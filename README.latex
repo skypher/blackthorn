@@ -1,0 +1,148 @@
+%%%% Blackthorn -- Lisp Game Engine
+%%%%
+%%%% Copyright (c) 2007-2009, Elliott Slaughter <elliottslaughter@gmail.com>
+%%%%
+%%%% Permission is hereby granted, free of charge, to any person
+%%%% obtaining a copy of this software and associated documentation
+%%%% files (the "Software"), to deal in the Software without
+%%%% restriction, including without limitation the rights to use, copy,
+%%%% modify, merge, publish, distribute, sublicense, and/or sell copies
+%%%% of the Software, and to permit persons to whom the Software is
+%%%% furnished to do so, subject to the following conditions:
+%%%%
+%%%% Except as contained in this notice, the name(s) of the above
+%%%% copyright holders shall not be used in advertising or otherwise to
+%%%% promote the sale, use or other dealings in this Software without
+%%%% prior written authorization.
+%%%%
+%%%% The above copyright notice and this permission notice shall be
+%%%% included in all copies or substantial portions of the Software.
+%%%%
+%%%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+%%%% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+%%%% MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+%%%% NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+%%%% HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+%%%% WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+%%%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+%%%% DEALINGS IN THE SOFTWARE.
+%%%%
+
+% Usage:
+% This document can generate PDF (with pdflatex) or HTML (with hevea) output.
+% $ pdflatex README.latex
+% or
+% $ hevea -o README.html README.latex
+
+\documentclass[letterpaper]{article}
+
+\usepackage{hevea}
+\usepackage{hyperref}
+
+\title{Blackthorn: Lisp Game Engine}
+\author{Elliott Slaughter}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{What is Blackthorn?}
+
+Blackthorn is a framework for writing 2D games in Common Lisp. Blackthorn is attempt to write an efficient, dynamic, persistent 2D game engine in an expressive language which makes it easy to write games.
+
+\section{Why another game engine?}
+
+Games are hard to write. The effort needed to write a usable game engine from scratch, especially when dealing with the low-level details of languages like C, make the cost of writing games prohibitive. Libraries like \href{http://www.libsdl.org/}{SDL} get many of the driver-level graphics details out of the way, but still leave the user writing in C. Libraries like \href{http://www.pygame.org/news.html}{PyGame} and \href{http://code.google.com/p/lispbuilder/wiki/LispbuilderSDL}{LISPBUILDER-SDL} wrap more of these low-level details, but still don't provide a full game engine needed for writing substantial games.
+
+There are, of course, game engines which provide this functionality to the user. \href{http://www.yoyogames.com/gamemaker/}{Game Maker}, for example, is an engine which provides everything needed to make a basic game, and an extention language for writing more complex behavior. Using Game Maker, an experienced user can write a basic game in five minutes. However, Game Maker (and similar programs the authors have tried) have some substantial flaws. Problems with Game Maker, specifically, include:
+
+\begin{itemize}
+    \item Game Maker only runs on Windows. A Linux port is still a dream, and porting to any sort of mobile device is completely unimaginable.
+    \item Game Maker's extension language, GML, is a kludge, and inefficient. (The lack of a rich set of built-in datastructures is something I hear GML users complaining about frequently.)
+    \item Game Maker is closed source, so it would be impossible for anyone other than the authors to fix any of the above problems with Game Maker.
+\end{itemize}
+
+\section{What does Blackthorn provide?}
+
+Blackthorn attempts to fix many of the problems above. Blackthorn provides:
+
+\begin{itemize}
+    \item A not-yet-complete subset of the functionality provided by Game Maker. Despite being incomplete, Blackthorn is already capable of supporting simple games.
+    \item Blackthorn is written in Common Lisp, providing:
+    \begin{itemize}
+          \item Efficiency which is (depending on the implementation, and the benchmark) capable of competing with C.
+          \item Portable to any platform supported by a compliant ANSI Common Lisp compiler. Blackthorn currently runs on Windows, Linux, and Mac OSX. Porting Blackthorn to a new compiler takes a couple of hours.
+          \item Dynamic behavior, because the entire compiler is available at runtime. An on-screen development REPL (read-eval-print loop, i.e. a development console) with an on-screen debugger is provided, giving the user the ability to rewrite arbitrary pieces of code on the fly.
+          \item Extensibility, because the game engine itself is an open platform, and because user code operates at the same level as the game engine.
+          \item And finally, because Blackthorn is open source, it is open to improvements from the community.
+    \end{itemize}
+\end{itemize}
+
+\section{Technical details}
+
+Blackthorn uses \href{http://code.google.com/p/lispbuilder/}{LISPBUILDER-SDL} for graphics support (which internally uses \href{http://www.libsdl.org/}{SDL} and \href{http://www.libsdl.org/projects/SDL_image/}{SDL\_image}), and \href{http://common-lisp.net/project/cl-store/}{CL-STORE} as an internal database for object persistence.
+
+Blackthorn currently runs on Windows, Linux, and Mac OS X, under \href{http://franz.com/products/allegrocl/}{Allegro CL}, \href{http://clisp.cons.org/}{CLISP}, \href{http://trac.clozure.com/openmcl}{Clozure CL}, and \href{http://www.sbcl.org/}{SBCL}. Blackthorn has been tested successfully on the following OS/Lisp combinations:
+
+\begin{tabular}{c c c c}
+           & Windows & Linux & Mac OS X \\
+Allegro CL & Yes     & ??    & ?? \\
+CLISP      & Yes     & Yes   & Yes \\
+Clozure CL & Yes     & Yes   & No \\
+SBCL       & Yes     & Yes   & Yes \\
+\end{tabular}
+
+Among the compatible compilers, SBCL is suggested because it is (a) free and open source, (b) compatible with Windows, Linux and Mac, and (c) has the best performance of the compilers listed. Allegro CL is also a good choice, but is commercial software (although a free version is available).
+
+\subsection{Direct dependencies}
+
+\begin{itemize}
+    \item \href{http://code.google.com/p/lispbuilder/}{LISPBUILDER-SDL and -SDL-IMAGE}
+    \item \href{http://common-lisp.net/project/cl-store/}{CL-STORE}
+    \item \href{http://www.common-lisp.org/project/cl-containers/}{CL-Containers}
+    \item \href{http://www.cliki.net/trivial-garbage}{Trivial Garbage}
+    \item \href{http://www.weitz.de/cl-fad/}{CL-FAD}
+\end{itemize}
+
+\subsection{Windows only (optional)}
+
+\begin{itemize}
+    \item \href{http://www.cygwin.com/}{Cygwin} or \href{http://gnuwin32.sourceforge.net/}{GnuWin32} to use the Makefile
+    \item \href{http://nsis.sourceforge.net/}{NSIS} for building installers
+\end{itemize}
+
+\section{Installation}
+
+Download the source using darcs
+
+\begin{verbatim}
+darcs get http://common-lisp.net/~eslaughter/darcs/blackthorn
+\end{verbatim}
+
+To start Blackthorn from the shell, merely call make
+
+\begin{verbatim}
+make
+\end{verbatim}
+
+Optionally, use parameters to specify the build environment, e.g.
+
+\begin{verbatim}
+make cl=sbcl db=nodb driver=load.lisp system=bunnyslayer
+\end{verbatim}
+
+If instead you prefer to start Blackthorn interactively, start your Lisp and
+
+\begin{verbatim}
+(load "load")
+\end{verbatim}
+
+\section{Download}
+
+Binary distributions are made semi-frequently and are available for download at \url{http://elliottslaughter.net/bunnyslayer/download}.
+License
+
+Blackthorn is free and open source software, see the \href{http://common-lisp.net/~eslaughter/darcs/blackthorn/COPYRIGHT}{COPYRIGHT} file for details.
+
+\end{document}

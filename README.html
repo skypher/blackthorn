@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+            "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE>Blackthorn: Lisp Game Engine
+</TITLE>
+
+<META http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<META name="GENERATOR" content="hevea 1.10">
+<STYLE type="text/css">
+.li-itemize{margin:1ex 0ex;}
+.li-enumerate{margin:1ex 0ex;}
+.dd-description{margin:0ex 0ex 1ex 4ex;}
+.dt-description{margin:0ex;}
+.toc{list-style:none;}
+.thefootnotes{text-align:left;margin:0ex;}
+.dt-thefootnotes{margin:0em;}
+.dd-thefootnotes{margin:0em 0em 0em 2em;}
+.footnoterule{margin:1em auto 1em 0px;width:50%;}
+.caption{padding-left:2ex; padding-right:2ex; margin-left:auto; margin-right:auto}
+.title{margin:2ex auto;text-align:center}
+.center{text-align:center;margin-left:auto;margin-right:auto;}
+.flushleft{text-align:left;margin-left:0ex;margin-right:auto;}
+.flushright{text-align:right;margin-left:auto;margin-right:0ex;}
+DIV TABLE{margin-left:inherit;margin-right:inherit;}
+PRE{text-align:left;margin-left:0ex;margin-right:auto;}
+BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
+TD P{margin:0px;}
+.boxed{border:1px solid black}
+.textboxed{border:1px solid black}
+.vbar{border:none;width:2px;background-color:black;}
+.hbar{border:none;height:2px;width:100%;background-color:black;}
+.hfill{border:none;height:1px;width:200%;background-color:black;}
+.vdisplay{border-collapse:separate;border-spacing:2px;width:auto; empty-cells:show; border:2px solid red;}
+.vdcell{white-space:nowrap;padding:0px;width:auto; border:2px solid green;}
+.display{border-collapse:separate;border-spacing:2px;width:auto; border:none;}
+.dcell{white-space:nowrap;padding:0px;width:auto; border:none;}
+.dcenter{margin:0ex auto;}
+.vdcenter{border:solid #FF8000 2px; margin:0ex auto;}
+.minipage{text-align:left; margin-left:0em; margin-right:auto;}
+.marginpar{border:solid thin black; width:20%; text-align:left;}
+.marginparleft{float:left; margin-left:0ex; margin-right:1ex;}
+.marginparright{float:right; margin-left:1ex; margin-right:0ex;}
+.theorem{text-align:left;margin:1ex auto 1ex 0ex;}
+.part{margin:2ex auto;text-align:center}
+</STYLE>
+</HEAD>
+<BODY >
+<!--HEVEA command line is: /usr/bin/hevea -o README.html README.latex -->
+<!--CUT DEF section 1 --><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Blackthorn: Lisp Game Engine</H1><H3 CLASS="titlerest">Elliott Slaughter</H3></TD></TR>
+</TABLE><!--TOC section Contents-->
+<H2 CLASS="section"><!--SEC ANCHOR -->Contents</H2><!--SEC END --><UL CLASS="toc"><LI CLASS="li-toc">
+<A HREF="#htoc1">1&#XA0;&#XA0;What is Blackthorn?</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc2">2&#XA0;&#XA0;Why another game engine?</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc3">3&#XA0;&#XA0;What does Blackthorn provide?</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc4">4&#XA0;&#XA0;Technical details</A>
+<UL CLASS="toc"><LI CLASS="li-toc">
+<A HREF="#htoc5">4.1&#XA0;&#XA0;Direct dependencies</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc6">4.2&#XA0;&#XA0;Windows only (optional)</A>
+</LI></UL>
+</LI><LI CLASS="li-toc"><A HREF="#htoc7">5&#XA0;&#XA0;Installation</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc8">6&#XA0;&#XA0;Download</A>
+</LI></UL><!--TOC section What is Blackthorn?-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc1">1</A>&#XA0;&#XA0;What is Blackthorn?</H2><!--SEC END --><P>Blackthorn is a framework for writing 2D games in Common Lisp. Blackthorn is attempt to write an efficient, dynamic, persistent 2D game engine in an expressive language which makes it easy to write games.</P><!--TOC section Why another game engine?-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc2">2</A>&#XA0;&#XA0;Why another game engine?</H2><!--SEC END --><P>Games are hard to write. The effort needed to write a usable game engine from scratch, especially when dealing with the low-level details of languages like C, make the cost of writing games prohibitive. Libraries like <A HREF="http://www.libsdl.org/">SDL</A> get many of the driver-level graphics details out of the way, but still leave the user writing in C. Libraries like <A HREF="http://www.pygame.org/news.html">PyGame</A> and <A HREF="http://code.google.com/p/lispbuilder/wiki/LispbuilderSDL">LISPBUILDER-SDL</A> wrap more of these low-level details, but still don&#X2019;t provide a full game engine needed for writing substantial games.</P><P>There are, of course, game engines which provide this functionality to the user. <A HREF="http://www.yoyogames.com/gamemaker/">Game Maker</A>, for example, is an engine which provides everything needed to make a basic game, and an extention language for writing more complex behavior. Using Game Maker, an experienced user can write a basic game in five minutes. However, Game Maker (and similar programs the authors have tried) have some substantial flaws. Problems with Game Maker, specifically, include:</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+Game Maker only runs on Windows. A Linux port is still a dream, and porting to any sort of mobile device is completely unimaginable.
+</LI><LI CLASS="li-itemize">Game Maker&#X2019;s extension language, GML, is a kludge, and inefficient. (The lack of a rich set of built-in datastructures is something I hear GML users complaining about frequently.)
+</LI><LI CLASS="li-itemize">Game Maker is closed source, so it would be impossible for anyone other than the authors to fix any of the above problems with Game Maker.
+</LI></UL><!--TOC section What does Blackthorn provide?-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc3">3</A>&#XA0;&#XA0;What does Blackthorn provide?</H2><!--SEC END --><P>Blackthorn attempts to fix many of the problems above. Blackthorn provides:</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+A not-yet-complete subset of the functionality provided by Game Maker. Despite being incomplete, Blackthorn is already capable of supporting simple games.
+</LI><LI CLASS="li-itemize">Blackthorn is written in Common Lisp, providing:
+<UL CLASS="itemize"><LI CLASS="li-itemize">
+Efficiency which is (depending on the implementation, and the benchmark) capable of competing with C.
+</LI><LI CLASS="li-itemize">Portable to any platform supported by a compliant ANSI Common Lisp compiler. Blackthorn currently runs on Windows, Linux, and Mac OSX. Porting Blackthorn to a new compiler takes a couple of hours.
+</LI><LI CLASS="li-itemize">Dynamic behavior, because the entire compiler is available at runtime. An on-screen development REPL (read-eval-print loop, i.e. a development console) with an on-screen debugger is provided, giving the user the ability to rewrite arbitrary pieces of code on the fly.
+</LI><LI CLASS="li-itemize">Extensibility, because the game engine itself is an open platform, and because user code operates at the same level as the game engine.
+</LI><LI CLASS="li-itemize">And finally, because Blackthorn is open source, it is open to improvements from the community.
+</LI></UL>
+</LI></UL><!--TOC section Technical details-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc4">4</A>&#XA0;&#XA0;Technical details</H2><!--SEC END --><P>Blackthorn uses <A HREF="http://code.google.com/p/lispbuilder/">LISPBUILDER-SDL</A> for graphics support (which internally uses <A HREF="http://www.libsdl.org/">SDL</A> and <A HREF="http://www.libsdl.org/projects/SDL_image/">SDL_image</A>), and <A HREF="http://common-lisp.net/project/cl-store/">CL-STORE</A> as an internal database for object persistence.</P><P>Blackthorn currently runs on Windows, Linux, and Mac OS X, under <A HREF="http://franz.com/products/allegrocl/">Allegro CL</A>, <A HREF="http://clisp.cons.org/">CLISP</A>, <A HREF="http://trac.clozure.com/openmcl">Clozure CL</A>, and <A HREF="http://www.sbcl.org/">SBCL</A>. Blackthorn has been tested successfully on the following OS/Lisp combinations:</P><TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=center NOWRAP>&nbsp;</TD><TD ALIGN=center NOWRAP>Windows</TD><TD ALIGN=center NOWRAP>Linux</TD><TD ALIGN=center NOWRAP>Mac OS X</TD></TR>
+<TR><TD ALIGN=center NOWRAP>Allegro CL</TD><TD ALIGN=center NOWRAP>Yes</TD><TD ALIGN=center NOWRAP>??</TD><TD ALIGN=center NOWRAP>??</TD></TR>
+<TR><TD ALIGN=center NOWRAP>CLISP</TD><TD ALIGN=center NOWRAP>Yes</TD><TD ALIGN=center NOWRAP>Yes</TD><TD ALIGN=center NOWRAP>Yes</TD></TR>
+<TR><TD ALIGN=center NOWRAP>Clozure CL</TD><TD ALIGN=center NOWRAP>Yes</TD><TD ALIGN=center NOWRAP>Yes</TD><TD ALIGN=center NOWRAP>No</TD></TR>
+<TR><TD ALIGN=center NOWRAP>SBCL</TD><TD ALIGN=center NOWRAP>Yes</TD><TD ALIGN=center NOWRAP>Yes</TD><TD ALIGN=center NOWRAP>Yes</TD></TR>
+</TABLE><P>Among the compatible compilers, SBCL is suggested because it is (a) free and open source, (b) compatible with Windows, Linux and Mac, and (c) has the best performance of the compilers listed. Allegro CL is also a good choice, but is commercial software (although a free version is available).</P><!--TOC subsection Direct dependencies-->
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc5">4.1</A>&#XA0;&#XA0;Direct dependencies</H3><!--SEC END --><UL CLASS="itemize"><LI CLASS="li-itemize">
+<A HREF="http://code.google.com/p/lispbuilder/">LISPBUILDER-SDL and -SDL-IMAGE</A>
+</LI><LI CLASS="li-itemize"><A HREF="http://common-lisp.net/project/cl-store/">CL-STORE</A>
+</LI><LI CLASS="li-itemize"><A HREF="http://www.common-lisp.org/project/cl-containers/">CL-Containers</A>
+</LI><LI CLASS="li-itemize"><A HREF="http://www.cliki.net/trivial-garbage">Trivial Garbage</A>
+</LI><LI CLASS="li-itemize"><A HREF="http://www.weitz.de/cl-fad/">CL-FAD</A>
+</LI></UL><!--TOC subsection Windows only (optional)-->
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc6">4.2</A>&#XA0;&#XA0;Windows only (optional)</H3><!--SEC END --><UL CLASS="itemize"><LI CLASS="li-itemize">
+<A HREF="http://www.cygwin.com/">Cygwin</A> or <A HREF="http://gnuwin32.sourceforge.net/">GnuWin32</A> to use the Makefile
+</LI><LI CLASS="li-itemize"><A HREF="http://nsis.sourceforge.net/">NSIS</A> for building installers
+</LI></UL><!--TOC section Installation-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc7">5</A>&#XA0;&#XA0;Installation</H2><!--SEC END --><P>Download the source using darcs</P><PRE CLASS="verbatim">darcs get http://common-lisp.net/~eslaughter/darcs/blackthorn
+</PRE><P>To start Blackthorn from the shell, merely call make</P><PRE CLASS="verbatim">make
+</PRE><P>Optionally, use parameters to specify the build environment, e.g.</P><PRE CLASS="verbatim">make cl=sbcl db=nodb driver=load.lisp system=bunnyslayer
+</PRE><P>If instead you prefer to start Blackthorn interactively, start your Lisp and</P><PRE CLASS="verbatim">(load "load")
+</PRE><!--TOC section Download-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc8">6</A>&#XA0;&#XA0;Download</H2><!--SEC END --><P>Binary distributions are made semi-frequently and are available for download at <A HREF="http://elliottslaughter.net/bunnyslayer/download"><TT>http://elliottslaughter.net/bunnyslayer/download</TT></A>.
+License</P><P>Blackthorn is free and open source software, see the <A HREF="http://common-lisp.net/~eslaughter/darcs/blackthorn/COPYRIGHT">COPYRIGHT</A> file for details.</P><!--CUT END -->
+<!--HTMLFOOT-->
+<!--ENDHTML-->
+<!--FOOTER-->
+<HR SIZE=2><BLOCKQUOTE CLASS="quote"><EM>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
+</EM><A HREF="http://hevea.inria.fr/index.html"><EM>H</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>V</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>A</EM></A><EM>.</EM></BLOCKQUOTE></BODY>
+</HTML>
