@@ -161,11 +161,24 @@
 
     ;; Initialize viewing values.
     (gl:viewport 0 0 800 600)
+    (gl:enable :texture-2d)
+    (gl:enable :blend)
+    (gl:blend-func :src-alpha :one-minus-src-alpha)
     (gl:matrix-mode :projection)
     (gl:load-identity)
 
-    ;; Main loop:
-    (let ((triangle-angle 0) (quad-angle 0))
+    (let ((texture (car (gl:gen-textures 1))))
+      (let ((surface (sdl-image:load-image "disp/texture.png")))
+        (gl:bind-texture :texture-2d texture)
+        (gl:tex-parameter :texture-2d :texture-min-filter :linear)
+        (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
+        (gl:tex-image-2d :texture-2d 0 :rgba
+                         (sdl:width surface) (sdl:height surface)
+                         0 :rgba :unsigned-byte
+                         (sdl-base::with-pixel (pixels (sdl:fp surface))
+                           (sdl-base::pixel-data pixels))))
+
+      ;; Main loop:
       (sdl:with-events ()
         (:quit-event () t) ; t for quit, (return-from main) for toplevel
         (:key-down-event (:key key :mod mod :mod-key mod-key :unicode unicode)
@@ -174,38 +187,16 @@
                        (format t "key up ~a~%" key))
         (:idle ()
                (gl:clear :color-buffer-bit)
-               (gl:with-pushed-matrix
-                 (gl:translate -0.5 0 0)
-                 (gl:rotate triangle-angle 0 1 0)
-                 (gl:translate 0.5 0 0)
-                 (gl:ortho 0 800 600 0 -1 1)
-                 (gl:with-primitive :triangles
-                   (gl:color 1 0 0)
-                   (gl:vertex 200 100 0)
-                   (gl:color 0 1 0)
-                   (gl:vertex 50 500 0)
-                   (gl:color 0 0 1)
-                   (gl:vertex 350 500 0)))
 
                (gl:with-pushed-matrix
-                 (gl:translate 0.42 0 0)
-                 (gl:rotate quad-angle 1 0 0)
-                 (gl:rotate quad-angle 0 1 0)
-                 (gl:translate -0.42 0 0)
                  (gl:ortho 0 800 600 0 -1 1)
+                 (gl:bind-texture :texture-2d texture)
                  (gl:with-primitive :quads
-                   (gl:color 1 0 0)
-                   (gl:vertex 400 125 0)
-                   (gl:color 0 1 0)
-                   (gl:vertex 750 125 0)
-                   (gl:color 0 0 1)
-                   (gl:vertex 750 475 0)
-                   (gl:color 1 0 1)
-                   (gl:vertex 400 475 0)))
-               (setf triangle-angle (mod (1+ triangle-angle) 360)
-                     quad-angle (mod (1+ triangle-angle) 360))
+                   (gl:tex-coord 0 0) (gl:vertex 200 100 0)
+                   (gl:tex-coord 1 0) (gl:vertex 600 100 0)
+                   (gl:tex-coord 1 1) (gl:vertex 600 500 0)
+                   (gl:tex-coord 0 1) (gl:vertex 200 500 0)))
 
-               ;; Start processing buffered OpenGL routines.
                (gl:flush)
                (sdl:update-display)))))
 
