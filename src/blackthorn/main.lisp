@@ -156,35 +156,58 @@
     (setf *save-file-pathname* file))
 
   (sdl:with-init ()
-    (sdl:window 300 300 :flags sdl:sdl-opengl)
+    (sdl:window 800 600 :flags sdl:sdl-opengl)
     (gl:clear-color 0 0 0 0)
+
     ;; Initialize viewing values.
+    (gl:viewport 0 0 800 600)
     (gl:matrix-mode :projection)
     (gl:load-identity)
-    (gl:ortho 0 1 0 1 -1 1)
-
-    (sdl:enable-unicode t)
 
     ;; Main loop:
-    (sdl:with-events ()
-      (:quit-event () t) ; t for quit, (return-from main) for toplevel
-      (:key-down-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-        (format t "key down ~a~%" key))
-      (:key-up-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-        (format t "key up ~a~%" key))
-      (:idle ()
-       (gl:clear :color-buffer-bit)
-       ;; Draw white polygon (rectangle) with corners at
-       ;; (0.25, 0.25, 0.0) and (0.75, 0.75, 0.0).
-       (gl:color 1 1 1)
-       (gl:with-primitive :polygon
-                          (gl:vertex 0.25 0.25 0)
-                          (gl:vertex 0.75 0.25 0)
-                          (gl:vertex 0.75 0.75 0)
-                          (gl:vertex 0.25 0.75 0))
-       ;; Start processing buffered OpenGL routines.
-       (gl:flush)
-       (sdl:update-display))))
+    (let ((triangle-angle 0) (quad-angle 0))
+      (sdl:with-events ()
+        (:quit-event () t) ; t for quit, (return-from main) for toplevel
+        (:key-down-event (:key key :mod mod :mod-key mod-key :unicode unicode)
+                         (format t "key down ~a~%" key))
+        (:key-up-event (:key key :mod mod :mod-key mod-key :unicode unicode)
+                       (format t "key up ~a~%" key))
+        (:idle ()
+               (gl:clear :color-buffer-bit)
+               (gl:with-pushed-matrix
+                 (gl:translate -0.5 0 0)
+                 (gl:rotate triangle-angle 0 1 0)
+                 (gl:translate 0.5 0 0)
+                 (gl:ortho 0 800 600 0 -1 1)
+                 (gl:with-primitive :triangles
+                   (gl:color 1 0 0)
+                   (gl:vertex 200 100 0)
+                   (gl:color 0 1 0)
+                   (gl:vertex 50 500 0)
+                   (gl:color 0 0 1)
+                   (gl:vertex 350 500 0)))
+
+               (gl:with-pushed-matrix
+                 (gl:translate 0.42 0 0)
+                 (gl:rotate quad-angle 1 0 0)
+                 (gl:rotate quad-angle 0 1 0)
+                 (gl:translate -0.42 0 0)
+                 (gl:ortho 0 800 600 0 -1 1)
+                 (gl:with-primitive :quads
+                   (gl:color 1 0 0)
+                   (gl:vertex 400 125 0)
+                   (gl:color 0 1 0)
+                   (gl:vertex 750 125 0)
+                   (gl:color 0 0 1)
+                   (gl:vertex 750 475 0)
+                   (gl:color 1 0 1)
+                   (gl:vertex 400 475 0)))
+               (setf triangle-angle (mod (1+ triangle-angle) 360)
+                     quad-angle (mod (1+ triangle-angle) 360))
+
+               ;; Start processing buffered OpenGL routines.
+               (gl:flush)
+               (sdl:update-display)))))
 
   ;; Finalization:
   (exit))
