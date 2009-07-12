@@ -37,6 +37,16 @@
 
 (in-package :cl-user)
 
+(defpackage :blackthorn-graphics
+  (:nicknames :blt-gfx)
+  (:use :cl)
+  (:export
+
+   ;; graphics.lisp
+   load-image
+
+   ))
+
 (defpackage :blackthorn-user
   (:nicknames :blt-user)
   (:use :cl)

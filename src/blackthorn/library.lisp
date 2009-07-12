@@ -28,7 +28,7 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(in-package :blt-user)
+(in-package :blackthorn-user)
 
 ;;;
 ;;; Runtime dependencies which must be loaded into the lisp executable prior

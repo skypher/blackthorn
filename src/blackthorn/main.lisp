@@ -28,7 +28,7 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(in-package :blt-user)
+(in-package :blackthorn-user)
 
 ;;;
 ;;; System paths
@@ -156,27 +156,19 @@
     (setf *save-file-pathname* file))
 
   (sdl:with-init ()
-    (sdl:window 800 600 :flags sdl:sdl-opengl)
-    (gl:clear-color 0 0 0 0)
+    (sdl:set-gl-attribute :sdl-gl-doublebuffer 1)
+    (sdl:window 800 600 :bpp 32 :flags sdl:sdl-opengl)
 
-    ;; Initialize viewing values.
-    (gl:viewport 0 0 800 600)
     (gl:enable :texture-2d)
     (gl:enable :blend)
     (gl:blend-func :src-alpha :one-minus-src-alpha)
+    (gl:clear-color 0 0 0 0)
+    (gl:viewport 0 0 800 600)
+
     (gl:matrix-mode :projection)
     (gl:load-identity)
 
-    (let ((texture (car (gl:gen-textures 1))))
-      (let ((surface (sdl-image:load-image "disp/texture.png")))
-        (gl:bind-texture :texture-2d texture)
-        (gl:tex-parameter :texture-2d :texture-min-filter :linear)
-        (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
-        (gl:tex-image-2d :texture-2d 0 :rgba
-                         (sdl:width surface) (sdl:height surface)
-                         0 :rgba :unsigned-byte
-                         (sdl-base::with-pixel (pixels (sdl:fp surface))
-                           (sdl-base::pixel-data pixels))))
+    (let ((texture (blt-gfx:load-image "disp/texture.png")))
 
       ;; Main loop:
       (sdl:with-events ()
@@ -192,10 +184,10 @@
                  (gl:ortho 0 800 600 0 -1 1)
                  (gl:bind-texture :texture-2d texture)
                  (gl:with-primitive :quads
-                   (gl:tex-coord 0 0) (gl:vertex 200 100 0)
-                   (gl:tex-coord 1 0) (gl:vertex 600 100 0)
-                   (gl:tex-coord 1 1) (gl:vertex 600 500 0)
-                   (gl:tex-coord 0 1) (gl:vertex 200 500 0)))
+                   (gl:tex-coord 0 0) (gl:vertex 0 0 0)
+                   (gl:tex-coord 1 0) (gl:vertex 400 0 0)
+                   (gl:tex-coord 1 1) (gl:vertex 400 400 0)
+                   (gl:tex-coord 0 1) (gl:vertex 0 400 0)))
 
                (gl:flush)
                (sdl:update-display)))))
