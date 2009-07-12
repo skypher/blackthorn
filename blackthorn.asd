@@ -28,32 +28,41 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(defvar *driver-system* :blackthorn)
+(defpackage :blackthorn-asd
+  (:use :cl :asdf))
 
-(require :asdf)
-(asdf:operate 'asdf:load-op *driver-system*)
+(in-package :blackthorn-asd)
 
-;;; --------------------------------------------------------------------------
-;;; Setup profiler and run main.
-;;; --------------------------------------------------------------------------
+(defsystem blackthorn
+  :name "blackthorn"
+  :author "Elliott Slaughter <elliottslaughter@gmail.com>"
+  :version "0.2"
+  :components ((:module src
+                        :components
+                        ((:module blackthorn
+                                  :components
+                                  ((:file "package")
+                                   (:file "library")
+                                   (:file "main"))
+                                  :serial t))))
+  :depends-on (:trivial-features
 
-(in-package :blt-user)
+               ;; Command line option parsing:
+               :cli-parser
 
-(defun exit ())
+               ;; File utilities:
+               :cl-fad
 
-(defmacro profile-packages (&rest packages)
-  `(progn
-     ,@(loop for package in packages collect
-            `(progn
-               ,@(loop for symbol being the external-symbols in package
-                    when (fboundp symbol)
-                    collect
-                      #+sbcl `(sb-profile:profile ,symbol))))))
+               ;; Tar archive support:
+               :archive
 
-(profile-packages blt blt-user)
+               ;; Object serialization:
+               :cl-store
 
-(main)
+               ;; Data structures:
+               :cl-containers
 
-#+sbcl (sb-profile:report)
-
-#+sbcl (sb-ext:quit)
+               ;; Graphics:
+               :lispbuilder-sdl
+               :lispbuilder-sdl-image
+               :cl-opengl))

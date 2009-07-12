@@ -28,32 +28,27 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(defvar *driver-system* :blackthorn)
+#+allegro (require :foreign)
+#+allegro (require :osi)
 
-(require :asdf)
-(asdf:operate 'asdf:load-op *driver-system*)
+;;;
+;;; Package definitions
+;;;
 
-;;; --------------------------------------------------------------------------
-;;; Setup profiler and run main.
-;;; --------------------------------------------------------------------------
+(in-package :cl-user)
 
-(in-package :blt-user)
+(defpackage :blackthorn-user
+  (:nicknames :blt-user)
+  (:use :cl)
+  (:shadow :room)
+  #+allegro (:import-from :cl-user :exit)
+  (:export
 
-(defun exit ())
+   ;; main.lisp
+   :main
 
-(defmacro profile-packages (&rest packages)
-  `(progn
-     ,@(loop for package in packages collect
-            `(progn
-               ,@(loop for symbol being the external-symbols in package
-                    when (fboundp symbol)
-                    collect
-                      #+sbcl `(sb-profile:profile ,symbol))))))
+   ))
 
-(profile-packages blt blt-user)
-
-(main)
-
-#+sbcl (sb-profile:report)
-
-#+sbcl (sb-ext:quit)
+#-allegro
+(eval-when (:compile-toplevel :load-toplevel)
+  (setf (symbol-function 'blt-user::exit) #'quit))

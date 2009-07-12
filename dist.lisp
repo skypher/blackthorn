@@ -31,16 +31,14 @@
 (require :asdf)
 
 (defpackage :blackthorn-build
-  (:nicknames :bt-build)
+  (:nicknames :blt-build)
   (:use :cl)
   (:import-from :cl-user :*driver-system*)
   #+allegro (:import-from :excl :exit :generate-application :run-shell-command)
   #+sbcl (:import-from :sb-ext :save-lisp-and-die)
-  #+clisp (:import-from :ext :quit :saveinitmem)
-  (:documentation
-   "Packages build-time settings in Blackthorn RPG."))
+  #+clisp (:import-from :ext :quit :saveinitmem))
 
-(in-package :bt-build)
+(in-package :blt-build)
 
 (defvar *driver-system* :blackthorn)
 
@@ -115,8 +113,8 @@
  :allow-existing-directory t
  #+windows :icon-file
  #+windows
- (make-pathname :directory '(:relative "w32") :name "bt" :type "ico")
- :restart-init-function 'bt-user:main
+ (make-pathname :directory '(:relative "windows") :name "bt" :type "ico")
+ :restart-init-function 'blt-user:main
  #-windows
  :application-administration
  #-windows ;; Quiet startup (See below for Windows version of this.)
@@ -174,12 +172,12 @@
 ;;; Make main executable, SBCL.
 ;;;
 
-#+sbcl (save-lisp-and-die +build-exe+ :toplevel #'bt-user:main :executable t)
+#+sbcl (save-lisp-and-die +build-exe+ :toplevel #'blt-user:main :executable t)
 
 ;;;
 ;;; Make main executable, CLISP.
 ;;;
 
 #+clisp
-(saveinitmem +build-exe+ :init-function #'bt-user:main :executable t :norc t)
+(saveinitmem +build-exe+ :init-function #'blt-user:main :executable t :norc t)
 #+clisp (quit)

@@ -51,9 +51,6 @@ endif
 endif
 endif
 
-# Use no DB by default. (Valid options are store.)
-db := store
-
 # Which ASDF system to load:
 system := blackthorn
 
@@ -130,23 +127,23 @@ load:
 
 .PHONY: load-allegro
 load-allegro:
-	alisp +B +s ${driver} -e "(pushnew :bt-${db} cl:*features*)" -e "(defparameter *driver-system* '|${system}|)" -- -${mode} ${file}
+	alisp +B +s ${driver} -e "(defparameter *driver-system* '|${system}|)" -- --${mode}=${file}
 
 .PHONY: load-sbcl
 load-sbcl:
-	sbcl --eval "(pushnew :bt-${db} cl:*features*)" --eval "(defparameter *driver-system* \"${system}\")" --load ${driver} -- -${mode} ${file}
+	sbcl --eval "(defparameter *driver-system* \"${system}\")" --load ${driver} -- --${mode}=${file}
 
 .PHONY: load-clisp
 load-clisp:
-	clisp -x "(pushnew :bt-${db} cl:*features*)" -x "(defparameter *driver-system* \"${system}\")" -x "(load \"${driver}\")" -- -${mode} ${file}
+	clisp -x "(defparameter *driver-system* \"${system}\")" -x "(load \"${driver}\")" -- --${mode}=${file}
 
 .PHONY: load-ecl
 load-ecl:
-	ecl -eval "(pushnew :bt-${db} cl:*features*)" -eval "(defparameter *driver-system* \"${system}\")" -load ${driver} -- -${mode} ${file}
+	ecl -eval "(defparameter *driver-system* \"${system}\")" -load ${driver} -- --${mode}=${file}
 
 .PHONY: load-clozure
 load-clozure:
-	ccl --eval "(pushnew :bt-${db} cl:*features*)" --eval "(defparameter *driver-system* \"${system}\")" --load ${driver} -- -${mode} ${file}
+	ccl --eval "(defparameter *driver-system* \"${system}\")" --load ${driver} -- --${mode}=${file}
 
 .PHONY: test
 test:
@@ -175,6 +172,7 @@ README:
 	pdflatex README.latex
 	hevea -o README.html README.latex
 	hevea -o README.html README.latex
+	rm -f README.aux README.haux README.htoc README.log README.out README.toc
 
 .PHONY: atdoc
 atdoc:
@@ -222,4 +220,4 @@ distclean:
 
 .PHONY: docclean
 docclean:
-	rm -rf atdoc README.aux README.haux README.htoc README.html README.log README.out README.pdf README.toc
+	rm -rf atdoc

@@ -63,7 +63,7 @@
 ;;;
 
 (atdoc:generate-documentation
- '(:bt :bt-user)
+ '(:blt :blt-user)
  +doc-dir+
  :index-title "Blackthorn API Reference"
  :heading "Blackthorn 2D -- Lisp Game Engine")
