@@ -43,7 +43,7 @@
   (:export
 
    ;; graphics.lisp
-   load-image
+   :load-image-to-texture
 
    ))
 

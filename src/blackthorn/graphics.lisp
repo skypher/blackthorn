@@ -62,50 +62,23 @@
    'sdl-cffi::sdl-pixel-format
    slot-name))
 
-;; Two versions of load-image:
-;; The first checks bytes-per-pixel and the red-mask manually to try to manually
-;; decide the pixel format to give GL.
-;; The second uses load-and-convert-image to try to do this automatically.
-;; Only the first version works.
-(defun load-image (source)
+(defun load-and-convert-image (source)
   (assert (probe-file source))
-  (let ((texture (car (gl:gen-textures 1)))
-        (surface (sdl-image:load-image source)))
+  (let* ((image (sdl-image:load-image source))
+         (w (sdl:width image)) (h (sdl:height image))
+         (surface (sdl:create-surface  w h :bpp 32 :pixel-alpha t)))
+    (sdl:blit-surface image surface)))
+
+(defun load-image-to-texture (source)
+  (assert (probe-file source))
+  (let* ((texture (car (gl:gen-textures 1)))
+         (surface (load-and-convert-image source))
+         (w (sdl:width surface)) (h (sdl:height surface)))
     (gl:bind-texture :texture-2d texture)
     (gl:tex-parameter :texture-2d :texture-min-filter :nearest)
     (gl:tex-parameter :texture-2d :texture-mag-filter :nearest)
-
-    (let* ((w (sdl:width surface)) (h (sdl:height surface))
-           (bpp (pixel-format-slot surface 'sdl-cffi::bytesperpixel))
-           (format (cond ((= bpp 4)
-                          (if (= (pixel-format-slot surface 'sdl-cffi::rmask)
-                                 #x000000ff)
-                              :rgba
-                              :bgra))
-                         ((= bpp 3)
-                          (if (= (pixel-format-slot surface 'sdl-cffi::rmask)
-                                 #x000000ff)
-                              :rgb
-                              :bgr))
-                         (t (error "Image \"~a\" is not truecolor." source)))))
-      (gl:tex-image-2d
-       :texture-2d 0 bpp w h 0 format :unsigned-byte
-       (sdl-base::with-pixel (pixels (sdl:fp surface))
-         (sdl-base::pixel-data pixels))))
-    texture))
-
-#+nil
-(defun load-image (source)
-  (assert (probe-file source))
-  (let ((texture (car (gl:gen-textures 1)))
-        (surface (sdl-image:load-and-convert-image source)))
-    (gl:bind-texture :texture-2d texture)
-    (gl:tex-parameter :texture-2d :texture-min-filter :nearest)
-    (gl:tex-parameter :texture-2d :texture-mag-filter :nearest)
-
-    (let ((w (sdl:width surface)) (h (sdl:height surface)))
-      (gl:tex-image-2d
+    (gl:tex-image-2d
        :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte
        (sdl-base::with-pixel (pixels (sdl:fp surface))
-         (sdl-base::pixel-data pixels))))
+         (sdl-base::pixel-data pixels)))
     texture))

@@ -168,7 +168,7 @@
     (gl:matrix-mode :projection)
     (gl:load-identity)
 
-    (let ((texture (blt-gfx:load-image "disp/texture.png")))
+    (let ((texture (blt-gfx:load-image-to-texture "disp/texture.png")))
 
       ;; Main loop:
       (sdl:with-events ()
