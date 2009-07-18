@@ -41,8 +41,7 @@
    (source
     :initarg :source)
    texture
-   (size
-    :reader size))
+   size)
   (:documentation
    "Wrapper over an Open GL texture."))
 
@@ -79,7 +78,8 @@
          (sdl-base::pixel-data pixels)))
     (values texture surface)))
 
-(defmethod texture ((image image))
+(defun texture (image)
+  (declare (type image image))
   (if (slot-boundp image 'texture)
       (slot-value image 'texture)
       (with-slots (source) image
@@ -87,7 +87,12 @@
           (setf (slot-value image 'texture) texture
                 (slot-value image 'size)
                 (complex (sdl:width surface) (sdl:height surface)))
-          texture))))
+          (values texture surface)))))
+
+(defmethod size ((image image))
+  ;; Automatically load the image texture.
+  (texture image)
+  (slot-value image 'size))
 
 (defgeneric x (object)
   (:method ((n number)) (realpart n)))
