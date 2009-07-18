@@ -28,45 +28,20 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(defpackage :blackthorn-asd
+(defpackage :blackthorn-stress-test-asd
   (:use :cl :asdf))
 
-(in-package :blackthorn-asd)
+(in-package :blackthorn-stress-test-asd)
 
-(defsystem blackthorn
-  :name "blackthorn"
+(defsystem blackthorn-stress-test
+  :name "blackthorn-stress-test"
   :author "Elliott Slaughter <elliottslaughter@gmail.com>"
   :version "0.2"
   :components ((:module src
                         :components
-                        ((:module blackthorn
+                        ((:module stress-test
                                   :components
                                   ((:file "package")
-                                   (:file "utils")
-                                   (:file "graphics")
-                                   (:file "game")
-                                   (:file "component")
-                                   (:file "library")
-                                   (:file "main"))
+                                   (:file "static"))
                                   :serial t))))
-  :depends-on (:trivial-features
-
-               ;; Command line option parsing:
-               :cli-parser
-
-               ;; File utilities:
-               :cl-fad
-
-               ;; Tar archive support:
-               :archive
-
-               ;; Object serialization:
-               :cl-store
-
-               ;; Data structures:
-               :cl-containers
-
-               ;; Graphics:
-               :lispbuilder-sdl
-               :lispbuilder-sdl-image
-               :cl-opengl))
+  :depends-on (:blackthorn))

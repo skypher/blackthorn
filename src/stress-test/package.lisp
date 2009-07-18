@@ -28,45 +28,14 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(defpackage :blackthorn-asd
-  (:use :cl :asdf))
+(in-package :cl-user)
 
-(in-package :blackthorn-asd)
+(defpackage :blackthorn-stress-test
+  (:nicknames :stress-test)
+  (:use :cl :blt-gfx :blt-phys :blt-user)
+  (:export
 
-(defsystem blackthorn
-  :name "blackthorn"
-  :author "Elliott Slaughter <elliottslaughter@gmail.com>"
-  :version "0.2"
-  :components ((:module src
-                        :components
-                        ((:module blackthorn
-                                  :components
-                                  ((:file "package")
-                                   (:file "utils")
-                                   (:file "graphics")
-                                   (:file "game")
-                                   (:file "component")
-                                   (:file "library")
-                                   (:file "main"))
-                                  :serial t))))
-  :depends-on (:trivial-features
+   ;; static.lisp
+   :static-test
 
-               ;; Command line option parsing:
-               :cli-parser
-
-               ;; File utilities:
-               :cl-fad
-
-               ;; Tar archive support:
-               :archive
-
-               ;; Object serialization:
-               :cl-store
-
-               ;; Data structures:
-               :cl-containers
-
-               ;; Graphics:
-               :lispbuilder-sdl
-               :lispbuilder-sdl-image
-               :cl-opengl))
+   ))

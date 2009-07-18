@@ -28,45 +28,30 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(defpackage :blackthorn-asd
-  (:use :cl :asdf))
+(in-package :blackthorn-stress-test)
 
-(in-package :blackthorn-asd)
+(defclass static-game (game) ())
 
-(defsystem blackthorn
-  :name "blackthorn"
-  :author "Elliott Slaughter <elliottslaughter@gmail.com>"
-  :version "0.2"
-  :components ((:module src
-                        :components
-                        ((:module blackthorn
-                                  :components
-                                  ((:file "package")
-                                   (:file "utils")
-                                   (:file "graphics")
-                                   (:file "game")
-                                   (:file "component")
-                                   (:file "library")
-                                   (:file "main"))
-                                  :serial t))))
-  :depends-on (:trivial-features
+(defmethod init-game ((game static-game))
+  (let ((root (make-instance 'component)))
+    (loop for x from 0 to 800 by 16
+       do (loop for y from 0 to 600 by 16
+             do (make-instance
+                 'sprite :parent root :offset (complex x y)
+                 :image (make-instance 'image :name 'tex
+                                       :source "disp/texture.png"))))
+    (setf (game-root game) root
+          (game-view game)
+          (make-instance 'component :offset #c(0 0) :size #c(800 600)))))
 
-               ;; Command line option parsing:
-               :cli-parser
+(defmethod init-game :after ((game static-game))
+  ; uncork the frame rate and see how fast we go
+  (setf (sdl:frame-rate) 100))
 
-               ;; File utilities:
-               :cl-fad
+;; For interactive use:
+(defun static-test ()
+  (let ((*game* (make-instance 'static-game)))
+    (main :exit-when-done nil)))
 
-               ;; Tar archive support:
-               :archive
-
-               ;; Object serialization:
-               :cl-store
-
-               ;; Data structures:
-               :cl-containers
-
-               ;; Graphics:
-               :lispbuilder-sdl
-               :lispbuilder-sdl-image
-               :cl-opengl))
+;; For non-interactive use:
+(defparameter *game* (make-instance 'static-game))

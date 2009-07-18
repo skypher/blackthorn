@@ -48,6 +48,8 @@
    :x
    :y
    :render
+   :unload-graphics
+   :window
 
    ))
 
@@ -55,6 +57,15 @@
   (:nicknames :blt-phys)
   (:use :cl :blt-gfx)
   (:export
+
+   ;; game.lisp
+   :game
+   :game-root
+   :game-view
+   :init-game
+   :load-game
+   :save-game
+   :*game*
 
    ;; component.lisp
    :component

@@ -28,45 +28,30 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(defpackage :blackthorn-asd
-  (:use :cl :asdf))
+(in-package :blackthorn-physics)
 
-(in-package :blackthorn-asd)
+(defclass game ()
+  ((root
+    :accessor game-root
+    :initform nil)
+   (view
+    :accessor game-view
+    :initform nil)))
 
-(defsystem blackthorn
-  :name "blackthorn"
-  :author "Elliott Slaughter <elliottslaughter@gmail.com>"
-  :version "0.2"
-  :components ((:module src
-                        :components
-                        ((:module blackthorn
-                                  :components
-                                  ((:file "package")
-                                   (:file "utils")
-                                   (:file "graphics")
-                                   (:file "game")
-                                   (:file "component")
-                                   (:file "library")
-                                   (:file "main"))
-                                  :serial t))))
-  :depends-on (:trivial-features
+(defvar *game*)
 
-               ;; Command line option parsing:
-               :cli-parser
+(defgeneric init-game (game))
+(defgeneric load-game (game))
+(defgeneric save-game (game))
 
-               ;; File utilities:
-               :cl-fad
+(defmethod init-game :after ((game game))
+  (if (game-view game)
+      (window (size (game-view game)))
+      (warn "No view object for game ~a: Unable to initialize window.~%" game)))
 
-               ;; Tar archive support:
-               :archive
-
-               ;; Object serialization:
-               :cl-store
-
-               ;; Data structures:
-               :cl-containers
-
-               ;; Graphics:
-               :lispbuilder-sdl
-               :lispbuilder-sdl-image
-               :cl-opengl))
+(defmethod render (game)
+  (with-slots (offset size) (game-view game)
+    (gl:with-pushed-matrix
+      (gl:ortho 0 (x size) (y size) 0 -1 1)
+      (gl:translate (x offset) (y offset) 0)
+      (render (game-root game)))))

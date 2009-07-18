@@ -142,8 +142,8 @@
         (vector->complex
          (find (apply #'min (mapcar #'x modes)) modes :key #'x)))))
 
-(defun main ()
-  "Main function deals with initialization and loading of SDL dlls when running a compiled executable."
+(defun main (&key (exit-when-done t))
+  "Main entry point for the game. Deals with initialization, finalization, and the main game loop."
   ;; Initialization:
   (setup-paths)
   (load-dlls)
@@ -156,9 +156,8 @@
     (setf *save-file-pathname* file))
 
   (sdl:with-init ()
-    (sdl:set-gl-attribute :sdl-gl-doublebuffer 1)
-    (sdl:window 800 600 :bpp 32 :flags sdl:sdl-opengl)
-    (gl:viewport 0 0 800 600)
+    (unless *game* (error "No game specified.~%"))
+    (init-game *game*)
 
     (gl:enable :texture-2d)
     (gl:enable :blend)
@@ -171,37 +170,27 @@
     (gl:matrix-mode :modelview)
     (gl:load-identity)
 
-    (let ((root (make-instance 'component)))
-      (loop for x from 0 to 800 by 16
-         do (loop for y from 0 to 600 by 16
-               do  (make-instance
-                    'sprite :parent root :offset (complex x y)
-                    :image (make-instance 'image :name 'tex
-                                          :source "disp/texture.png"))))
+    ;; Main loop:
+    (sdl:with-events ()
+      (:quit-event () t) ; t for quit, (return-from main) for toplevel
+      (:key-down-event (:key key :mod mod :mod-key mod-key :unicode unicode)
+        (declare (ignore mod mod-key unicode))
+        (format t "key down ~a~%" key))
+      (:key-up-event (:key key :mod mod :mod-key mod-key :unicode unicode)
+        (declare (ignore mod mod-key unicode))
+        (format t "key up ~a~%" key))
+      (:idle ()
+        (gl:clear :color-buffer-bit :depth-buffer-bit)
 
-      (setf (sdl:frame-rate) 100) ; uncork the frame rate and see how fast we go
+        (render *game*)
 
-      ;; Main loop:
-      (sdl:with-events ()
-        (:quit-event () t) ; t for quit, (return-from main) for toplevel
-        (:key-down-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-          (declare (ignore mod mod-key unicode))
-          (format t "key down ~a~%" key))
-        (:key-up-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-          (declare (ignore mod mod-key unicode))
-          (format t "key up ~a~%" key))
-        (:idle ()
-               (gl:clear :color-buffer-bit :depth-buffer-bit)
+        (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
+          (sdl:set-caption s s))
 
-               (gl:with-pushed-matrix
-                 (gl:ortho 0 800 600 0 -1 1)
-                 (render root))
-
-               (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
-                 (sdl:set-caption s s))
-
-               (gl:flush)
-               (sdl:update-display)))))
+        (gl:flush)
+        (sdl:update-display))))
 
   ;; Finalization:
-  (exit))
+  (unload-graphics)
+  (when exit-when-done
+    (exit)))

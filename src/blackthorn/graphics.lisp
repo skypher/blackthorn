@@ -111,3 +111,18 @@
       (gl:tex-coord 1 0) (gl:vertex (x size) 0 0)
       (gl:tex-coord 1 1) (gl:vertex (x size) (y size) 0)
       (gl:tex-coord 0 1) (gl:vertex 0 (y size) 0))))
+
+;;;
+;;; Graphics Utilities
+;;;
+
+(defun unload-graphics ()
+  (gl:delete-textures
+   (loop for image being the hash-values in *images*
+      collect (slot-value image 'texture)
+      do (slot-makunbound image 'texture))))
+
+(defun window (size)
+  (sdl:set-gl-attribute :sdl-gl-doublebuffer 1)
+  (sdl:window (x size) (y size) :bpp 32 :flags sdl:sdl-opengl)
+  (gl:viewport 0 0 (x size) (y size)))
