@@ -211,7 +211,7 @@ install-mac:
 
 .PHONY: clean
 clean:
-	rm -rf $(wildcard */*/*.o */*/*.fas */*/*.lib */*/*.fasl */*/*.?x32fsl *.db ${tempfile})
+	rm -rf $(wildcard */*/*.o */*/*.fas */*/*.lib */*/*.fasl */*/*.?x32fsl */*/*.?x64fsl *.db ${tempfile})
 
 .PHONY: distclean
 distclean:
