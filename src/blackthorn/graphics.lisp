@@ -95,15 +95,11 @@
 (defgeneric y (object)
   (:method ((n number)) (imagpart n)))
 
-(defmethod render ((image image) offset)
+(defmethod render ((image image))
   (gl:bind-texture :texture-2d (texture image))
   (with-slots (size) image
-    (let ((top (y offset))
-          (bottom (+ (y offset) (y size)))
-          (left (x offset))
-          (right (+ (x offset) (x size))))
-      (gl:with-primitive :quads
-        (gl:tex-coord 0 0) (gl:vertex left top 0)
-        (gl:tex-coord 1 0) (gl:vertex right top 0)
-        (gl:tex-coord 1 1) (gl:vertex right bottom 0)
-        (gl:tex-coord 0 1) (gl:vertex left bottom 0)))))
+    (gl:with-primitive :quads
+      (gl:tex-coord 0 0) (gl:vertex 0 0 0)
+      (gl:tex-coord 1 0) (gl:vertex (x size) 0 0)
+      (gl:tex-coord 1 1) (gl:vertex (x size) (y size) 0)
+      (gl:tex-coord 0 1) (gl:vertex 0 (y size) 0))))

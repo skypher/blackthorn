@@ -184,7 +184,7 @@
 
                (gl:with-pushed-matrix
                  (gl:ortho 0 800 600 0 -1 1)
-                 (render image #c(0 0)))
+                 (render image))
 
                (gl:flush)
                (sdl:update-display)))))
