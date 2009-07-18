@@ -43,13 +43,17 @@
   (:export
 
    ;; graphics.lisp
-   :load-image-to-texture
+   :image
+   :size
+   :x
+   :y
+   :render
 
    ))
 
 (defpackage :blackthorn-user
   (:nicknames :blt-user)
-  (:use :cl)
+  (:use :cl :blt-gfx)
   (:shadow :room)
   #+allegro (:import-from :cl-user :exit)
   (:export

@@ -40,7 +40,9 @@
     :initarg :name)
    (source
     :initarg :source)
-   (texture))
+   texture
+   (size
+    :reader size))
   (:documentation
    "Wrapper over an Open GL texture."))
 
@@ -51,7 +53,7 @@
   (or (when name (gethash name *images*))
       (when (not source) (error "No such image named ~a." name))
       (let ((source (enough-namestring (truename source))))
-        (apply #'call-next-method :source source initargs))))
+        (apply #'call-next-method class :source source initargs))))
 
 (defmethod make-instance ((class (eql 'image)) &rest initargs)
   (apply #'make-instance (find-class 'image) initargs))
@@ -75,4 +77,33 @@
        :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte
        (sdl-base::with-pixel (pixels (sdl:fp surface))
          (sdl-base::pixel-data pixels)))
-    texture))
+    (values texture surface)))
+
+(defmethod texture ((image image))
+  (if (slot-boundp image 'texture)
+      (slot-value image 'texture)
+      (with-slots (source) image
+        (multiple-value-bind (texture surface) (load-image-to-texture source)
+          (setf (slot-value image 'texture) texture
+                (slot-value image 'size)
+                (complex (sdl:width surface) (sdl:height surface)))
+          texture))))
+
+(defgeneric x (object)
+  (:method ((n number)) (realpart n)))
+
+(defgeneric y (object)
+  (:method ((n number)) (imagpart n)))
+
+(defmethod render ((image image) offset)
+  (gl:bind-texture :texture-2d (texture image))
+  (with-slots (size) image
+    (let ((top (y offset))
+          (bottom (+ (y offset) (y size)))
+          (left (x offset))
+          (right (+ (x offset) (x size))))
+      (gl:with-primitive :quads
+        (gl:tex-coord 0 0) (gl:vertex left top 0)
+        (gl:tex-coord 1 0) (gl:vertex right top 0)
+        (gl:tex-coord 1 1) (gl:vertex right bottom 0)
+        (gl:tex-coord 0 1) (gl:vertex left bottom 0)))))

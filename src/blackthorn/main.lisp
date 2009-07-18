@@ -168,26 +168,23 @@
     (gl:matrix-mode :projection)
     (gl:load-identity)
 
-    (let ((texture (blt-gfx:load-image-to-texture "disp/texture.png")))
+    (let ((image (make-instance 'image :name 'tex :source "disp/texture.png")))
 
       ;; Main loop:
       (sdl:with-events ()
         (:quit-event () t) ; t for quit, (return-from main) for toplevel
         (:key-down-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-                         (format t "key down ~a~%" key))
+          (declare (ignore mod mod-key unicode))
+          (format t "key down ~a~%" key))
         (:key-up-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-                       (format t "key up ~a~%" key))
+          (declare (ignore mod mod-key unicode))
+          (format t "key up ~a~%" key))
         (:idle ()
                (gl:clear :color-buffer-bit)
 
                (gl:with-pushed-matrix
                  (gl:ortho 0 800 600 0 -1 1)
-                 (gl:bind-texture :texture-2d texture)
-                 (gl:with-primitive :quads
-                   (gl:tex-coord 0 0) (gl:vertex 0 0 0)
-                   (gl:tex-coord 1 0) (gl:vertex 400 0 0)
-                   (gl:tex-coord 1 1) (gl:vertex 400 400 0)
-                   (gl:tex-coord 0 1) (gl:vertex 0 400 0)))
+                 (render image #c(0 0)))
 
                (gl:flush)
                (sdl:update-display)))))
