@@ -54,7 +54,8 @@
   (or (when name (gethash name *images*))
       (when (not source) (error "No such image named ~a." name))
       (let ((source (enough-namestring (truename source))))
-        (apply #'call-next-method class :source source initargs))))
+        (setf (gethash name *images*)
+              (apply #'call-next-method class :source source initargs)))))
 
 (defmethod make-instance ((class (eql 'image)) &rest initargs)
   (apply #'make-instance (find-class 'image) initargs))

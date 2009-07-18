@@ -177,10 +177,10 @@
        :image (make-instance 'image :name 'tex :source "disp/texture.png"))
       (make-instance
        'sprite :parent root :offset #c(8 0) :depth 1
-       :image (make-instance 'image :name 'tex :source "disp/hero.png"))
+       :image (make-instance 'image :name 'hero :source "disp/hero.png"))
       (make-instance
        'sprite :parent root :offset #c(24 32)
-       :image (make-instance 'image :name 'tex :source "disp/hero.png"))
+       :image (make-instance 'image :name 'hero :source "disp/hero.png"))
       (make-instance
        'sprite :parent root :offset #c(32 32) :depth 0.25
        :image (make-instance 'image :name 'tex :source "disp/texture.png"))
