@@ -172,18 +172,14 @@
     (gl:load-identity)
 
     (let ((root (make-instance 'component)))
-      (make-instance
-       'sprite :parent root :offset #c(0 0) :depth 0.5
-       :image (make-instance 'image :name 'tex :source "disp/texture.png"))
-      (make-instance
-       'sprite :parent root :offset #c(8 0) :depth 1
-       :image (make-instance 'image :name 'hero :source "disp/hero.png"))
-      (make-instance
-       'sprite :parent root :offset #c(24 32)
-       :image (make-instance 'image :name 'hero :source "disp/hero.png"))
-      (make-instance
-       'sprite :parent root :offset #c(32 32) :depth 0.25
-       :image (make-instance 'image :name 'tex :source "disp/texture.png"))
+      (loop for x from 0 to 800 by 16
+         do (loop for y from 0 to 600 by 16
+               do  (make-instance
+                    'sprite :parent root :offset (complex x y)
+                    :image (make-instance 'image :name 'tex
+                                          :source "disp/texture.png"))))
+
+      (setf (sdl:frame-rate) 100) ; uncork the frame rate and see how fast we go
 
       ;; Main loop:
       (sdl:with-events ()
@@ -200,6 +196,9 @@
                (gl:with-pushed-matrix
                  (gl:ortho 0 800 600 0 -1 1)
                  (render root))
+
+               (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
+                 (sdl:set-caption s s))
 
                (gl:flush)
                (sdl:update-display)))))
