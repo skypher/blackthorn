@@ -56,12 +56,6 @@
 (defmethod make-instance ((class (eql 'image)) &rest initargs)
   (apply #'make-instance (find-class 'image) initargs))
 
-(defun pixel-format-slot (surface slot-name)
-  (cffi:foreign-slot-value
-   (sdl-base::pixel-format (sdl:fp surface))
-   'sdl-cffi::sdl-pixel-format
-   slot-name))
-
 (defun load-and-convert-image (source)
   (assert (probe-file source))
   (let* ((image (sdl-image:load-image source))
