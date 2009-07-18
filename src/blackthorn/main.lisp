@@ -168,7 +168,10 @@
     (gl:matrix-mode :projection)
     (gl:load-identity)
 
-    (let ((image (make-instance 'image :name 'tex :source "disp/texture.png")))
+    (let ((sprite
+           (make-instance
+            'sprite :image (make-instance
+                            'image :name 'tex :source "disp/texture.png"))))
 
       ;; Main loop:
       (sdl:with-events ()
@@ -184,7 +187,7 @@
 
                (gl:with-pushed-matrix
                  (gl:ortho 0 800 600 0 -1 1)
-                 (render image))
+                 (render sprite))
 
                (gl:flush)
                (sdl:update-display)))))

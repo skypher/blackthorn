@@ -42,7 +42,9 @@
                         ((:module blackthorn
                                   :components
                                   ((:file "package")
+                                   (:file "utils")
                                    (:file "graphics")
+                                   (:file "component")
                                    (:file "library")
                                    (:file "main"))
                                   :serial t))))

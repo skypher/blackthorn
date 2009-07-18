@@ -34,6 +34,8 @@
 ;;; Open GL Texture Wrapper
 ;;;
 
+(defgeneric name (object))
+
 (defclass image ()
   ((name
     :reader name
@@ -89,17 +91,17 @@
                 (complex (sdl:width surface) (sdl:height surface)))
           (values texture surface)))))
 
+(defgeneric size (object))
 (defmethod size ((image image))
   ;; Automatically load the image texture.
   (texture image)
   (slot-value image 'size))
 
-(defgeneric x (object)
-  (:method ((n number)) (realpart n)))
+(declaim (inline x y))
+(defun x (n) (realpart n))
+(defun y (n) (imagpart n))
 
-(defgeneric y (object)
-  (:method ((n number)) (imagpart n)))
-
+(defgeneric render (object))
 (defmethod render ((image image))
   (gl:bind-texture :texture-2d (texture image))
   (with-slots (size) image

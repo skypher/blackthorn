@@ -51,9 +51,29 @@
 
    ))
 
+(defpackage :blackthorn-physics
+  (:nicknames :blt-phys)
+  (:use :cl :blt-gfx)
+  (:export
+
+   ;; component.lisp
+   :component
+   :offset
+   :depth
+   :size
+   :parent
+   :children
+   :attach
+   :dettach
+   :render
+   :sprite
+   :image
+
+   ))
+
 (defpackage :blackthorn-user
   (:nicknames :blt-user)
-  (:use :cl :blt-gfx)
+  (:use :cl :blt-gfx :blt-phys)
   (:shadow :room)
   #+allegro (:import-from :cl-user :exit)
   (:export
