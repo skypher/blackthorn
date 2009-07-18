@@ -158,20 +158,32 @@
   (sdl:with-init ()
     (sdl:set-gl-attribute :sdl-gl-doublebuffer 1)
     (sdl:window 800 600 :bpp 32 :flags sdl:sdl-opengl)
+    (gl:viewport 0 0 800 600)
 
     (gl:enable :texture-2d)
     (gl:enable :blend)
     (gl:blend-func :src-alpha :one-minus-src-alpha)
     (gl:clear-color 0 0 0 0)
-    (gl:viewport 0 0 800 600)
 
-    (gl:matrix-mode :projection)
+    (gl:enable :depth-test)
+    (gl:depth-func :lequal)
+
+    (gl:matrix-mode :modelview)
     (gl:load-identity)
 
-    (let ((sprite
-           (make-instance
-            'sprite :image (make-instance
-                            'image :name 'tex :source "disp/texture.png"))))
+    (let ((root (make-instance 'component)))
+      (make-instance
+       'sprite :parent root :offset #c(0 0) :depth 0.5
+       :image (make-instance 'image :name 'tex :source "disp/texture.png"))
+      (make-instance
+       'sprite :parent root :offset #c(8 0) :depth 1
+       :image (make-instance 'image :name 'tex :source "disp/hero.png"))
+      (make-instance
+       'sprite :parent root :offset #c(24 32)
+       :image (make-instance 'image :name 'tex :source "disp/hero.png"))
+      (make-instance
+       'sprite :parent root :offset #c(32 32) :depth 0.25
+       :image (make-instance 'image :name 'tex :source "disp/texture.png"))
 
       ;; Main loop:
       (sdl:with-events ()
@@ -183,11 +195,11 @@
           (declare (ignore mod mod-key unicode))
           (format t "key up ~a~%" key))
         (:idle ()
-               (gl:clear :color-buffer-bit)
+               (gl:clear :color-buffer-bit :depth-buffer-bit)
 
                (gl:with-pushed-matrix
                  (gl:ortho 0 800 600 0 -1 1)
-                 (render sprite))
+                 (render root))
 
                (gl:flush)
                (sdl:update-display)))))

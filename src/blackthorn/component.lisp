@@ -55,7 +55,6 @@
     :initform #c(0 0))
    (parent
     :reader parent
-    :initarg :parent
     :initform nil)
    (children
     :reader children
@@ -63,6 +62,10 @@
 
 (defgeneric attach (parent child))
 (defgeneric dettach (parent child))
+
+(defmethod initialize-instance :after ((component component) &key parent)
+  (when parent
+    (attach parent component)))
 
 (defmethod attach ((parent component) (child component))
   (with-slots (children) parent
@@ -100,7 +103,7 @@
     (let ((n (fill-pointer children)))
       (unless (zerop n)
         (loop for child across children
-           for i from (+ 1 (/ 1.0d0 n)) upto (- 1 (/ 1.0d0 n)) by (/ 2.0d0 n)
+           for i from (+ -1 (/ 1.0d0 n)) upto (- 1 (/ 1.0d0 n)) by (/ 2.0d0 n)
            do (gl:with-pushed-matrix
                 (gl:translate 0 0 i)
                 (gl:scale 1 1 (/ 1.0d0 n))
@@ -119,5 +122,5 @@
     :initform nil)))
 
 (defmethod render :before ((sprite sprite))
-  (with-slots (image) sprite
+  (with-slots (image depth) sprite
     (render image)))
