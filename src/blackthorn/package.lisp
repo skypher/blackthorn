@@ -40,16 +40,19 @@
 (defpackage :blackthorn-graphics
   (:nicknames :blt-gfx)
   (:use :cl)
+  (:import-from :sdl :set-caption)
   (:export
 
+   :set-caption
+
    ;; graphics.lisp
+   :window
    :image
+   :unload-graphics
    :size
    :x
    :y
    :render
-   :unload-graphics
-   :window
 
    ))
 
@@ -60,12 +63,13 @@
 
    ;; game.lisp
    :game
+   :*game*
    :game-root
    :game-view
    :init-game
    :load-game
    :save-game
-   :*game*
+   :update
 
    ;; component.lisp
    :component

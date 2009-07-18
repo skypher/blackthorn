@@ -142,6 +142,10 @@
         (vector->complex
          (find (apply #'min (mapcar #'x modes)) modes :key #'x)))))
 
+;;;
+;;; Main Game Driver
+;;;
+
 (defun main (&key (exit-when-done t))
   "Main entry point for the game. Deals with initialization, finalization, and the main game loop."
   ;; Initialization:
@@ -181,14 +185,11 @@
         (format t "key up ~a~%" key))
       (:idle ()
         (gl:clear :color-buffer-bit :depth-buffer-bit)
-
         (render *game*)
-
-        (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
-          (sdl:set-caption s s))
-
         (gl:flush)
-        (sdl:update-display))))
+        (sdl:update-display)
+
+        (update *game*))))
 
   ;; Finalization:
   (unload-graphics)

@@ -45,8 +45,13 @@
           (make-instance 'component :offset #c(0 0) :size #c(800 600)))))
 
 (defmethod init-game :after ((game static-game))
-  ; uncork the frame rate and see how fast we go
+  ;; uncork the frame rate and see how fast we go
   (setf (sdl:frame-rate) 100))
+
+(defmethod update :after ((game static-game))
+  ;; report the frame reate
+  (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
+    (set-caption s s)))
 
 ;; For interactive use:
 (defun static-test ()
