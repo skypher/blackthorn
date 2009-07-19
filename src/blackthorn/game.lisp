@@ -59,4 +59,4 @@
 (defgeneric update (object))
 
 (defmethod update ((game game))
-  (declare (ignore game)))
+  (update (game-root game)))

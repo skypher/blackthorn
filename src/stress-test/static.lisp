@@ -33,16 +33,17 @@
 (defclass static-game (game) ())
 
 (defmethod init-game ((game static-game))
-  (let ((root (make-instance 'component)))
-    (loop for x from 0 to 800 by 16
-       do (loop for y from 0 to 600 by 16
+  (let ((root (make-instance 'component))
+	(size #c(800 600)))
+    (loop for x from 0 to (x size) by 16
+       do (loop for y from 0 to (y size) by 16
              do (make-instance
                  'sprite :parent root :offset (complex x y)
                  :image (make-instance 'image :name 'tex
                                        :source "disp/texture.png"))))
     (setf (game-root game) root
           (game-view game)
-          (make-instance 'component :offset #c(0 0) :size #c(800 600)))))
+          (make-instance 'component :offset #c(0 0) :size size))))
 
 (defmethod init-game :after ((game static-game))
   ;; uncork the frame rate and see how fast we go

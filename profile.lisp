@@ -50,7 +50,7 @@
                     collect
                       #+sbcl `(sb-profile:profile ,symbol))))))
 
-(profile-packages blt blt-user)
+(profile-packages blt-gfx blt-phys blt-user)
 
 (main)
 
