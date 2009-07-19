@@ -83,6 +83,9 @@
    :render
    :sprite
    :image
+   :mobile
+   :veloc
+   :accel
 
    ))
 

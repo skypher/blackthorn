@@ -38,4 +38,7 @@
    ;; static.lisp
    :static-test
 
+   ;;mobile.lisp
+   :mobile-test
+
    ))

@@ -129,3 +129,25 @@
 (defmethod render :before ((sprite sprite))
   (with-slots (image depth) sprite
     (render image)))
+
+;;;
+;;; Mobiles
+;;;
+
+(defgeneric veloc (object))
+(defgeneric accel (object))
+
+(defclass mobile (component)
+  ((veloc
+    :accessor veloc
+    :initarg :veloc
+    :initform #c(0 0))
+   (accel
+    :accessor accel
+    :initarg :accel
+    :initform #c(0 0))))
+
+(defmethod update :before ((mobile mobile))
+  (with-slots (offset veloc accel) mobile
+    (incf veloc accel)
+    (incf offset veloc)))
