@@ -102,13 +102,12 @@
   (with-slots (children) component
     (let ((n (fill-pointer children)))
       (unless (zerop n)
-	(gl:with-pushed-matrix
-	  (gl:translate 0 0 (+ -1 (/ 1.0d0 n)))
-	  (gl:scale 1 1 (/ 1.0d0 n))
-	  (loop with i = (/ 2.0d0 n)
-	     for child across children
-	     do (gl:translate 0 0 i)
-	     do (render child)))))))
+        (gl:with-pushed-matrix
+          (gl:translate 0 0 (+ -1 (/ 1.0d0 n)))
+          (gl:scale 1 1 (/ 1.0d0 n))
+          (loop for child across children
+             do (render child)
+             do (gl:translate 0 0 2.0d0)))))))
 
 (defmethod update ((component component))
   (do-children (child component)
