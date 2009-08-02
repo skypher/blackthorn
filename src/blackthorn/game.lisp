@@ -36,7 +36,10 @@
     :initform nil)
    (view
     :accessor game-view
-    :initform nil)))
+    :initform nil)
+   (key-subscription
+    :accessor key-subscription
+    :initform (make-instance 'event-subscription))))
 
 (defvar *game*)
 
@@ -60,3 +63,14 @@
 
 (defmethod update ((game game))
   (update (game-root game)))
+
+(defmethod event-update ((game game))
+  (event-update (game-root game)))
+
+(defmethod handle-key-down ((game game) &rest initargs)
+  (push-event (key-subscription game)
+              (apply #'make-instance 'key-event :type 'key-down initargs)))
+
+(defmethod handle-key-up ((game game) &rest initargs)
+  (push-event (key-subscription game)
+              (apply #'make-instance 'key-event  :type 'key-up initargs)))

@@ -113,6 +113,10 @@
   (do-children (child component)
     (update child)))
 
+(defmethod event-update ((component component))
+  (do-children (child component)
+    (event-update child)))
+
 ;;;
 ;;; Sprites
 ;;;

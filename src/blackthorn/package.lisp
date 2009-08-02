@@ -61,16 +61,6 @@
   (:use :cl :blt-gfx)
   (:export
 
-   ;; game.lisp
-   :game
-   :*game*
-   :game-root
-   :game-view
-   :init-game
-   :load-game
-   :save-game
-   :update
-
    ;; component.lisp
    :component
    :offset
@@ -86,6 +76,44 @@
    :mobile
    :veloc
    :accel
+
+   ;; actor.lisp
+   :event
+   :event-type
+   :event-type-p
+   :event-handler
+   :name
+   :event-test
+   :event-body
+   :actor
+   :event-handlers
+   :define-event-handlers
+   :push-event
+   :dispatch-event
+   :event-update
+   :event-subscription
+   :subscribe-event
+   :unsubscribe-event
+
+   ;; input.lisp
+   :key-event
+   :event-key
+   :event-mod
+   :event-mod-key
+   :event-unicode
+
+   ;; game.lisp
+   :game
+   :*game*
+   :game-root
+   :game-view
+   :init-game
+   :load-game
+   :save-game
+   :update
+   :key-subscription
+   :handle-key-down
+   :handle-key-up
 
    ))
 

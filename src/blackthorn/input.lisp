@@ -28,44 +28,22 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(in-package :blackthorn-stress-test)
+(in-package :blackthorn-physics)
 
-(defclass mobile-game (game) ())
+;;;
+;;; Key Events
+;;;
 
-(defclass mobile-object (sprite mobile) ())
-
-(defmethod init-game ((game mobile-game))
-  (let ((root (make-instance 'component))
-        (size #c(800 600)))
-    (loop for x from 0 to (x size) by 16
-       do (loop for y from 0 to (y size) by 16
-             do (make-instance
-                 'mobile-object :parent root :offset (complex x y)
-                 :veloc (complex (random 1.0) (random 1.0))
-                 :image (make-instance 'image :name 'tex
-                                       :source "disp/texture.png"))))
-    (let ((keys (make-instance 'actor :parent root)))
-      (define-event-handlers (event) keys
-        (any-key t
-          (format t "~a: ~a~%" (event-type event) (event-key event))))
-      (subscribe-event (key-subscription game) keys))
-    (setf (game-root game) root
-          (game-view game)
-          (make-instance 'component :offset #c(0 0) :size size))))
-
-(defmethod init-game :after ((game mobile-game))
-  ;; uncork the frame rate and see how fast we go
-  (setf (sdl:frame-rate) 100))
-
-(defmethod update :after ((game mobile-game))
-  ;; report the frame reate
-  (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
-    (set-caption s s)))
-
-;; For interactive use:
-(defun mobile-test ()
-  (let ((*game* (make-instance 'mobile-game)))
-    (main :exit-when-done nil)))
-
-;; For non-interactive use:
-(defparameter *game* (make-instance 'mobile-game))
+(defclass key-event (event)
+  ((key
+    :reader event-key
+    :initarg :key)
+   (mod
+    :reader event-mod
+    :initarg :mod)
+   (mod-key
+    :reader event-mod-key
+    :initarg :mod-key)
+   (unicode
+    :reader event-unicode
+    :initarg :unicode)))

@@ -178,18 +178,19 @@
     (sdl:with-events ()
       (:quit-event () t) ; t for quit, (return-from main) for toplevel
       (:key-down-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-        (declare (ignore mod mod-key unicode))
-        (format t "key down ~a~%" key))
+        (handle-key-down
+         *game* :key key :mod mod :mod-key mod-key :unicode unicode))
       (:key-up-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-        (declare (ignore mod mod-key unicode))
-        (format t "key up ~a~%" key))
+        (handle-key-up
+         *game* :key key :mod mod :mod-key mod-key :unicode unicode))
       (:idle ()
         (gl:clear :color-buffer-bit :depth-buffer-bit)
         (render *game*)
         (gl:flush)
         (sdl:update-display)
 
-        (update *game*))))
+        (update *game*)
+        (event-update *game*))))
 
   ;; Finalization:
   (unload-graphics)
