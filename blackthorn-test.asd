@@ -42,6 +42,7 @@
                         ((:module test
                                   :components
                                   ((:file "package")
-                                   (:file "component"))
+                                   (:file "component")
+                                   (:file "actor"))
                                   :serial t))))
   :depends-on (:blackthorn :fiveam))

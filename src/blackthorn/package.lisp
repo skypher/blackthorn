@@ -82,10 +82,13 @@
    :event-type
    :event-type-p
    :event-handler
+   :handle-event-p
+   :handle-event
    :name
    :event-test
    :event-body
    :event-mixin
+   :event-queue
    :event-handlers
    :define-event-handlers
    :push-event

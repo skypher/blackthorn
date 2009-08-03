@@ -82,12 +82,11 @@
                :test (lambda (,event) ,test)
                :body (lambda (,event) ,@body))))
     (once-only (object)
-      `(progn
-        ,@(mapcar #'(lambda (clause)
-                      `(pushnew ,(apply #'expand-clause clause)
-                        (event-handlers ,object)
-                        :key #'name))
-                  clauses)))))
+      `(setf (event-handlers ,object)
+             (append (event-handlers ,object)
+                     (list ,@(mapcar #'(lambda (clause)
+                                         (apply #'expand-clause clause))
+                                     clauses)))))))
 
 (defmethod push-event ((object event-mixin) (event event))
   (containers:enqueue (event-queue object) event))
