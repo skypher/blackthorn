@@ -87,27 +87,6 @@
     table))
 
 ;;;
-;;; Queues
-;;;
-
-(defun make-queue () (cons nil nil))
-
-(defun queue-top (queue) (caar queue))
-
-(defun queue-pop (queue)
-  (let ((head (car queue)))
-    (when head
-      (prog1 (car head)
-        (setf (car queue) (cdr head))
-        (unless (car queue) (setf (cdr queue) nil))))))
-
-(defun queue-push (queue elt)
-  (let ((tail (list elt)))
-    (if (car queue)
-        (setf (cddr queue) tail (cdr queue) tail)
-        (setf (car queue) tail (cdr queue) tail))))
-
-;;;
 ;;; Anaphora
 ;;;
 
