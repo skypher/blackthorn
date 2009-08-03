@@ -85,15 +85,17 @@
    :name
    :event-test
    :event-body
-   :actor
+   :event-mixin
    :event-handlers
    :define-event-handlers
    :push-event
    :dispatch-event
-   :event-update
+   :dispatch-queued-events
    :event-subscription
    :subscribe-event
    :unsubscribe-event
+   :actor
+   :event-update
 
    ;; input.lisp
    :key-event
@@ -112,8 +114,6 @@
    :save-game
    :update
    :key-subscription
-   :handle-key-down
-   :handle-key-up
 
    ))
 

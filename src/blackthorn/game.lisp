@@ -30,7 +30,7 @@
 
 (in-package :blackthorn-physics)
 
-(defclass game ()
+(defclass game (event-subscription)
   ((root
     :accessor game-root
     :initform nil)
@@ -39,7 +39,10 @@
     :initform nil)
    (key-subscription
     :accessor key-subscription
-    :initform (make-instance 'event-subscription))))
+    :initform (make-instance 'event-subscription :types '(:key-down :key-up)))))
+
+(defmethod initialize-instance :after ((game game) &key)
+  (subscribe-event game (key-subscription game)))
 
 (defvar *game*)
 
@@ -66,11 +69,3 @@
 
 (defmethod event-update ((game game))
   (event-update (game-root game)))
-
-(defmethod handle-key-down ((game game) &rest initargs)
-  (push-event (key-subscription game)
-              (apply #'make-instance 'key-event :type 'key-down initargs)))
-
-(defmethod handle-key-up ((game game) &rest initargs)
-  (push-event (key-subscription game)
-              (apply #'make-instance 'key-event  :type 'key-up initargs)))

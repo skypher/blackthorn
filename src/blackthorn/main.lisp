@@ -178,11 +178,17 @@
     (sdl:with-events ()
       (:quit-event () t) ; t for quit, (return-from main) for toplevel
       (:key-down-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-        (handle-key-down
-         *game* :key key :mod mod :mod-key mod-key :unicode unicode))
+        (push-event
+         *game*
+         (make-instance
+          'key-event
+          :type :key-down :key key :mod mod :mod-key mod-key :unicode unicode)))
       (:key-up-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-        (handle-key-up
-         *game* :key key :mod mod :mod-key mod-key :unicode unicode))
+        (push-event
+         *game*
+         (make-instance
+          'key-event
+          :type :key-up :key key :mod mod :mod-key mod-key :unicode unicode)))
       (:idle ()
         (gl:clear :color-buffer-bit :depth-buffer-bit)
         (render *game*)
