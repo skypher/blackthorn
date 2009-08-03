@@ -29,11 +29,11 @@
 ####
 
 # Search PATH for a Lisp compiler.
-ifneq ($(shell which alisp),)
-	cl := allegro
-else
 ifneq ($(shell which sbcl),)
 	cl := sbcl
+else
+ifneq ($(shell which alisp),)
+	cl := allegro
 else
 ifneq ($(shell which clisp),)
 	cl := clisp
@@ -57,6 +57,7 @@ system := blackthorn
 # Stardard drivers:
 prop := property.lisp
 load := load.lisp
+test := test.lisp
 dist := dist.lisp
 prof := profile.lisp
 atdoc := atdoc.lisp
@@ -147,7 +148,7 @@ load-clozure:
 
 .PHONY: test
 test:
-	$(MAKE) new
+	$(MAKE) driver="${test}" system="blackthorn-test" new
 
 .PHONY: prof
 prof:
