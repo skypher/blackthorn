@@ -39,3 +39,10 @@
    :run-tests
 
    ))
+
+(in-package :blackthorn-test)
+
+(def-suite blackthorn)
+
+(defun run-tests ()
+  (run! 'blackthorn))

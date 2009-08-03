@@ -30,8 +30,6 @@
 
 (in-package :blackthorn-test)
 
-(def-suite blackthorn)
-
 (def-suite blackthorn-physics :in blackthorn)
 
 (in-suite blackthorn-physics)
@@ -99,6 +97,3 @@
     (is (= (fill-pointer (children root)) 2))
     (is (eql (aref (children root) 0) child1))
     (is (eql (aref (children root) 1) child2))))
-
-(defun run-tests ()
-  (run! 'blackthorn))
