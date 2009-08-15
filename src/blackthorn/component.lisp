@@ -58,7 +58,7 @@
     :initform nil)
    (children
     :reader children
-    :initform (make-array 10 :fill-pointer 0 :adjustable t))))
+    :initform (vector))))
 
 (defgeneric attach (parent child))
 (defgeneric dettach (parent child))
@@ -72,20 +72,13 @@
     (with-slots ((childs-parent parent)) child
       (when childs-parent
         (dettach childs-parent child))
-      (vector-push-extend child children)
-      ;; Replace generic sort with an efficient bubble sort?
-      (sort children #'> :key #'depth)
+      (setf children (merge 'vector children (vector child) #'> :key #'depth))
       (setf childs-parent parent))))
 
 (defmethod dettach ((parent component) (child component))
   (with-slots (children) parent
     (with-slots ((childs-parent parent)) child
-      ;; Swap the child to the end so it can pop off...
-      (rotatef (aref children (position child children))
-               (aref children (1- (fill-pointer children))))
-      ;; Ensure that the child can't be seen in the parent's children list.
-      (setf (aref children (1- (fill-pointer children))) nil)
-      (vector-pop children)
+      (setf children (delete child children))
       (setf childs-parent nil))))
 
 (defmacro do-children ((var component) &body body)
@@ -100,7 +93,7 @@
 
 (defmethod render ((component component))
   (with-slots (children) component
-    (let ((n (fill-pointer children)))
+    (let ((n (array-dimension children 0)))
       (unless (zerop n)
         (gl:with-pushed-matrix
           (gl:translate 0 0 (+ -1 (/ 1.0d0 n)))

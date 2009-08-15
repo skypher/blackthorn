@@ -41,13 +41,13 @@
     (is (zerop (size root)))
     (is (not (parent root)))
     (is (arrayp (children root)))
-    (is (zerop (fill-pointer (children root))))))
+    (is (zerop (array-dimension (children root) 0)))))
 
 (test root-with-one-child
   (let* ((root (make-instance 'component))
          (child (make-instance 'component :parent root)))
     (is (eql root (parent child)))
-    (is (= (fill-pointer (children root)) 1))
+    (is (= (array-dimension (children root) 0) 1))
     (is (eql (aref (children root) 0) child))
     (let (seen)
       (blt-phys::do-children (c root)
@@ -60,16 +60,16 @@
   (let ((root (make-instance 'component))
          (child (make-instance 'component)))
     (is (not (parent child)))
-    (is (zerop (fill-pointer (children root))))
+    (is (zerop (array-dimension (children root) 0)))
 
     (attach root child)
     (is (eql root (parent child)))
-    (is (= (fill-pointer (children root)) 1))
+    (is (= (array-dimension (children root) 0) 1))
     (is (eql (aref (children root) 0) child))
 
     (dettach root child)
     (is (not (parent child)))
-    (is (zerop (fill-pointer (children root))))))
+    (is (zerop (array-dimension (children root) 0)))))
 
 (test root-with-two-children
   (let* ((root (make-instance 'component))
@@ -77,7 +77,7 @@
          (child2 (make-instance 'component :parent root :depth -1)))
     (is (eql root (parent child1)))
     (is (eql root (parent child2)))
-    (is (= (fill-pointer (children root)) 2))
+    (is (= (array-dimension (children root) 0) 2))
     ;; since children are sorted by depth, we know the order of the children
     (is (eql (aref (children root) 0) child1))
     (is (eql (aref (children root) 1) child2))
@@ -94,6 +94,6 @@
          (child1 (make-instance 'component :parent root :depth 1)))
     (is (eql root (parent child1)))
     (is (eql root (parent child2)))
-    (is (= (fill-pointer (children root)) 2))
+    (is (= (array-dimension (children root) 0) 2))
     (is (eql (aref (children root) 0) child1))
     (is (eql (aref (children root) 1) child2))))
