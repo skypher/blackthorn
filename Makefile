@@ -41,10 +41,14 @@ else
 ifneq ($(shell which ecl),)
 	cl := ecl
 else
+ifneq ($(shell which ecl.exe),)
+	cl := ecl
+else
 ifneq ($(shell which ccl),)
 	cl := clozure
 else
 	$(error No Lisp compiler found.)
+endif
 endif
 endif
 endif
@@ -140,7 +144,11 @@ load-clisp:
 
 .PHONY: load-ecl
 load-ecl:
+ifneq ($(shell which ecl.exe),)
+	ecl.exe -eval "(defparameter *driver-system* \"${system}\")" -load ${driver} -- --${mode}=${file}
+else
 	ecl -eval "(defparameter *driver-system* \"${system}\")" -load ${driver} -- --${mode}=${file}
+endif
 
 .PHONY: load-clozure
 load-clozure:

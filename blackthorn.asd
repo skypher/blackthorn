@@ -59,12 +59,6 @@
                ;; File utilities:
                :cl-fad
 
-               ;; Tar archive support:
-               :archive
-
-               ;; Object serialization:
-               :cl-store
-
                ;; Data structures:
                :cl-containers
 
