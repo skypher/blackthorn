@@ -61,7 +61,7 @@
     :initform (vector))))
 
 (defgeneric attach (parent child))
-(defgeneric dettach (parent child))
+(defgeneric detach (parent child))
 
 (defmethod initialize-instance :after ((component component) &key parent)
   (when parent
@@ -71,11 +71,11 @@
   (with-slots (children) parent
     (with-slots ((childs-parent parent)) child
       (when childs-parent
-        (dettach childs-parent child))
+        (detach childs-parent child))
       (setf children (merge 'vector children (vector child) #'> :key #'depth))
       (setf childs-parent parent))))
 
-(defmethod dettach ((parent component) (child component))
+(defmethod detach ((parent component) (child component))
   (with-slots (children) parent
     (with-slots ((childs-parent parent)) child
       (setf children (delete child children))

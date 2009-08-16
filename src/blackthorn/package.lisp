@@ -69,7 +69,7 @@
    :parent
    :children
    :attach
-   :dettach
+   :detach
    :render
    :sprite
    :image

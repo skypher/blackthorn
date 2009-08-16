@@ -56,7 +56,7 @@
             (setf seen c)))
       (is (eql seen child)))))
 
-(test (root-attach-dettach-child :depends-on root-with-no-children)
+(test (root-attach-detach-child :depends-on root-with-no-children)
   (let ((root (make-instance 'component))
          (child (make-instance 'component)))
     (is (not (parent child)))
@@ -67,7 +67,7 @@
     (is (= (array-dimension (children root) 0) 1))
     (is (eql (aref (children root) 0) child))
 
-    (dettach root child)
+    (detach root child)
     (is (not (parent child)))
     (is (zerop (array-dimension (children root) 0)))))
 
@@ -111,7 +111,7 @@
        do (is (eql (aref (children root) i) (nth i children)))
        do (is (eql root (parent (aref (children root) i)))))))
 
-(test (root-attach-dettach-many-children :depends-on root-attach-dettach-child)
+(test (root-attach-detach-many-children :depends-on root-attach-detach-child)
   (let* ((n 100)
          (root (make-instance 'component))
          (children
@@ -130,7 +130,7 @@
              do (is (eql (aref (children root) j) c))))
     (loop for i from 0 below n
        for child in children
-       do (dettach root child)
+       do (detach root child)
        do (is (eql (parent child) nil))
        do (setf current (delete child current))
        do (loop for j from 0 below (- n i)
