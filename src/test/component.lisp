@@ -43,7 +43,7 @@
     (is (arrayp (children root)))
     (is (zerop (array-dimension (children root) 0)))))
 
-(test root-with-one-child
+(test (root-with-one-child :depends-on root-with-no-children)
   (let* ((root (make-instance 'component))
          (child (make-instance 'component :parent root)))
     (is (eql root (parent child)))
@@ -56,7 +56,7 @@
             (setf seen c)))
       (is (eql seen child)))))
 
-(test root-attach-dettach-child
+(test (root-attach-dettach-child :depends-on root-with-no-children)
   (let ((root (make-instance 'component))
          (child (make-instance 'component)))
     (is (not (parent child)))
@@ -71,7 +71,7 @@
     (is (not (parent child)))
     (is (zerop (array-dimension (children root) 0)))))
 
-(test root-with-two-children
+(test (root-with-two-children :depends-on root-with-one-child)
   (let* ((root (make-instance 'component))
          (child1 (make-instance 'component :parent root :depth 1))
          (child2 (make-instance 'component :parent root :depth -1)))
@@ -97,3 +97,42 @@
     (is (= (array-dimension (children root) 0) 2))
     (is (eql (aref (children root) 0) child1))
     (is (eql (aref (children root) 1) child2))))
+
+(test (root-with-many-children :depends-on root-with-two-children)
+  (let* ((n 100)
+         (root (make-instance 'component))
+         (children
+          (sort (loop repeat n
+                   collect (make-instance 'component :parent root
+                                          :depth (random 1.0)))
+                #'> :key #'depth)))
+    (is (= (array-dimension (children root) 0) n))
+    (loop for i from 0 below n
+       do (is (eql (aref (children root) i) (nth i children)))
+       do (is (eql root (parent (aref (children root) i)))))))
+
+(test (root-attach-dettach-many-children :depends-on root-attach-dettach-child)
+  (let* ((n 100)
+         (root (make-instance 'component))
+         (children
+          (loop repeat n
+             collect (make-instance 'component :depth (random 1.0))))
+         current)
+    (is (= (array-dimension (children root) 0) 0))
+    (loop for i from 0 below n
+       for child in children
+       do (attach root child)
+       do (is (eql root (parent child)))
+       do (push child current)
+       do (setf current (sort current #'> :key #'depth))
+       do (loop for j from 0 below i
+             for c in current
+             do (is (eql (aref (children root) j) c))))
+    (loop for i from 0 below n
+       for child in children
+       do (dettach root child)
+       do (is (eql (parent child) nil))
+       do (setf current (delete child current))
+       do (loop for j from 0 below (- n i)
+             for c in current
+             do (is (eql (aref (children root) j) c))))))
