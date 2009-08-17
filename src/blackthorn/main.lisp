@@ -146,6 +146,14 @@
 ;;; Main Game Driver
 ;;;
 
+#+blt-debug
+(defvar *driver-system*)
+
+#+blt-debug
+(let ((n 0))
+  (defun reload-p ()
+    (zerop (mod (incf n) (truncate (sdl:frame-rate) 2)))))
+
 (defun main (&key (exit-when-done t))
   "Main entry point for the game. Deals with initialization, finalization, and the main game loop."
   ;; Initialization:
@@ -196,7 +204,11 @@
         (sdl:update-display)
 
         (update *game*)
-        (event-update *game*))))
+        (event-update *game*)
+
+        #+blt-debug
+        (when (reload-p)
+          (asdf:oos 'asdf:load-op *driver-system*)))))
 
   ;; Finalization:
   (unload-graphics)
