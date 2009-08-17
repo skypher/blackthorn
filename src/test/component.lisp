@@ -34,7 +34,11 @@
 
 (in-suite blackthorn-physics)
 
-(test root-with-no-children
+;;;
+;;; Check the structural properties of component trees
+;;;
+
+(test component-with-no-children
   (let ((root (make-instance 'component)))
     (is (zerop (offset root)))
     (is (zerop (depth root)))
@@ -43,12 +47,12 @@
     (is (arrayp (children root)))
     (is (zerop (array-dimension (children root) 0)))))
 
-(test (root-with-one-child :depends-on root-with-no-children)
+(test (component-with-one-child :depends-on component-with-no-children)
   (let* ((root (make-instance 'component))
          (child (make-instance 'component :parent root)))
     (is (eql root (parent child)))
-    (is (= (array-dimension (children root) 0) 1))
-    (is (eql (aref (children root) 0) child))
+    (is (= 1 (array-dimension (children root) 0)))
+    (is (eql child (aref (children root) 0)))
     (let (seen)
       (blt-phys::do-children (c root)
         (if seen
@@ -56,7 +60,7 @@
             (setf seen c)))
       (is (eql seen child)))))
 
-(test (root-attach-detach-child :depends-on root-with-no-children)
+(test (component-attach-detach-child :depends-on component-with-no-children)
   (let ((root (make-instance 'component))
          (child (make-instance 'component)))
     (is (not (parent child)))
@@ -64,23 +68,23 @@
 
     (attach root child)
     (is (eql root (parent child)))
-    (is (= (array-dimension (children root) 0) 1))
-    (is (eql (aref (children root) 0) child))
+    (is (= 1 (array-dimension (children root) 0)))
+    (is (eql child (aref (children root) 0)))
 
     (detach root child)
     (is (not (parent child)))
     (is (zerop (array-dimension (children root) 0)))))
 
-(test (root-with-two-children :depends-on root-with-one-child)
+(test (component-with-two-children :depends-on component-with-one-child)
   (let* ((root (make-instance 'component))
          (child1 (make-instance 'component :parent root :depth 1))
          (child2 (make-instance 'component :parent root :depth -1)))
     (is (eql root (parent child1)))
     (is (eql root (parent child2)))
-    (is (= (array-dimension (children root) 0) 2))
+    (is (= 2 (array-dimension (children root) 0)))
     ;; since children are sorted by depth, we know the order of the children
-    (is (eql (aref (children root) 0) child1))
-    (is (eql (aref (children root) 1) child2))
+    (is (eql child1 (aref (children root) 0)))
+    (is (eql child2 (aref (children root) 1)))
 
     (let (seen)
       (blt-phys::do-children (c root)
@@ -94,11 +98,23 @@
          (child1 (make-instance 'component :parent root :depth 1)))
     (is (eql root (parent child1)))
     (is (eql root (parent child2)))
-    (is (= (array-dimension (children root) 0) 2))
-    (is (eql (aref (children root) 0) child1))
-    (is (eql (aref (children root) 1) child2))))
+    (is (= 2 (array-dimension (children root) 0)))
+    (is (eql child1 (aref (children root) 0)))
+    (is (eql child2 (aref (children root) 1)))))
 
-(test (root-with-many-children :depends-on root-with-two-children)
+(test (component-with-nested-children :depends-on component-with-one-child)
+  (let* ((root (make-instance 'component))
+         (child (make-instance 'component :parent root))
+         (grandchild (make-instance 'component :parent child)))
+    (is (eql root (parent child)))
+    (is (= 1 (array-dimension (children root) 0)))
+    (is (eql child (aref (children root) 0)))
+
+    (is (eql child (parent grandchild)))
+    (is (= 1 (array-dimension (children child) 0)))
+    (is (eql grandchild (aref (children child) 0)))))
+
+(test (component-with-many-children :depends-on component-with-two-children)
   (let* ((n 100)
          (root (make-instance 'component))
          (children
@@ -106,19 +122,20 @@
                    collect (make-instance 'component :parent root
                                           :depth (random 1.0)))
                 #'> :key #'depth)))
-    (is (= (array-dimension (children root) 0) n))
+    (is (= n (array-dimension (children root) 0)))
     (loop for i from 0 below n
-       do (is (eql (aref (children root) i) (nth i children)))
+       do (is (eql (nth i children) (aref (children root) i)))
        do (is (eql root (parent (aref (children root) i)))))))
 
-(test (root-attach-detach-many-children :depends-on root-attach-detach-child)
-  (let* ((n 100)
+(test (component-attach-detach-many-children
+       :depends-on component-attach-detach-child)
+  (let* ((n 20)
          (root (make-instance 'component))
          (children
           (loop repeat n
              collect (make-instance 'component :depth (random 1.0))))
          current)
-    (is (= (array-dimension (children root) 0) 0))
+    (is (= 0 (array-dimension (children root) 0)))
     (loop for i from 0 below n
        for child in children
        do (attach root child)
@@ -127,12 +144,42 @@
        do (setf current (sort current #'> :key #'depth))
        do (loop for j from 0 below i
              for c in current
-             do (is (eql (aref (children root) j) c))))
+             do (is (eql c (aref (children root) j)))))
     (loop for i from 0 below n
        for child in children
        do (detach root child)
-       do (is (eql (parent child) nil))
+       do (is (eql nil (parent child)))
        do (setf current (delete child current))
        do (loop for j from 0 below (- n i)
              for c in current
-             do (is (eql (aref (children root) j) c))))))
+             do (is (eql c (aref (children root) j)))))))
+
+;;;
+;;; Ensure that update gets called on every node in the entire subtree
+;;;
+
+(defclass update-test (component)
+  ((methods-called :accessor methods-called :initform nil)))
+
+(defmethod update :before ((object update-test))
+  (push :before (methods-called object)))
+
+(defmethod update ((object update-test))
+  (push :primary (methods-called object))
+  (call-next-method))
+
+(defmethod update :after ((object update-test))
+  (push :after (methods-called object)))
+
+(defmethod update :around ((object update-test))
+  (call-next-method)
+  (setf (methods-called object) (reverse (methods-called object))))
+
+(test (component-update-children :depends-on component-with-nested-children)
+  (let* ((root (make-instance 'update-test))
+         (child (make-instance 'update-test :parent root))
+         (grandchild (make-instance 'update-test :parent child)))
+    (update root)
+    (is (equal '(:before :primary :after) (methods-called root)))
+    (is (equal '(:before :primary :after) (methods-called child)))
+    (is (equal '(:before :primary :after) (methods-called grandchild)))))
