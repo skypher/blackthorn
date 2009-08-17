@@ -34,13 +34,16 @@
 
 (defmethod init-game ((game static-game))
   (let ((root (make-instance 'component))
-	(size #c(800 600)))
+        (size #c(800 600))
+        (texture-pathname
+         (merge-pathnames "disp/texture.png"
+                          blt-user::*resource-directory-pathname*)))
     (loop for x from 0 to (x size) by 16
        do (loop for y from 0 to (y size) by 16
              do (make-instance
                  'sprite :parent root :offset (complex x y)
                  :image (make-instance 'image :name 'tex
-                                       :source "disp/texture.png"))))
+                                       :source texture-pathname))))
     (setf (game-root game) root
           (game-view game)
           (make-instance 'component :offset #c(0 0) :size size))))
