@@ -38,15 +38,12 @@
   (let ((root (make-instance 'component))
         (size #c(800 600))
         (texture-pathname
-         (merge-pathnames "disp/texture.png"
+         (merge-pathnames "disp/hero.png"
                           blt-user::*resource-directory-pathname*)))
-    (loop for x from 0 to (x size) by 16
-       do (loop for y from 0 to (y size) by 16
-             do (make-instance
-                 'mobile-object :parent root :offset (complex x y)
-                 :veloc (complex (random 1.0) (random 1.0))
-                 :image (make-instance 'image :name 'tex
-                                       :source texture-pathname))))
+    (make-instance
+     'mobile-object :parent root :offset (complex 400 300)
+     :veloc (complex (random 1.0) (random 1.0))
+     :image (make-instance 'image :name 'tex :source texture-pathname))
     (let ((keys (make-instance 'actor :parent root)))
       (define-event-handlers (event) keys
         (any-key t
