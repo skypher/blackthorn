@@ -30,19 +30,7 @@
 
 (defvar *driver-system* :blackthorn)
 
-;; forward package declaration
-(defpackage :blackthorn-user
-  (:use :cl))
-
-(in-package :blackthorn-user)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (pushnew :blt-debug *features*))
-
-;; put the *driver-system* binding in the blt-user package
-#+blt-debug (defvar *driver-system* cl-user::*driver-system*)
-
 (require :asdf)
 (asdf:operate 'asdf:load-op *driver-system*)
 
-(main)
+(blt-user:main)
