@@ -47,3 +47,9 @@
    (unicode
     :reader event-unicode
     :initarg :unicode)))
+
+(defun key-down-p (event key)
+  (and (event-type-p event :key-down) (eql (event-key event) key)))
+
+(defun key-up-p (event key)
+  (and (event-type-p event :key-up) (eql (event-key event) key)))

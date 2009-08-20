@@ -106,6 +106,8 @@
    :event-mod
    :event-mod-key
    :event-unicode
+   :key-down-p
+   :key-up-p
 
    ;; game.lisp
    :game
