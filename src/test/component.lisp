@@ -55,10 +55,8 @@
     (is (eql child (aref (children root) 0)))
     (let (seen)
       (blt-phys::do-children (c root)
-        (if seen
-            (fail "do-children returned more than one object")
-            (setf seen c)))
-      (is (eql seen child)))))
+	(push child seen))
+      (is (equal (list child) seen)))))
 
 (test (component-attach-detach-child :depends-on component-with-no-children)
   (let ((root (make-instance 'component))
