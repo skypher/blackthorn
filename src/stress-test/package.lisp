@@ -31,7 +31,7 @@
 (in-package :cl-user)
 
 (defpackage :blackthorn-stress-test
-  (:nicknames :stress-test)
+  (:nicknames :blt-stress-test)
   (:use :cl :blt-gfx :blt-phys :blt-user)
   (:export
 
