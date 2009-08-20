@@ -57,8 +57,7 @@
   (let ((root (make-instance 'component))
         (size #c(800 600))
         (texture-pathname
-         (merge-pathnames "disp/hero.png"
-                          blt-user::*resource-directory-pathname*)))
+         (merge-pathnames "disp/hero.png" *resource-directory-pathname*)))
     (let ((hero (make-instance
                  'hero :parent root :offset (/ size 2)
                  :image (make-instance 'image :name 'tex

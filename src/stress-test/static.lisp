@@ -36,8 +36,7 @@
   (let ((root (make-instance 'component))
         (size #c(800 600))
         (texture-pathname
-         (merge-pathnames "disp/texture.png"
-                          blt-user::*resource-directory-pathname*)))
+         (merge-pathnames "disp/texture.png" *resource-directory-pathname*)))
     (loop for x from 0 to (x size) by 16
        do (loop for y from 0 to (y size) by 16
              do (make-instance
