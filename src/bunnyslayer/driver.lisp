@@ -30,42 +30,61 @@
 
 (in-package :bunnyslayer)
 
-(defclass mobile-game (game) ())
+(defclass bunnyslayer-game (game) ())
 
-(defclass mobile-object (sprite mobile) ())
+(defclass hero (sprite mobile actor) ())
 
-(defmethod init-game ((game mobile-game))
+(defmethod initialize-instance :after ((hero hero) &key)
+  (define-event-handlers (event) hero
+    (move-north (and (event-type-p event :key-down)
+                     (eql (event-key event) :sdl-key-up))
+      (incf (veloc hero) #c(0 -2)))
+    (move-north (and (event-type-p event :key-up)
+                     (eql (event-key event) :sdl-key-up))
+      (decf (veloc hero) #c(0 -2)))
+    (move-south (and (event-type-p event :key-down)
+                     (eql (event-key event) :sdl-key-down))
+      (incf (veloc hero) #c(0 2)))
+    (move-south (and (event-type-p event :key-up)
+                     (eql (event-key event) :sdl-key-down))
+      (decf (veloc hero) #c(0 2)))
+    (move-west (and (event-type-p event :key-down)
+                     (eql (event-key event) :sdl-key-left))
+      (incf (veloc hero) #c(-2 0)))
+    (move-west (and (event-type-p event :key-up)
+                     (eql (event-key event) :sdl-key-left))
+      (decf (veloc hero) #c(-2 0)))
+    (move-east (and (event-type-p event :key-down)
+                     (eql (event-key event) :sdl-key-right))
+      (incf (veloc hero) #c(2 0)))
+    (move-east (and (event-type-p event :key-up)
+                     (eql (event-key event) :sdl-key-right))
+      (decf (veloc hero) #c(2 0)))))
+
+(defmethod init-game ((game bunnyslayer-game))
   (let ((root (make-instance 'component))
         (size #c(800 600))
         (texture-pathname
          (merge-pathnames "disp/hero.png"
                           blt-user::*resource-directory-pathname*)))
-    (make-instance
-     'mobile-object :parent root :offset (complex 400 300)
-     :veloc (complex (random 1.0) (random 1.0))
-     :image (make-instance 'image :name 'tex :source texture-pathname))
-    (let ((keys (make-instance 'actor :parent root)))
-      (define-event-handlers (event) keys
-        (any-key t
-          (format t "~a: ~a~%" (event-type event) (event-key event))))
-      (subscribe-event (key-subscription game) keys))
+    (let ((hero (make-instance
+                 'hero :parent root :offset (/ size 2)
+                 :image (make-instance 'image :name 'tex
+                                       :source texture-pathname))))
+      (subscribe-event (key-subscription game) hero))
     (setf (game-root game) root
           (game-view game)
           (make-instance 'component :offset #c(0 0) :size size))))
 
-(defmethod init-game :after ((game mobile-game))
-  ;; uncork the frame rate and see how fast we go
-  (setf (sdl:frame-rate) 100))
-
-(defmethod update :after ((game mobile-game))
+(defmethod update :after ((game bunnyslayer-game))
   ;; report the frame reate
   (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
     (set-caption s s)))
 
 ;; For interactive use:
 (defun bunnyslayer ()
-  (let ((*game* (make-instance 'mobile-game)))
+  (let ((*game* (make-instance 'bunnyslayer-game)))
     (main :exit-when-done nil)))
 
 ;; For non-interactive use:
-(defvar *game* (make-instance 'mobile-game))
+(defvar *game* (make-instance 'bunnyslayer-game))
