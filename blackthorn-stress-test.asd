@@ -37,6 +37,7 @@
   :name "blackthorn-stress-test"
   :author "Elliott Slaughter <elliottslaughter@gmail.com>"
   :version "0.2"
+  :description "Blackthorn game engine stress test."
   :components ((:module src
                         :components
                         ((:module stress-test
