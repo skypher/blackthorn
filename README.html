@@ -46,21 +46,10 @@ TD P{margin:0px;}
 </STYLE>
 </HEAD>
 <BODY >
-<!--HEVEA command line is: /usr/bin/hevea -o README.html README.latex -->
+<!--HEVEA command line is: c:\Bin\hevea\hevea -exec xxdate.exe -o README.html README.tex -->
 <!--CUT DEF section 1 --><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Blackthorn: Lisp Game Engine</H1><H3 CLASS="titlerest">Elliott Slaughter</H3></TD></TR>
 </TABLE><!--TOC section Contents-->
-<H2 CLASS="section"><!--SEC ANCHOR -->Contents</H2><!--SEC END --><UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc1">1&#XA0;&#XA0;What is Blackthorn?</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc2">2&#XA0;&#XA0;Why another game engine?</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc3">3&#XA0;&#XA0;What does Blackthorn provide?</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc4">4&#XA0;&#XA0;Technical details</A>
-<UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc5">4.1&#XA0;&#XA0;Direct dependencies</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc6">4.2&#XA0;&#XA0;Windows only (optional)</A>
-</LI></UL>
-</LI><LI CLASS="li-toc"><A HREF="#htoc7">5&#XA0;&#XA0;Installation</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc8">6&#XA0;&#XA0;Download</A>
-</LI></UL><!--TOC section What is Blackthorn?-->
+<H2 CLASS="section"><!--SEC ANCHOR -->Contents</H2><!--SEC END --><!--TOC section What is Blackthorn?-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc1">1</A>&#XA0;&#XA0;What is Blackthorn?</H2><!--SEC END --><P>Blackthorn is a framework for writing 2D games in Common Lisp. Blackthorn is attempt to write an efficient, dynamic, persistent 2D game engine in an expressive language which makes it easy to write games.</P><!--TOC section Why another game engine?-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc2">2</A>&#XA0;&#XA0;Why another game engine?</H2><!--SEC END --><P>Games are hard to write. The effort needed to write a usable game engine from scratch, especially when dealing with the low-level details of languages like C, make the cost of writing games prohibitive. Libraries like <A HREF="http://www.libsdl.org/">SDL</A> get many of the driver-level graphics details out of the way, but still leave the user writing in C. Libraries like <A HREF="http://www.pygame.org/news.html">PyGame</A> and <A HREF="http://code.google.com/p/lispbuilder/wiki/LispbuilderSDL">LISPBUILDER-SDL</A> wrap more of these low-level details, but still don&#X2019;t provide a full game engine needed for writing substantial games.</P><P>There are, of course, game engines which provide this functionality to the user. <A HREF="http://www.yoyogames.com/gamemaker/">Game Maker</A>, for example, is an engine which provides everything needed to make a basic game, and an extention language for writing more complex behavior. Using Game Maker, an experienced user can write a basic game in five minutes. However, Game Maker (and similar programs the authors have tried) have some substantial flaws. Problems with Game Maker, specifically, include:</P><UL CLASS="itemize"><LI CLASS="li-itemize">
 Game Maker only runs on Windows. A Linux port is still a dream, and porting to any sort of mobile device is completely unimaginable.

@@ -169,19 +169,20 @@ dist:
 	cp -r $(wildcard lib/*) disp bin
 	$(MAKE) driver="${dist}" new
 
+.PHONY: README
+README:
+	pdflatex README.tex
+ifneq ($(shell which hevea.bat),)
+	hevea.bat -o README.html README.tex
+	d2u README.html
+else
+	hevea -o README.html README.tex
+endif
+
 .PHONY: doc
 doc:
 	$(MAKE) docclean
-	$(MAKE) README
 	$(MAKE) atdoc
-
-.PHONY: README
-README:
-	pdflatex README.latex
-	pdflatex README.latex
-	hevea -o README.html README.latex
-	hevea -o README.html README.latex
-	rm -f README.aux README.haux README.htoc README.log README.out README.toc
 
 .PHONY: atdoc
 atdoc:
