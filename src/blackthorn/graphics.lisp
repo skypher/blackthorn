@@ -34,8 +34,13 @@
 ;;; Graphics Utilities
 ;;;
 
+(declaim (inline x y))
+(defun x (n) (realpart n))
+(defun y (n) (imagpart n))
+
 (defun window (size &optional title-caption icon-caption)
-  (sdl:set-gl-attribute :sdl-gl-doublebuffer 1)
+  ;; The following breaks in Windows 7 (Exception Acess Violation):
+  ;(sdl:set-gl-attribute :sdl-gl-doublebuffer 1)
   (sdl:window (x size) (y size) :bpp 32 :flags sdl:sdl-opengl
               :title-caption title-caption :icon-caption icon-caption)
   (gl:viewport 0 0 (x size) (y size)))
@@ -113,10 +118,6 @@
   ;; Automatically load the image texture.
   (texture image)
   (slot-value image 'size))
-
-(declaim (inline x y))
-(defun x (n) (realpart n))
-(defun y (n) (imagpart n))
 
 (defgeneric render (object))
 (defmethod render ((image image))
