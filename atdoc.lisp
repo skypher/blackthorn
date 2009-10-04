@@ -52,7 +52,7 @@
 
 (defconstant +working-dir+ (cwd))
 
-(defconstant +doc-dir+ (append-directory +working-dir+ "atdoc"))
+(defconstant +doc-dir+ (append-directory +working-dir+ "doc"))
 
 (if (fad:file-exists-p +doc-dir+)
     (fad:delete-directory-and-files +doc-dir+))

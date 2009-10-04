@@ -223,11 +223,11 @@ install-mac:
 clean:
 	rm -rf $(wildcard */*/*.o */*/*.fas */*/*.lib */*/*.fasl */*/*.?x32fsl */*/*.?x64fsl *.db ${tempfile})
 
+.PHONY: docclean
+docclean:
+	rm -rf doc README.aux README.haux README.htoc README.log README.out README.toc
+
 .PHONY: distclean
 distclean:
 	$(MAKE) clean docclean
 	rm -rf $(wildcard build.in build.out bin *-install.exe)
-
-.PHONY: docclean
-docclean:
-	rm -rf atdoc
