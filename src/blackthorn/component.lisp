@@ -85,22 +85,28 @@
   `(loop for ,var across (slot-value ,component 'children)
       do (progn ,@body)))
 
-(defmethod render :around ((component component))
-  (with-slots (offset) component
-    (gl:with-pushed-matrix
-      (gl:translate (x offset) (y offset) 0)
-      (call-next-method))))
+(defun first-neg-depth (children)
+  (position-if #'(lambda (x) (< (slot-value x 'depth) 0)) children))
 
-(defmethod render ((component component))
-  (with-slots (children) component
-    (let ((n (array-dimension children 0)))
-      (unless (zerop n)
-        (gl:with-pushed-matrix
-          (gl:translate 0 0 (+ -1 (/ 1.0d0 n)))
-          (gl:scale 1 1 (/ 1.0d0 n))
-          (loop for child across children
-             do (render child)
-             do (gl:translate 0 0 2.0d0)))))))
+(defgeneric render (object xy zmin zmax))
+(defmethod render ((component component) xy zmin zmax)
+  (with-slots (children offset) component
+    (let ((xy (+ xy offset))
+          (n (array-dimension children 0)))
+      (if (not (zerop n))
+          (let ((median (or (first-neg-depth children) n))
+                (dz (/ (- zmax zmin) n)))
+            (iter (for child in-vector children below median)
+                  (for z initially zmax then (- z dz))
+                  (render child xy (- z dz) z))
+            (draw component xy (/ (+ zmax zmin) 2d0))
+            (iter (for child in-vector children from median)
+                  (for z initially (/ (+ zmax zmin) 2d0) then (- z dz))
+                  (render child xy (- z dz) z)))
+          (draw component xy (/ (+ zmax zmin) 2d0))))))
+
+(defmethod draw ((component component) xy z)
+  (declare (ignore component xy z)))
 
 (defmethod update ((component component))
   (do-children (child component)
@@ -122,9 +128,9 @@
     :initarg :image
     :initform nil)))
 
-(defmethod render :before ((sprite sprite))
-  (with-slots (image depth) sprite
-    (render image)))
+(defmethod draw ((sprite sprite) xy z)
+  (with-slots (image) sprite
+    (draw image xy z)))
 
 ;;;
 ;;; Mobiles

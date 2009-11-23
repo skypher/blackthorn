@@ -55,12 +55,12 @@
       (window (size (game-view game)))
       (warn "No view object for game ~a: Unable to initialize window.~%" game)))
 
-(defmethod render ((game game))
+(defmethod render ((game game) xy zmin zmax)
   (with-slots (offset size) (game-view game)
     (gl:with-pushed-matrix
       (gl:ortho 0 (x size) (y size) 0 -1 1)
-      (gl:translate (x offset) (y offset) 0)
-      (render (game-root game)))))
+      (gl:with-primitive :quads
+        (render (game-root game) (+ xy offset) zmin zmax)))))
 
 (defgeneric update (object))
 

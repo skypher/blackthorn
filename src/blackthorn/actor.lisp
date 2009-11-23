@@ -79,8 +79,8 @@
   (labels ((expand-clause (name test &rest body)
              `(make-instance 'event-handler
                :name ',name
-               :test (lambda (,event) ,test)
-               :body (lambda (,event) ,@body))))
+               :test (lambda (,event) (declare (ignorable ,event)) ,test)
+               :body (lambda (,event) (declare (ignorable ,event)) ,@body))))
     (once-only (object)
       `(setf (event-handlers ,object)
              (append (event-handlers ,object)

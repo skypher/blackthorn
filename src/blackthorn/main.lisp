@@ -191,7 +191,12 @@
           :type :key-up :key key :mod mod :mod-key mod-key :unicode unicode)))
       (:idle ()
         (gl:clear :color-buffer-bit :depth-buffer-bit)
-        (render *game*)
+        ;; TODO: Replace this with a sprite sheet!!!
+        (gl:bind-texture
+         :texture-2d
+         (blt-gfx::texture (make-instance 'blt-gfx:image :name 'tex
+                                        :source "disp/texture.png")))
+        (render *game* #c(0 0) 1d0 -1d0)
         (gl:flush)
         (sdl:update-display)
 

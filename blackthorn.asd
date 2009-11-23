@@ -51,15 +51,11 @@
                                    (:file "library")
                                    (:file "main"))
                                   :serial t))))
-  :depends-on (:trivial-features
-
-               ;; Command line option parsing:
+  :depends-on (;; Utilities
+               :trivial-features
                :cli-parser
-
-               ;; File utilities:
                :cl-fad
-
-               ;; Data structures:
+               :iterate
                :cl-containers
 
                ;; Graphics:

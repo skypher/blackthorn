@@ -52,13 +52,13 @@
    :size
    :x
    :y
-   :render
+   :draw
 
    ))
 
 (defpackage :blackthorn-physics
   (:nicknames :blt-phys)
-  (:use :cl :blt-gfx)
+  (:use :cl :iter :blt-gfx)
   (:export
 
    ;; component.lisp
@@ -71,6 +71,7 @@
    :attach
    :detach
    :render
+   :draw
    :sprite
    :image
    :mobile

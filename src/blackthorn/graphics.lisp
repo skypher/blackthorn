@@ -119,12 +119,12 @@
   (texture image)
   (slot-value image 'size))
 
-(defgeneric render (object))
-(defmethod render ((image image))
-  (gl:bind-texture :texture-2d (texture image))
-  (with-slots (size) image
-    (gl:with-primitive :quads
-      (gl:tex-coord 0 0) (gl:vertex 0 0 0)
-      (gl:tex-coord 1 0) (gl:vertex (x size) 0 0)
-      (gl:tex-coord 1 1) (gl:vertex (x size) (y size) 0)
-      (gl:tex-coord 0 1) (gl:vertex 0 (y size) 0))))
+(defgeneric draw (object xy z))
+(defmethod draw ((image image) xy z)
+  (let* ((size (size image))
+         (x1 (x xy)) (x2 (+ x1 (x size)))
+         (y1 (y xy)) (y2 (+ y1 (y size))))
+    (gl:tex-coord 0 0) (gl:vertex x1 y1 z)
+    (gl:tex-coord 1 0) (gl:vertex x2 y1 z)
+    (gl:tex-coord 1 1) (gl:vertex x2 y2 z)
+    (gl:tex-coord 0 1) (gl:vertex x1 y2 z)))
