@@ -30,7 +30,11 @@
 
 (in-package :blackthorn-stress-test)
 
-(defclass mobile-game (game) ())
+(defclass mobile-game (game)
+  ((test-size
+    :reader test-size
+    :initarg :test-size
+    :initform 5000)))
 
 (defclass mobile-object (sprite mobile) ())
 
@@ -39,13 +43,13 @@
         (size #c(800 600))
         (texture-pathname
          (merge-pathnames "disp/texture.png" *resource-directory-pathname*)))
-    (loop for x from 0 to (x size) by 16
-       do (loop for y from 0 to (y size) by 16
-             do (make-instance
-                 'mobile-object :parent root :offset (complex x y)
-                 :veloc (complex (random 1.0) (random 1.0))
-                 :image (make-instance 'image :name 'tex
-                                       :source texture-pathname))))
+    (loop for i from 0 to (test-size game)
+       do (make-instance
+           'mobile-object :parent root
+           :offset (complex (random (x size)) (random (y size)))
+           :veloc (complex (- (random 1.0) 0.5) (- (random 1.0) 0.5))
+           :image (make-instance 'image :name 'tex
+                                 :source texture-pathname)))
     (let ((keys (make-instance 'actor :parent root)))
       (define-event-handlers (event) keys
         (any-key t
@@ -64,10 +68,21 @@
   (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
     (set-caption s s)))
 
+(defmethod update :after ((object mobile-object))
+  (with-slots (offset veloc) object
+    (cond ((< (x offset) 0)
+           (setf veloc (complex (abs (x veloc)) (y veloc))))
+          ((>= (x offset) (x (size (game-view *game*))))
+           (setf veloc (complex (- (abs (x veloc))) (y veloc)))))
+    (cond ((< (y offset) 0)
+           (setf veloc (complex (x veloc) (abs (y veloc)))))
+          ((>= (y offset) (y (size (game-view *game*))))
+           (setf veloc (complex (x veloc) (- (abs (y veloc)))))))))
+
 ;; For interactive use:
-(defun mobile-test ()
-  (let ((*game* (make-instance 'mobile-game)))
+(defun mobile-test (&optional (n 5000))
+  (let ((*game* (make-instance 'mobile-game :test-size n)))
     (main :exit-when-done nil)))
 
 ;; For non-interactive use:
-(defvar *game* (make-instance 'mobile-game))
+(defvar *game* (make-instance 'mobile-game :test-size 5000))
