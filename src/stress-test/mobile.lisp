@@ -50,11 +50,13 @@
            :veloc (complex (- (random 1.0) 0.5) (- (random 1.0) 0.5))
            :image (make-instance 'image :name 'tex
                                  :source texture-pathname)))
-    (let ((keys (make-instance 'actor :parent root)))
-      (define-event-handlers (event) keys
-        (any-key t
-          (format t "~a: ~a~%" (event-type event) (event-key event))))
-      (subscribe-event (key-subscription game) keys))
+    (labels ((report-event (object event)
+               (declare (ignore object))
+               (format t "~a: ~a~%" (event-type event) (event-key event))))
+      (let ((keys (make-instance 'actor :parent root)))
+        (bind keys :key-down #'report-event)
+        (bind keys :key-up #'report-event)
+        (subscribe (game-keys game) keys)))
     (setf (game-root game) root
           (game-view game)
           (make-instance 'component :offset #c(0 0) :size size))))

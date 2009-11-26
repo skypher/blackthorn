@@ -37,12 +37,15 @@
    (view
     :accessor game-view
     :initform nil)
-   (key-subscription
-    :accessor key-subscription
-    :initform (make-instance 'event-subscription :types '(:key-down :key-up)))))
+   (keys
+    :accessor game-keys
+    :initform (make-instance 'event-subscription :types '(:key-down :key-up)))
+   (event-queue
+    :reader event-queue
+    :initform (make-instance 'containers:basic-queue))))
 
 (defmethod initialize-instance :after ((game game) &key)
-  (subscribe-event game (key-subscription game)))
+  (subscribe game (game-keys game)))
 
 (defvar *game*)
 
@@ -67,5 +70,19 @@
 (defmethod update ((game game))
   (update (game-root game)))
 
+;;;
+;;; Global Event Queue
+;;;
+
+(defmethod send-event ((game game) target event)
+  (containers:enqueue (event-queue game) (list target event)))
+
+(defun send (target event)
+  (send-event *game* target event))
+
+(defgeneric event-update (game))
+
 (defmethod event-update ((game game))
-  (event-update (game-root game)))
+  (labels ((apply-dispatch-event (args) (apply #'dispatch-event args)))
+    (containers:iterate-elements (event-queue game) #'apply-dispatch-event)
+    (containers:empty! (event-queue game))))

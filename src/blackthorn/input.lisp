@@ -48,8 +48,65 @@
     :reader event-unicode
     :initarg :unicode)))
 
-(defun key-down-p (event key)
-  (and (event-type-p event :key-down) (eql (event-key event) key)))
+;;;
+;;; Key Mixin
+;;;
 
-(defun key-up-p (event key)
-  (and (event-type-p event :key-up) (eql (event-key event) key)))
+(defclass key-mixin (event-mixin)
+  ((key-down-handlers
+    :reader key-down-handlers
+    :initform (make-hash-table))
+   (key-up-handlers
+    :reader key-up-handlers
+    :initform (make-hash-table))))
+
+(defmethod initialize-instance :after ((object key-mixin) &key)
+  (unless (bound-p object :key-down)
+    (bind object :key-down #'dispatch-key-down))
+  (unless (bound-p object :key-up)
+    (bind object :key-up #'dispatch-key-up)))
+
+(defmethod bound-key-down-p ((object event-mixin) key)
+  (multiple-value-bind (value exists) (gethash key (key-down-handlers object))
+    (declare (ignore value))
+    exists))
+
+(defmethod bind-key-down ((object key-mixin) key thunk)
+  (with-slots (key-down-handlers) object
+    (setf (gethash key key-down-handlers) thunk)))
+
+(defmethod unbind-key-down ((object event-mixin) key)
+  (with-slots (key-down-handlers) object
+    (remhash key key-down-handlers)))
+
+(defmethod bound-key-up-p ((object event-mixin) key)
+  (multiple-value-bind (value exists) (gethash key (key-up-handlers object))
+    (declare (ignore value))
+    exists))
+
+(defmethod bind-key-up ((object key-mixin) key thunk)
+  (with-slots (key-up-handlers) object
+    (setf (gethash key key-up-handlers) thunk)))
+
+(defmethod unbind-key-up ((object event-mixin) key)
+  (with-slots (key-up-handlers) object
+    (remhash key key-up-handlers)))
+
+(defmethod dispatch-key-down ((object key-mixin) (event key-event))
+  (with-slots (key-down-handlers) object
+    (let ((handler (gethash (event-key event) key-down-handlers)))
+      (when handler
+        (funcall handler object event)))))
+
+(defmethod dispatch-key-up ((object key-mixin) (event key-event))
+  (with-slots (key-up-handlers) object
+    (let ((handler (gethash (event-key event) key-up-handlers)))
+      (when handler
+        (funcall handler object event)))))
+
+;;;
+;;; Actors
+;;;
+
+(defclass actor (component key-mixin)
+  ())

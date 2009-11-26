@@ -35,23 +35,38 @@
 (defclass hero (sprite mobile actor) ())
 
 (defmethod initialize-instance :after ((hero hero) &key)
-  (define-event-handlers (event) hero
-    (move-north (key-down-p event :sdl-key-up)
-      (incf (veloc hero) #c(0 -2)))
-    (stop-north (key-up-p event :sdl-key-up)
-      (decf (veloc hero) #c(0 -2)))
-    (move-south (key-down-p event :sdl-key-down)
-      (incf (veloc hero) #c(0 2)))
-    (stop-south (key-up-p event :sdl-key-down)
-      (decf (veloc hero) #c(0 2)))
-    (move-west (key-down-p event :sdl-key-left)
-      (incf (veloc hero) #c(-2 0)))
-    (stop-west (key-up-p event :sdl-key-left)
-      (decf (veloc hero) #c(-2 0)))
-    (move-east (key-down-p event :sdl-key-right)
-      (incf (veloc hero) #c(2 0)))
-    (stop-east (key-up-p event :sdl-key-right)
-      (decf (veloc hero) #c(2 0)))))
+  (bind-key-down hero :sdl-key-up    #'move-north)
+  (bind-key-up   hero :sdl-key-up    #'stop-north)
+  (bind-key-down hero :sdl-key-down  #'move-south)
+  (bind-key-up   hero :sdl-key-down  #'stop-south)
+  (bind-key-down hero :sdl-key-left  #'move-west)
+  (bind-key-up   hero :sdl-key-left  #'stop-west)
+  (bind-key-down hero :sdl-key-right #'move-east)
+  (bind-key-up   hero :sdl-key-right #'stop-east))
+
+(defmethod move-north ((hero hero) event)
+  (incf (veloc hero) #c(0 -2)))
+
+(defmethod stop-north ((hero hero) event)
+  (decf (veloc hero) #c(0 -2)))
+
+(defmethod move-south ((hero hero) event)
+  (incf (veloc hero) #c(0 2)))
+
+(defmethod stop-south ((hero hero) event)
+  (decf (veloc hero) #c(0 2)))
+
+(defmethod move-west ((hero hero) event)
+  (incf (veloc hero) #c(-2 0)))
+
+(defmethod stop-west ((hero hero) event)
+  (decf (veloc hero) #c(-2 0)))
+
+(defmethod move-east ((hero hero) event)
+  (incf (veloc hero) #c(2 0)))
+
+(defmethod stop-east ((hero hero) event)
+  (decf (veloc hero) #c(2 0)))
 
 (defmethod init-game ((game bunnyslayer-game))
   (let ((root (make-instance 'component))
@@ -62,7 +77,7 @@
                  'hero :parent root :offset (/ size 2)
                  :image (make-instance 'image :name 'tex
                                        :source texture-pathname))))
-      (subscribe-event (key-subscription game) hero))
+      (subscribe (game-keys game) hero))
     (setf (game-root game) root
           (game-view game)
           (make-instance 'component :offset #c(0 0) :size size))))

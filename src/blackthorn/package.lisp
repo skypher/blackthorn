@@ -81,25 +81,13 @@
    ;; actor.lisp
    :event
    :event-type
-   :event-type-p
-   :event-handler
-   :handle-event-p
-   :handle-event
-   :name
-   :event-test
-   :event-body
    :event-mixin
-   :event-queue
-   :event-handlers
-   :define-event-handlers
-   :push-event
-   :dispatch-event
-   :dispatch-queued-events
+   :bound-p
+   :bind
+   :unbind
    :event-subscription
-   :subscribe-event
-   :unsubscribe-event
-   :actor
-   :event-update
+   :subscribe
+   :unsubscribe
 
    ;; input.lisp
    :key-event
@@ -107,19 +95,26 @@
    :event-mod
    :event-mod-key
    :event-unicode
-   :key-down-p
-   :key-up-p
+   :bound-key-down-p
+   :bind-key-down
+   :unbind-key-down
+   :bound-key-up-p
+   :bind-key-up
+   :unbind-key-up
+   :actor
 
    ;; game.lisp
    :game
    :*game*
    :game-root
    :game-view
+   :game-keys
    :init-game
    :load-game
    :save-game
    :update
-   :key-subscription
+   :send
+   :event-update
 
    ))
 

@@ -39,109 +39,58 @@
     :reader event-type
     :initarg :type)))
 
-(defmethod event-type-p ((event event) type)
-  (eql (event-type event) type))
-
-;;;
-;;; Event Handlers
-;;;
-
-(defclass event-handler ()
-  ((name
-    :reader name
-    :initarg :name)
-   (test
-    :reader event-test
-    :initarg :test)
-   (body
-    :reader event-body
-    :initarg :body)))
-
-(defmethod handle-event-p ((event-handler event-handler) (event event))
-  (funcall (event-test event-handler) event))
-
-(defmethod handle-event ((event-handler event-handler) (event event))
-  (funcall (event-body event-handler) event))
-
 ;;;
 ;;; Event Mixin
 ;;;
 
 (defclass event-mixin ()
-  ((event-queue
-    :reader event-queue
-    :initform (make-instance 'containers:basic-queue))
-   (event-handlers
+  ((handlers
     :accessor event-handlers
-    :initform nil)))
+    :initform (make-hash-table))))
 
-(defmacro define-event-handlers ((event) object &body clauses)
-  (labels ((expand-clause (name test &rest body)
-             `(make-instance 'event-handler
-               :name ',name
-               :test (lambda (,event) (declare (ignorable ,event)) ,test)
-               :body (lambda (,event) (declare (ignorable ,event)) ,@body))))
-    (once-only (object)
-      `(setf (event-handlers ,object)
-             (append (event-handlers ,object)
-                     (list ,@(mapcar #'(lambda (clause)
-                                         (apply #'expand-clause clause))
-                                     clauses)))))))
+(defmethod bound-p ((object event-mixin) event)
+  (multiple-value-bind (value exists) (gethash event (event-handlers object))
+    (declare (ignore value))
+    exists))
 
-(defmethod push-event ((object event-mixin) (event event))
-  (containers:enqueue (event-queue object) event))
+(defmethod bind ((object event-mixin) event thunk)
+  (with-slots (handlers) object
+    (setf (gethash event handlers) thunk)))
+
+(defmethod unbind ((object event-mixin) event)
+  (with-slots (handlers) object
+    (remhash event handlers)))
 
 (defmethod dispatch-event ((object event-mixin) (event event))
-  (let ((handler (find-if #'(lambda (handler) (handle-event-p handler event))
-                          (event-handlers object))))
-    (when handler
-      (handle-event handler event))))
-
-(defmethod dispatch-queued-events ((object event-mixin))
-  (containers:iterate-elements
-   (event-queue object)
-   #'(lambda (event) (dispatch-event object event)))
-  (containers:empty! (event-queue object)))
+  (with-slots (handlers) object
+    (let ((handler (gethash (event-type event) handlers)))
+      (when handler
+        (funcall handler object event)))))
 
 ;;;
 ;;; Event Subscriptions
 ;;;
 
 (defclass event-subscription (event-mixin)
-  ((event-types
-    :accessor event-types
-    :initarg :types
-    :initform t)
-   (subscribers
+  ((subscribers
     :accessor event-subscribers
     :initform nil)))
 
-(defmethod initialize-instance :after ((subscription event-subscription) &key)
-  (define-event-handlers (event) subscription
-    (dispatch-event (with-slots (event-types) subscription
-                      (or (eql event-types t)
-                          (member (event-type event) event-types)))
-      (loop for subscriber in (event-subscribers subscription)
-         do (push-event subscriber event)))))
+(defmethod initialize-instance :after
+    ((subscription event-subscription) &key types)
+  (iter (for type in types)
+        (unless (bound-p subscription type)
+          (bind subscription type #'dispatch-event))))
 
-(defmethod subscribe-event
+(defmethod subscribe
     ((subscription event-subscription) (subscriber event-mixin))
   (pushnew subscriber (event-subscribers subscription)))
 
-(defmethod unsubscribe-event
+(defmethod unsubscribe
     ((subscription event-subscription) (subscriber event-mixin))
   (setf (event-subscribers subscription)
         (delete subscriber (event-subscribers subscription))))
 
-(defmethod push-event ((subscription event-subscription) (event event))
-  (dispatch-event subscription event))
-
-;;;
-;;; Actors
-;;;
-
-(defclass actor (component event-mixin)
-  ())
-
-(defmethod event-update :before ((actor actor))
-  (dispatch-queued-events actor))
+(defmethod dispatch-event ((subscription event-subscription) (event event))
+  (iter (for subscriber in (event-subscribers subscription))
+        (dispatch-event subscriber event)))
