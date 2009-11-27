@@ -141,6 +141,13 @@
 ;;; Main Game Driver
 ;;;
 
+#+blt-debug
+(defvar *driver-system* nil)
+
+#+blt-debug
+(defun reload-game (listener event)
+  (asdf:oos 'asdf:load-op *driver-system*))
+
 (defun main (&key (exit-when-done t))
   "Main entry point for the game. Deals with initialization, finalization, and the main game loop."
   ;; Initialization:
@@ -157,6 +164,12 @@
   (sdl:with-init ()
     (unless *game* (error "No game specified.~%"))
     (init-game *game*)
+
+    #+blt-debug
+    (when *driver-system*
+      (let ((listener (make-instance 'actor)))
+	(bind-key-down listener :sdl-key-r #'reload-game)
+	(subscribe (game-keys *game*) listener)))
 
     (gl:enable :texture-2d)
     (gl:enable :blend)
@@ -189,8 +202,11 @@
         ;; TODO: Replace this with a sprite sheet!!!
         (gl:bind-texture
          :texture-2d
-         (blt-gfx::texture (make-instance 'blt-gfx:image :name 'tex
-                                        :source "disp/texture.png")))
+         (blt-gfx::texture
+	  (make-instance
+	   'blt-gfx:image :name 'tex
+	   :source (merge-pathnames "disp/texture.png"
+				    *resource-directory-pathname*))))
         (render *game* #c(0 0) 1d0 -1d0)
         (gl:flush)
         (sdl:update-display)

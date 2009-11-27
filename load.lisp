@@ -23,9 +23,20 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(defvar *driver-system* :blackthorn)
+(defvar *driver-system* :bunnyslayer)
 
+;; Insert the *driver-system* binding into the blackthorn-user package:
+(defpackage :blackthorn-user (:use :cl)) ; forward declaration
+
+(in-package :blackthorn-user)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (pushnew :blt-debug *features*))
+
+#+blt-debug (defvar *driver-system* cl-user::*driver-system*)
+
+;; Load and run main:
 (require :asdf)
 (asdf:operate 'asdf:load-op *driver-system*)
 
-(blt-user:main)
+(main)
