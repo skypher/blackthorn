@@ -168,8 +168,8 @@
     #+blt-debug
     (when *driver-system*
       (let ((listener (make-instance 'actor)))
-	(bind-key-down listener :sdl-key-r #'reload-game)
-	(subscribe (game-keys *game*) listener)))
+        (bind-key-down listener :sdl-key-r #'reload-game)
+        (subscribe (game-keys *game*) listener)))
 
     (gl:enable :texture-2d)
     (gl:enable :blend)
@@ -203,10 +203,10 @@
         (gl:bind-texture
          :texture-2d
          (blt-gfx::texture
-	  (make-instance
-	   'blt-gfx:image :name 'tex
-	   :source (merge-pathnames "disp/texture.png"
-				    *resource-directory-pathname*))))
+          (make-instance
+           'blt-gfx:image :name 'tex
+           :source (merge-pathnames "disp/texture.png"
+                                    *resource-directory-pathname*))))
         (render *game* #c(0 0) 1d0 -1d0)
         (gl:flush)
         (sdl:update-display)
