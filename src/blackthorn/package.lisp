@@ -70,11 +70,8 @@
    :update
    :sprite
    :image
-   :mobile
-   :veloc
-   :accel
 
-   ;; actor.lisp
+   ;; event.lisp
    :event
    :event-type
    :event-mixin
@@ -97,7 +94,6 @@
    :bound-key-up-p
    :bind-key-up
    :unbind-key-up
-   :actor
 
    ;; game.lisp
    :game
@@ -110,6 +106,12 @@
    :save-game
    :send
    :update-game
+
+   ;; actor.lisp
+   :actor
+   :mobile
+   :veloc
+   :accel
 
    ))
 
