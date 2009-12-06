@@ -23,38 +23,43 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(defpackage :blackthorn-asd
-  (:use :cl :asdf))
+(in-package :blackthorn-physics)
 
-(in-package :blackthorn-asd)
+;;;
+;;; Actors
+;;;
 
-(defsystem blackthorn
-  :name "blackthorn"
-  :author "Elliott Slaughter <elliottslaughter@gmail.com>"
-  :version "0.2"
-  :components ((:module src
-                        :components
-                        ((:module blackthorn
-                                  :components
-                                  ((:file "package")
-                                   (:file "utils")
-                                   (:file "graphics")
-                                   (:file "component")
-                                   (:file "event")
-                                   (:file "input")
-                                   (:file "game")
-                                   (:file "actor")
-                                   (:file "library")
-                                   (:file "main"))
-                                  :serial t))))
-  :depends-on (;; Utilities
-               :trivial-features
-               :cli-parser
-               :cl-fad
-               :iterate
-               :cl-containers
+(defclass actor (component key-mixin)
+  ())
 
-               ;; Graphics:
-               :lispbuilder-sdl
-               :lispbuilder-sdl-image
-               :cl-opengl))
+(defmethod initialize-instance :after ((actor actor) &key)
+  (bind actor :update #'update))
+
+(defmethod event-update ((component component))
+  (do-children (child component)
+    (event-update child)))
+
+(defmethod event-update :before ((actor actor))
+  (send actor (make-instance 'event :type :update)))
+
+;;;
+;;; Mobiles
+;;;
+
+(defgeneric veloc (object))
+(defgeneric accel (object))
+
+(defclass mobile (actor)
+  ((veloc
+    :accessor veloc
+    :initarg :veloc
+    :initform #c(0 0))
+   (accel
+    :accessor accel
+    :initarg :accel
+    :initform #c(0 0))))
+
+(defmethod update :before ((mobile mobile) event)
+  (with-slots (offset veloc accel) mobile
+    (incf veloc accel)
+    (incf offset veloc)))

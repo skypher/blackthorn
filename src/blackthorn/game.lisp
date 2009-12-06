@@ -60,24 +60,22 @@
       (gl:with-primitive :quads
         (render (game-root game) (+ xy offset) zmin zmax)))))
 
-(defgeneric update (object))
-
-(defmethod update ((game game))
-  (update (game-root game)))
-
 ;;;
-;;; Global Event Queue
+;;; Game Event Queue
 ;;;
 
+(defgeneric send-event (game target event))
 (defmethod send-event ((game game) target event)
   (containers:enqueue (event-queue game) (list target event)))
 
 (defun send (target event)
   (send-event *game* target event))
 
-(defgeneric event-update (game))
+(defgeneric event-update (object))
 
-(defmethod event-update ((game game))
+(defgeneric update-game (game))
+(defmethod update-game ((game game))
   (labels ((apply-dispatch-event (args) (apply #'dispatch-event args)))
+    (event-update (game-root game))
     (containers:iterate-elements (event-queue game) #'apply-dispatch-event)
     (containers:empty! (event-queue game))))

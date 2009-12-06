@@ -67,6 +67,7 @@
    :detach
    :render
    :draw
+   :update
    :sprite
    :image
    :mobile
@@ -107,9 +108,8 @@
    :init-game
    :load-game
    :save-game
-   :update
    :send
-   :event-update
+   :update-game
 
    ))
 

@@ -61,12 +61,13 @@
   ;; uncork the frame rate and see how fast we go
   (setf (sdl:frame-rate) 100))
 
-(defmethod update :after ((game mobile-game))
+(defmethod update-game :after ((game mobile-game))
   ;; report the frame reate
   (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
     (set-caption s s)))
 
-(defmethod update :after ((object mobile-object))
+(defmethod update :after ((object mobile-object) event)
+  (declare (ignore event))
   (with-slots (offset veloc) object
     (cond ((< (x offset) 0)
            (setf veloc (complex (abs (x veloc)) (y veloc))))

@@ -31,7 +31,6 @@
 
 (defgeneric offset (object))
 (defgeneric depth (object))
-(defgeneric size (object))
 (defgeneric parent (object))
 (defgeneric children (object))
 
@@ -103,13 +102,9 @@
 (defmethod draw ((component component) xy z)
   (declare (ignore component xy z)))
 
-(defmethod update ((component component))
-  (do-children (child component)
-    (update child)))
-
-(defmethod event-update ((component component))
-  (do-children (child component)
-    (event-update child)))
+(defgeneric update (object event))
+(defmethod update ((component component) event)
+  (declare (ignore component event)))
 
 ;;;
 ;;; Sprites
@@ -126,25 +121,3 @@
 (defmethod draw ((sprite sprite) xy z)
   (with-slots (image) sprite
     (draw image xy z)))
-
-;;;
-;;; Mobiles
-;;;
-
-(defgeneric veloc (object))
-(defgeneric accel (object))
-
-(defclass mobile (component)
-  ((veloc
-    :accessor veloc
-    :initarg :veloc
-    :initform #c(0 0))
-   (accel
-    :accessor accel
-    :initarg :accel
-    :initform #c(0 0))))
-
-(defmethod update :before ((mobile mobile))
-  (with-slots (offset veloc accel) mobile
-    (incf veloc accel)
-    (incf offset veloc)))

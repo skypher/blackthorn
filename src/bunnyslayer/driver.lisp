@@ -27,7 +27,7 @@
 
 (defclass bunnyslayer-game (game) ())
 
-(defclass hero (sprite mobile actor) ())
+(defclass hero (sprite mobile) ())
 
 (defmethod initialize-instance :after ((hero hero) &key)
   (bind-key-down hero :sdl-key-up    #'move-north)
@@ -77,7 +77,7 @@
           (game-view game)
           (make-instance 'component :offset #c(0 0) :size size))))
 
-(defmethod update :after ((game bunnyslayer-game))
+(defmethod update-game :after ((game bunnyslayer-game))
   ;; report the frame reate
   (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
     (set-caption s s)))

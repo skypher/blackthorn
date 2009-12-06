@@ -146,6 +146,7 @@
 
 #+blt-debug
 (defun reload-game (listener event)
+  (declare (ignore listener event))
   (asdf:oos 'asdf:load-op *driver-system*))
 
 (defun main (&key (exit-when-done t))
@@ -211,8 +212,7 @@
         (gl:flush)
         (sdl:update-display)
 
-        (update *game*)
-        (event-update *game*))))
+        (update-game *game*))))
 
   ;; Finalization:
   (unload-graphics)
