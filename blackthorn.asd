@@ -40,7 +40,7 @@
                                    (:file "utils")
                                    (:file "graphics")
                                    (:file "component")
-                                   (:file "actor")
+                                   (:file "event")
                                    (:file "input")
                                    (:file "game")
                                    (:file "library")
