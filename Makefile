@@ -149,6 +149,10 @@ endif
 load-clozure:
 	ccl --eval "(defparameter *driver-system* \"${system}\")" --load ${driver} -- --${mode}=${file}
 
+.PHONY: stress
+stress:
+	$(MAKE) system="blackthorn-stress-test" new
+
 .PHONY: test
 test:
 	$(MAKE) driver="${test}" system="blackthorn-test" new
