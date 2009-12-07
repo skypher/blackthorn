@@ -164,7 +164,7 @@
 
   (sdl:with-init ()
     (unless *game* (error "No game specified.~%"))
-    (init-game *game*)
+    (game-init *game*)
 
     #+blt-debug
     (when *driver-system*
@@ -212,7 +212,7 @@
         (gl:flush)
         (sdl:update-display)
 
-        (update-game *game*))))
+        (game-update *game*))))
 
   ;; Finalization:
   (unload-graphics)

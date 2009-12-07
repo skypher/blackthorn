@@ -44,11 +44,11 @@
 
 (defvar *game*)
 
-(defgeneric init-game (game))
-(defgeneric load-game (game))
-(defgeneric save-game (game))
+(defgeneric game-init (game))
+(defgeneric game-load (game))
+(defgeneric game-save (game))
 
-(defmethod init-game :after ((game game))
+(defmethod game-init :after ((game game))
   (if (game-view game)
       (window (size (game-view game)))
       (warn "No view object for game ~a: Unable to initialize window.~%" game)))
@@ -73,8 +73,8 @@
 
 (defgeneric event-update (object))
 
-(defgeneric update-game (game))
-(defmethod update-game ((game game))
+(defgeneric game-update (game))
+(defmethod game-update ((game game))
   (labels ((apply-dispatch-event (args) (apply #'dispatch-event args)))
     (event-update (game-root game))
     (containers:iterate-elements (event-queue game) #'apply-dispatch-event)

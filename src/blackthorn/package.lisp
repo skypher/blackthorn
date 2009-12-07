@@ -101,11 +101,11 @@
    :game-root
    :game-view
    :game-keys
-   :init-game
-   :load-game
-   :save-game
+   :game-init
+   :game-load
+   :game-save
+   :game-update
    :send
-   :update-game
 
    ;; actor.lisp
    :actor

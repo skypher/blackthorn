@@ -37,7 +37,7 @@
   (declare (ignore object))
   (format t "~a: ~a~%" (event-type event) (event-key event)))
 
-(defmethod init-game ((game mobile-game))
+(defmethod game-init ((game mobile-game))
   (let ((root (make-instance 'component))
         (size #c(800 600))
         (texture-pathname
@@ -57,11 +57,11 @@
           (game-view game)
           (make-instance 'component :offset #c(0 0) :size size))))
 
-(defmethod init-game :after ((game mobile-game))
+(defmethod game-init :after ((game mobile-game))
   ;; uncork the frame rate and see how fast we go
   (setf (sdl:frame-rate) 100))
 
-(defmethod update-game :after ((game mobile-game))
+(defmethod game-update :after ((game mobile-game))
   ;; report the frame reate
   (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
     (set-caption s s)))

@@ -63,7 +63,7 @@
 (defmethod stop-east ((hero hero) event)
   (decf (veloc hero) #c(2 0)))
 
-(defmethod init-game ((game bunnyslayer-game))
+(defmethod game-init ((game bunnyslayer-game))
   (let ((root (make-instance 'component))
         (size #c(800 600))
         (texture-pathname
@@ -77,7 +77,7 @@
           (game-view game)
           (make-instance 'component :offset #c(0 0) :size size))))
 
-(defmethod update-game :after ((game bunnyslayer-game))
+(defmethod game-update :after ((game bunnyslayer-game))
   ;; report the frame reate
   (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
     (set-caption s s)))
