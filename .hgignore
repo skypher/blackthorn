@@ -1,0 +1,21 @@
+syntax: glob
+
+# hidden, backup, and temporary files
+*~
+.\#*
+.*.swp
+.DS_Store
+
+# object files
+*.o
+*.fas
+*.lib
+*.fasl
+*.?x32fsl
+*.?x64fsl
+
+# README output files
+README.aux
+README.log
+README.out
+README.toc
