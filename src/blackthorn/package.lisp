@@ -26,11 +26,13 @@
 #+allegro (require :foreign)
 #+allegro (require :osi)
 
-;;;
-;;; Package definitions
-;;;
-
 (in-package :cl-user)
+
+;;;
+;;; Internal Packages:
+;;; Anything exported here but not exported in the public interface is
+;;; intended for internal use.
+;;;
 
 (defpackage :blackthorn-graphics
   (:nicknames :blt-gfx)
@@ -115,11 +117,93 @@
 
    ))
 
+;;;
+;;; Public Interface:
+;;; The generic functions and classes listed form the interface to Blackthorn.
+;;;
+
+(defpackage :blackthorn
+  (:nicknames :blt)
+  (:use :cl :blt-gfx :blt-phys)
+  (:export
+
+   ;; graphics.lisp
+   :window
+   :image
+   :size
+   :x
+   :y
+   :draw
+
+   ;; component.lisp
+   :component
+   :offset
+   :depth
+   :size
+   :parent
+   :children
+   :attach
+   :detach
+   :render
+   :draw
+   :update
+   :sprite
+   :image
+
+   ;; event.lisp
+   :event
+   :event-type
+   :event-mixin
+   :bound-p
+   :bind
+   :unbind
+   :event-subscription
+   :subscribe
+   :unsubscribe
+
+   ;; input.lisp
+   :key-event
+   :event-key
+   :event-mod
+   :event-mod-key
+   :event-unicode
+   :bound-key-down-p
+   :bind-key-down
+   :unbind-key-down
+   :bound-key-up-p
+   :bind-key-up
+   :unbind-key-up
+
+   ;; game.lisp
+   :game
+   :*game*
+   :game-root
+   :game-view
+   :game-keys
+   :game-init
+   :game-load
+   :game-save
+   :game-update
+   :send
+
+   ;; actor.lisp
+   :actor
+   :mobile
+   :veloc
+   :accel
+
+   ))
+
+;;;
+;;; User Package:
+;;;
+
 (defpackage :blackthorn-user
   (:nicknames :blt-user)
-  (:use :cl :blt-gfx :blt-phys)
+  (:use :cl :blt)
   (:shadow :room)
   #+allegro (:import-from :cl-user :exit)
+  (:import-from :blt-gfx :unload-graphics)
   (:export
 
    ;; main.lisp

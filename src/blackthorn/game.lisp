@@ -44,10 +44,6 @@
 
 (defvar *game*)
 
-(defgeneric game-init (game))
-(defgeneric game-load (game))
-(defgeneric game-save (game))
-
 (defmethod game-init :after ((game game))
   (if (game-view game)
       (window (size (game-view game)))
@@ -73,7 +69,6 @@
 
 (defgeneric event-update (object))
 
-(defgeneric game-update (game))
 (defmethod game-update ((game game))
   (labels ((apply-dispatch-event (args) (apply #'dispatch-event args)))
     (event-update (game-root game))

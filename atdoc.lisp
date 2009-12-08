@@ -57,10 +57,16 @@
 ;;; Build documentation.
 ;;;
 
-(atdoc:generate-documentation
+(atdoc:generate-html-documentation
  '(:blt :blt-user)
  +doc-dir+
  :index-title "Blackthorn API Reference"
- :heading "Blackthorn 2D -- Lisp Game Engine")
+ :heading "Blackthorn -- Lisp Game Engine")
+
+(atdoc:generate-latex-documentation
+ '(:blt :blt-user)
+ +doc-dir+
+ :title "Blackthorn API Reference")
+
 
 (#-allegro quit #+allegro exit)

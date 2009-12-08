@@ -43,23 +43,19 @@
     :accessor event-handlers
     :initform (make-hash-table))))
 
-(defgeneric bound-p (object event))
 (defmethod bound-p ((object event-mixin) event)
   (multiple-value-bind (value exists) (gethash event (event-handlers object))
     (declare (ignore value))
     exists))
 
-(defgeneric bind (object event thunk))
 (defmethod bind ((object event-mixin) event thunk)
   (with-slots (handlers) object
     (setf (gethash event handlers) thunk)))
 
-(defgeneric unbind (object event))
 (defmethod unbind ((object event-mixin) event)
   (with-slots (handlers) object
     (remhash event handlers)))
 
-(defgeneric dispatch-event (object event))
 (defmethod dispatch-event ((object event-mixin) (event event))
   (with-slots (handlers) object
     (let ((handler (gethash (event-type event) handlers)))
@@ -81,12 +77,10 @@
         (unless (bound-p subscription type)
           (bind subscription type #'dispatch-event))))
 
-(defgeneric subscribe (subscription subscriber))
 (defmethod subscribe
     ((subscription event-subscription) (subscriber event-mixin))
   (pushnew subscriber (event-subscribers subscription)))
 
-(defgeneric unsubscribe (subscription subscriber))
 (defmethod unsubscribe
     ((subscription event-subscription) (subscriber event-mixin))
   (setf (event-subscribers subscription)

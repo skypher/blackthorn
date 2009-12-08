@@ -23,6 +23,7 @@ README.toc
 # build files
 bin/*
 lib/*
+doc/*
 *.app
 *.exe
 *.tar.gz

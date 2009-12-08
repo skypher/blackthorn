@@ -42,8 +42,6 @@
 ;;; Open GL Texture Wrapper
 ;;;
 
-(defgeneric name (object))
-
 (defclass image ()
   ((name
     :reader name
@@ -106,13 +104,11 @@
                 (complex (sdl:width surface) (sdl:height surface)))
           (values texture surface)))))
 
-(defgeneric size (object))
 (defmethod size ((image image))
   ;; Automatically load the image texture.
   (texture image)
   (slot-value image 'size))
 
-(defgeneric draw (object xy z))
 (defmethod draw ((image image) xy z)
   (let* ((size (size image))
          (x1 (x xy)) (x2 (+ x1 (x size)))
