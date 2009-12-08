@@ -26,17 +26,11 @@
 (defvar *driver-system* :bunnyslayer)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (pushnew :blt-debug *features*))
-
-;; Insert the *driver-system* binding into the blackthorn-user package:
-#+blt-debug (defpackage :blackthorn-user (:use :cl)) ; forward declaration
-
-#+blt-debug (in-package :blackthorn-user)
-
-#+blt-debug (defvar *driver-system* cl-user::*driver-system*)
+  (when (find-package :swank)
+    (pushnew :blt-debug *features*)))
 
 ;; Load and run main:
 (require :asdf)
 (asdf:operate 'asdf:load-op *driver-system*)
 
-(main)
+(blt-user::main)

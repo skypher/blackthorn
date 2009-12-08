@@ -141,14 +141,6 @@
 ;;; Main Game Driver
 ;;;
 
-#+blt-debug
-(defvar *driver-system* nil)
-
-#+blt-debug
-(defun reload-game (listener event)
-  (declare (ignore listener event))
-  (asdf:oos 'asdf:load-op *driver-system*))
-
 (defun main (&key (exit-when-done t))
   "Main entry point for the game. Deals with initialization, finalization, and the main game loop."
   ;; Initialization:
@@ -165,12 +157,6 @@
   (sdl:with-init ()
     (unless *game* (error "No game specified.~%"))
     (game-init *game*)
-
-    #+blt-debug
-    (when *driver-system*
-      (let ((listener (make-instance 'actor)))
-        (bind-key-down listener :sdl-key-r #'reload-game)
-        (subscribe (game-keys *game*) listener)))
 
     (gl:enable :texture-2d)
     (gl:enable :blend)
@@ -211,6 +197,12 @@
         (render *game* #c(0 0) 1d0 -1d0)
         (gl:flush)
         (sdl:update-display)
+
+        #+blt-debug
+        (let ((connection
+               (or swank::*emacs-connection* (swank::default-connection))))
+          (when connection
+            (swank::handle-requests connection t)))
 
         (game-update *game*))))
 
