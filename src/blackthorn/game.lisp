@@ -44,10 +44,6 @@
 
 (defvar *game*)
 
-(defgeneric game-init (game))
-(defgeneric game-load (game))
-(defgeneric game-save (game))
-
 (defmethod game-init :after ((game game))
   (if (game-view game)
       (window (size (game-view game)))
@@ -69,11 +65,14 @@
   (containers:enqueue (event-queue game) (list target event)))
 
 (defun send (target event)
+  "@arg[target]{An @class{event-mixin}.}
+   @arg[event]{An @class{event}.}
+   @short{Schedules an event for dispatch at a future time.} The event will be
+     delivered to the target object during the update portion of the game loop."
   (send-event *game* target event))
 
 (defgeneric event-update (object))
 
-(defgeneric game-update (game))
 (defmethod game-update ((game game))
   (labels ((apply-dispatch-event (args) (apply #'dispatch-event args)))
     (event-update (game-root game))

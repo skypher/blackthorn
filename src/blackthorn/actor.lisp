@@ -46,9 +46,6 @@
 ;;; Mobiles
 ;;;
 
-(defgeneric veloc (object))
-(defgeneric accel (object))
-
 (defclass mobile (actor)
   ((veloc
     :accessor veloc

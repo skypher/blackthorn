@@ -29,11 +29,13 @@
 ;;; Graphics Utilities
 ;;;
 
-(declaim (inline x y))
-(defun x (n) (realpart n))
-(defun y (n) (imagpart n))
-
 (defun window (size &optional title-caption icon-caption)
+  "@arg[size]{A complex number.}
+   @arg[title-caption]{A string.}
+   @arg[icon-caption]{A string.}
+   @short{Creates a window of the specified size. Optional strings may be
+     provided to specify the caption of the window when visible, and
+     minimized.}"
   (sdl:window (x size) (y size) :bpp 32 :flags sdl:sdl-opengl
               :title-caption title-caption :icon-caption icon-caption)
   (gl:viewport 0 0 (x size) (y size)))
@@ -41,8 +43,6 @@
 ;;;
 ;;; Open GL Texture Wrapper
 ;;;
-
-(defgeneric name (object))
 
 (defclass image ()
   ((name
@@ -106,13 +106,11 @@
                 (complex (sdl:width surface) (sdl:height surface)))
           (values texture surface)))))
 
-(defgeneric size (object))
 (defmethod size ((image image))
   ;; Automatically load the image texture.
   (texture image)
   (slot-value image 'size))
 
-(defgeneric draw (object xy z))
 (defmethod draw ((image image) xy z)
   (let* ((size (size image))
          (x1 (x xy)) (x2 (+ x1 (x size)))

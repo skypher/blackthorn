@@ -29,11 +29,6 @@
 ;;; Components
 ;;;
 
-(defgeneric offset (object))
-(defgeneric depth (object))
-(defgeneric parent (object))
-(defgeneric children (object))
-
 (defclass component ()
   ((offset
     :accessor offset
@@ -53,9 +48,6 @@
    (children
     :reader children
     :initform (vector))))
-
-(defgeneric attach (parent child))
-(defgeneric detach (parent child))
 
 (defmethod initialize-instance :after ((component component) &key parent)
   (when parent
@@ -82,7 +74,6 @@
 (defun first-neg-depth (children)
   (position-if #'(lambda (x) (< (slot-value x 'depth) 0)) children))
 
-(defgeneric render (object xy zmin zmax))
 (defmethod render ((component component) xy zmin zmax)
   (with-slots (children offset) component
     (let ((xy (+ xy offset))
@@ -102,15 +93,12 @@
 (defmethod draw ((component component) xy z)
   (declare (ignore component xy z)))
 
-(defgeneric update (object event))
 (defmethod update ((component component) event)
   (declare (ignore component event)))
 
 ;;;
 ;;; Sprites
 ;;;
-
-(defgeneric image (object))
 
 (defclass sprite (component)
   ((image

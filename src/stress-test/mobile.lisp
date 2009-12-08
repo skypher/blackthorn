@@ -62,7 +62,7 @@
   (setf (sdl:frame-rate) 100))
 
 (defmethod game-update :after ((game mobile-game))
-  ;; report the frame reate
+  ;; report the frame rate
   (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
     (set-caption s s)))
 
