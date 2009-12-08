@@ -37,6 +37,7 @@
                         ((:module blackthorn
                                   :components
                                   ((:file "package")
+                                   (:file "public")
                                    (:file "utils")
                                    (:file "graphics")
                                    (:file "component")

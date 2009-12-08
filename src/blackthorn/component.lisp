@@ -100,8 +100,6 @@
 ;;; Sprites
 ;;;
 
-(defgeneric image (object))
-
 (defclass sprite (component)
   ((image
     :accessor image

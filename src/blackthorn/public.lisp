@@ -24,21 +24,140 @@
 
 (in-package :blackthorn)
 
-;; actor.lisp
-(defgeneric veloc (object))
-(defgeneric accel (object))
+;;;
+;;; Games
+;;;
 
-;; component.lisp
-(defgeneric offset (object))
-(defgeneric depth (object))
-(defgeneric parent (object))
-(defgeneric children (object))
-(defgeneric attach (parent child))
-(defgeneric detach (parent child))
-(defgeneric render (object xy zmin zmax))
-(defgeneric update (object event))
+(defgeneric game-root (game)
+  (:documentation
+   "@arg[game]{A @class{game}.}
+    @return{A @class{component}.}
+    @short{Returns the root component of the game simulation tree.}"))
 
-;; event.lisp
+(defgeneric game-view (game)
+  (:documentation
+   "@arg[game]{A @class{game}.}
+    @return{A @class{component}.}
+    @short{Returns the view component of the game simulation.}"))
+
+(defgeneric game-keys (game)
+  (:documentation
+   "@arg[game]{A @class{game}.}
+    @return{A @class{key-event} @class{subcription}.}
+    @short{Returns a subcription which can be used to subscribe to
+    global key events.}"))
+
+(defgeneric game-init (game)
+  (:documentation
+   "@arg[game]{A @class{game}.}
+    @short{Used to initialize a new @class{game} prior to starting the main
+    loop. Users are expected to define a primary method for this generic
+    function.}"))
+
+(defgeneric game-load (game))
+(defgeneric game-save (game))
+
+(defgeneric game-update (game)
+  (:documentation
+   "@arg[game]{A @class{game}.}
+    @short{Called during the main game loop to update the game every frame.
+    A default method is supplied}"))
+
+;;;
+;;; Graphics
+;;;
+
+(defgeneric name (object)
+  (:documentation
+   "@arg[object]{An object.}
+    @return{A symbol.}
+    @short{Returns the name of an object.} Used to uniquely indentify
+    objects in a human readable form."))
+
+(defgeneric size (object)
+  (:documentation
+   "@arg[object]{An object.}
+    @return{A complex number.}
+    @short{Returns the size of an object as a complex number.}
+    @see{x} @see{y}"))
+
+(defgeneric draw (object xy z)
+  (:documentation
+   "@arg[object]{An object.}
+    @arg[xy]{A complex number.}
+    @arg[z]{A real number.}
+    @short{Draws the object at the given position in absolute coordinates.}
+    @see{x} @see{y}"))
+
+;;;
+;;; Components
+;;;
+
+(defgeneric offset (object)
+  (:documentation
+   "@arg[object]{A @class{component}.}
+    @return{A complex number.}
+    @short{Returns the coordinate offset of an object relative to its
+    @fun{parent}.}
+    @see{x} @see{y}"))
+
+(defgeneric depth (object)
+  (:documentation
+   "@arg[object]{A @class{component}.}
+    @return{A real number.}
+    @short{Returns the depth of an object.} Depth is assessed relative to
+    siblings, according to parent. Negative depth is above the parent,
+    positive depth is below the parent."))
+
+(defgeneric parent (object)
+  (:documentation
+   "@arg[object]{A @class{component}.}
+    @return{A @class{component}.}
+    @short{Returns the parent of an object within the game simulation tree.}
+    @see{attach} @see{detach}"))
+
+(defgeneric children (object)
+  (:documentation
+   "@arg[object]{A @class{component}.}
+    @return{A vector of @class{component}.}
+    @short{Returns the children of an object within the game simulation tree.}
+    @see{attach} @see{detach}"))
+
+(defgeneric image (object)
+  (:documentation
+   "@arg[object]{A @class{blt-phys:sprite}.}
+    @return{An @class{image}.}
+    @short{Returns the image of an object.}"))
+
+(defgeneric attach (parent child)
+  (:documentation
+   "@arg[parent]{A @class{component}.}
+    @arg[child]{A @class{component}.}
+    @short{Sets child's @fun{parent} to parent and adds child to
+    parent's @fun{children}.}
+    @see{detach}"))
+
+(defgeneric detach (parent child)
+  (:documentation
+   "@arg[parent]{A @class{component}.}
+    @arg[child]{A @class{component}.}
+    @short{Sets child's @fun{parent} to nil and removes child from
+    parent's @fun{children}.}
+    @see{attach}"))
+
+(defgeneric render (object xy zmin zmax)
+  (:documentation
+   "@arg[object]{A @class{component}.}
+    @arg[xy]{A complex number.}
+    @arg[zmin]{A real number.}
+    @arg[zmax]{A real number.}
+    @short{Draws an object at an absolute coordinate within the specified
+    depth space.} Responsible for rendering all @fun{children} of an object."))
+
+;;;
+;;; Events
+;;;
+
 (defgeneric bound-p (object event))
 (defgeneric bind (object event thunk))
 (defgeneric unbind (object event))
@@ -46,21 +165,10 @@
 (defgeneric subscribe (subscription subscriber))
 (defgeneric unsubscribe (subscription subscriber))
 
-;; game.lisp
-(defgeneric game-root (game))
-(defgeneric game-view (game))
-(defgeneric game-keys (game))
-(defgeneric game-init (game))
-(defgeneric game-load (game))
-(defgeneric game-save (game))
-(defgeneric game-update (game))
+;;;
+;;; Keyboard Input
+;;;
 
-;; graphics.lisp
-(defgeneric name (object))
-(defgeneric size (object))
-(defgeneric draw (object xy z))
-
-;; input.lisp
 (defgeneric event-key (object))
 (defgeneric event-mod (object))
 (defgeneric event-mod-key (object))
@@ -73,3 +181,11 @@
 (defgeneric unbind-key-up (object key))
 (defgeneric dispatch-key-down (object event))
 (defgeneric dispatch-key-up (object event))
+
+;;;
+;;; Actors
+;;;
+
+(defgeneric veloc (object))
+(defgeneric accel (object))
+(defgeneric update (object event))
