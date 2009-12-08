@@ -65,6 +65,10 @@
   (containers:enqueue (event-queue game) (list target event)))
 
 (defun send (target event)
+  "@arg[target]{An @class{event-mixin}.}
+   @arg[event]{An @class{event}.}
+   @short{Schedules an event for dispatch at a future time.} The event will be
+     delivered to the target object during the update portion of the game loop."
   (send-event *game* target event))
 
 (defgeneric event-update (object))

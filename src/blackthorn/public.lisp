@@ -25,6 +25,29 @@
 (in-package :blackthorn)
 
 ;;;
+;;; Utilities
+;;;
+
+(declaim (inline x y))
+(defun x (n)
+  "@arg[n]{A complex number.}
+   @return{The real part of n.}
+   @short{Complex numbers are used to represent 2D coordinates in space.} The
+     x and y coordinates are represented by the real and imaginary portions
+     of the complex number, respectively.
+   @see{y}"
+  (realpart n))
+
+(defun y (n)
+  "@arg[n]{A complex number.}
+   @return{The imaginary part of n.}
+   @short{Complex numbers are used to represent 2D coordinates in space.} The
+     x and y coordinates are represented by the real and imaginary portions
+     of the complex number, respectively.
+   @see{x}"
+  (imagpart n))
+
+;;;
 ;;; Games
 ;;;
 
@@ -158,6 +181,12 @@
 ;;;
 ;;; Events
 ;;;
+
+(defgeneric event-type (event)
+  (:documentation
+   "@arg[event]{An @class{event}.}
+    @return{A symbol.}
+    @short{Returns an event's type.}"))
 
 (defgeneric bound-p (object event)
   (:documentation
