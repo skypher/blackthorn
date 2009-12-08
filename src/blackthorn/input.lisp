@@ -87,12 +87,14 @@
   (with-slots (key-up-handlers) object
     (remhash key key-up-handlers)))
 
+(defgeneric dispatch-key-down (object event))
 (defmethod dispatch-key-down ((object key-mixin) (event key-event))
   (with-slots (key-down-handlers) object
     (let ((handler (gethash (event-key event) key-down-handlers)))
       (when handler
         (funcall handler object event)))))
 
+(defgeneric dispatch-key-up (object event))
 (defmethod dispatch-key-up ((object key-mixin) (event key-event))
   (with-slots (key-up-handlers) object
     (let ((handler (gethash (event-key event) key-up-handlers)))

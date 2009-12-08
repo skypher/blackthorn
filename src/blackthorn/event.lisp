@@ -56,6 +56,7 @@
   (with-slots (handlers) object
     (remhash event handlers)))
 
+(defgeneric dispatch-event (object event))
 (defmethod dispatch-event ((object event-mixin) (event event))
   (with-slots (handlers) object
     (let ((handler (gethash (event-type event) handlers)))

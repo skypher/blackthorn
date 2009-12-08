@@ -43,16 +43,16 @@
 (defgeneric game-keys (game)
   (:documentation
    "@arg[game]{A @class{game}.}
-    @return{A @class{key-event} @class{subcription}.}
+    @return{A @class{key-event} @class{event-subscription}.}
     @short{Returns a subcription which can be used to subscribe to
-    global key events.}"))
+      global key events.}"))
 
 (defgeneric game-init (game)
   (:documentation
    "@arg[game]{A @class{game}.}
     @short{Used to initialize a new @class{game} prior to starting the main
-    loop. Users are expected to define a primary method for this generic
-    function.}"))
+      loop. Users are expected to define a primary method for this generic
+      function.}"))
 
 (defgeneric game-load (game))
 (defgeneric game-save (game))
@@ -61,7 +61,7 @@
   (:documentation
    "@arg[game]{A @class{game}.}
     @short{Called during the main game loop to update the game every frame.
-    A default method is supplied}"))
+      A default method is supplied}"))
 
 ;;;
 ;;; Graphics
@@ -72,7 +72,7 @@
    "@arg[object]{An object.}
     @return{A symbol.}
     @short{Returns the name of an object.} Used to uniquely indentify
-    objects in a human readable form."))
+      objects in a human readable form."))
 
 (defgeneric size (object)
   (:documentation
@@ -106,8 +106,8 @@
    "@arg[object]{A @class{component}.}
     @return{A real number.}
     @short{Returns the depth of an object.} Depth is assessed relative to
-    siblings, according to parent. Negative depth is above the parent,
-    positive depth is below the parent."))
+      siblings, according to parent. Negative depth is above the parent,
+      positive depth is below the parent."))
 
 (defgeneric parent (object)
   (:documentation
@@ -134,7 +134,7 @@
    "@arg[parent]{A @class{component}.}
     @arg[child]{A @class{component}.}
     @short{Sets child's @fun{parent} to parent and adds child to
-    parent's @fun{children}.}
+      parent's @fun{children}.}
     @see{detach}"))
 
 (defgeneric detach (parent child)
@@ -142,7 +142,7 @@
    "@arg[parent]{A @class{component}.}
     @arg[child]{A @class{component}.}
     @short{Sets child's @fun{parent} to nil and removes child from
-    parent's @fun{children}.}
+      parent's @fun{children}.}
     @see{attach}"))
 
 (defgeneric render (object xy zmin zmax)
@@ -152,40 +152,156 @@
     @arg[zmin]{A real number.}
     @arg[zmax]{A real number.}
     @short{Draws an object at an absolute coordinate within the specified
-    depth space.} Responsible for rendering all @fun{children} of an object."))
+      depth space.} Responsible for rendering all @fun{children} of an
+      object."))
 
 ;;;
 ;;; Events
 ;;;
 
-(defgeneric bound-p (object event))
-(defgeneric bind (object event thunk))
-(defgeneric unbind (object event))
-(defgeneric dispatch-event (object event))
-(defgeneric subscribe (subscription subscriber))
-(defgeneric unsubscribe (subscription subscriber))
+(defgeneric bound-p (object event)
+  (:documentation
+   "@arg[object]{An @class{event-mixin}.}
+    @arg[event]{A type of @class{event}.}
+    @return{A generalized boolean.}
+    @short{Returns whether an object has an event handler bound for a given
+      event type.}
+    @see{bind} @see{unbind}"))
+
+(defgeneric bind (object event thunk)
+  (:documentation
+   "@arg[object]{An @class{event-mixin}.}
+    @arg[event]{A type of @class{event}.}
+    @arg[thunk]{A function of two arguments: object, an @class{event-mixin},
+      and event, an @class{event}.}
+    @short{Binds an event handler for the given event type.}
+    @see{bound-p} @see{unbind}"))
+
+(defgeneric unbind (object event)
+  (:documentation
+   "@arg[object]{An @class{event-mixin}.}
+    @arg[event]{A type of @class{event}.}
+    @short{Uninds the event handler for the given event type.}
+    @see{bound-p} @see{bind}"))
+
+(defgeneric subscribe (subscription subscriber)
+  (:documentation
+   "@arg[subscription]{An @class{event-subscription}.}
+    @arg[subscriber]{An @class{event-mixin}.}
+    @short{Adds an object to the list of subscribers to a subscription.}
+    @see{unsubscribe}"))
+
+(defgeneric unsubscribe (subscription subscriber)
+  (:documentation
+   "@arg[subscription]{An @class{event-subscription}.}
+    @arg[subscriber]{An @class{event-mixin}.}
+    @short{Removes an object from the list of subscribers to a subscription.}
+    @see{subscribe}"))
 
 ;;;
 ;;; Keyboard Input
 ;;;
 
-(defgeneric event-key (object))
-(defgeneric event-mod (object))
-(defgeneric event-mod-key (object))
-(defgeneric event-unicode (object))
-(defgeneric bound-key-down-p (object key))
-(defgeneric bind-key-down (object key thunk))
-(defgeneric unbind-key-down (object key))
-(defgeneric bound-key-up-p (object key))
-(defgeneric bind-key-up (object key thunk))
-(defgeneric unbind-key-up (object key))
-(defgeneric dispatch-key-down (object event))
-(defgeneric dispatch-key-up (object event))
+(defgeneric event-key (event)
+  (:documentation
+   "@arg[subscription]{A @class{key-event}.}
+    @return{A symbol.}
+    @short{Returns the key name associated with a key event.}
+    @see{event-mod} @see{event-mod-key} @see{event-unicode}"))
+
+(defgeneric event-mod (event)
+  (:documentation
+   "@arg[subscription]{A @class{key-event}.}
+    @return{An integer.}
+    @short{Returns the bitwise OR of all modifiers associated with a key event.}
+    @see{event-key} @see{event-mod-key} @see{event-unicode}"))
+
+(defgeneric event-mod-key (event)
+  (:documentation
+   "@arg[subscription]{A @class{key-event}.}
+    @return{A list of symbols.}
+    @short{Returns a list of modifiers associated with a key event.}
+    @see{event-key} @see{event-mod} @see{event-unicode}"))
+
+(defgeneric event-unicode (event)
+  (:documentation
+   "@arg[subscription]{A @class{key-event}.}
+    @return{A character.}
+    @short{Returns the character associated with a key event.}
+    @see{event-key} @see{event-mod} @see{event-mod-key}"))
+
+(defgeneric bound-key-down-p (object key)
+  (:documentation
+   "@arg[object]{A @class{key-mixin}.}
+    @arg[event]{A type of @class{key-event}.}
+    @return{A generalized boolean.}
+    @short{Returns whether an object has a key-down event handler bound for a
+      given key.}
+    @see{bind-key-down} @see{unbind-key-down}"))
+
+(defgeneric bind-key-down (object key thunk)
+  (:documentation
+   "@arg[object]{A @class{key-mixin}.}
+    @arg[event]{A type of @class{key-event}.}
+    @arg[thunk]{A function of two arguments: object, a @class{key-mixin},
+      and event, a @class{key-event}.}
+    @short{Binds a key-down event handler for the given key.}
+    @see{bound-key-down-p} @see{unbind-key-down}"))
+
+(defgeneric unbind-key-down (object key)
+  (:documentation
+   "@arg[object]{A @class{key-mixin}.}
+    @arg[event]{A type of @class{key-event}.}
+    @short{Uninds the key-down event handler for the given key.}
+    @see{bound-key-down-p} @see{bind-key-down}"))
+
+(defgeneric bound-key-up-p (object key)
+  (:documentation
+   "@arg[object]{A @class{key-mixin}.}
+    @arg[event]{A type of @class{key-event}.}
+    @return{A generalized boolean.}
+    @short{Returns whether an object has a key-up event handler bound for a
+      given key.}
+    @see{bind-key-up} @see{unbind-key-up}"))
+
+(defgeneric bind-key-up (object key thunk)
+  (:documentation
+   "@arg[object]{A @class{key-mixin}.}
+    @arg[event]{A type of @class{key-event}.}
+    @arg[thunk]{A function of two arguments: object, a @class{key-mixin},
+      and event, a @class{key-event}.}
+    @short{Binds a key-up event handler for the given key.}
+    @see{bound-key-up-p} @see{unbind-key-up}"))
+
+(defgeneric unbind-key-up (object key)
+  (:documentation
+   "@arg[object]{A @class{key-mixin}.}
+    @arg[event]{A type of @class{key-event}.}
+    @short{Uninds the key-up event handler for the given key.}
+    @see{bound-key-up-p} @see{bind-key-up}"))
 
 ;;;
 ;;; Actors
 ;;;
 
-(defgeneric veloc (object))
-(defgeneric accel (object))
-(defgeneric update (object event))
+(defgeneric veloc (object)
+  (:documentation
+   "@arg[object]{A @class{mobile}.}
+    @return{A complex number.}
+    @short{Returns the object's velocity.}
+    @see{accel} @see{x} @see{y}"))
+
+(defgeneric accel (object)
+  (:documentation
+   "@arg[object]{A @class{mobile}.}
+    @return{A complex number.}
+    @short{Returns the object's acceleration.}
+    @see{veloc} @see{x} @see{y}"))
+
+(defgeneric update (object event)
+  (:documentation
+   "@arg[object]{An @class{actor}.}
+    @arg[object]{An update @class{event}.}
+    @short{Event handler for the update event.} This event handler is defined
+      automatically by the @class{actor} class. The default method does
+      nothing."))
