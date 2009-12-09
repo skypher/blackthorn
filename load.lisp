@@ -26,7 +26,8 @@
 (defvar *driver-system* :bunnyslayer)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (when (find-package :swank)
+  (when (and (find-package :swank)
+             (not (eql swank:*communication-style* :spawn)))
     (pushnew :blt-debug *features*)))
 
 ;; Load and run main:
