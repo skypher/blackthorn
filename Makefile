@@ -149,6 +149,11 @@ endif
 load-clozure:
 	ccl --eval "(defparameter *driver-system* \"${system}\")" --load ${driver} -- --${mode}=${file}
 
+.PHONY: slime
+slime:
+	$(MAKE) clean
+	emacs --eval "(progn (slime '${cl}) (while (not (slime-connected-p)) (sleep-for 0 200)) (slime-interactive-eval \"(defparameter *driver-system* \\\"${system}\\\")\") (slime-load-file \"${driver}\"))"
+
 .PHONY: stress
 stress:
 	$(MAKE) system="blackthorn-stress-test" new
