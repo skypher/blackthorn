@@ -193,7 +193,7 @@
         #+blt-debug
         (let ((connection
                (or swank::*emacs-connection* (swank::default-connection))))
-          (when connection
+          (when (and connection (not (eql swank:*communication-style* :spawn)))
             (swank::handle-requests connection t)))
 
         (game-update *game*))))

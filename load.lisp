@@ -27,12 +27,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (when (find-package :swank)
-    (pushnew :blt-swank *features*)))
-
-#+blt-swank
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (when (not (eql swank:*communication-style* :spawn))
-    (pushnew :blt-swank *features*)))
+    (pushnew :blt-debug *features*)))
 
 ;; Load and run main:
 (require :asdf)
