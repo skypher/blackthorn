@@ -40,40 +40,6 @@
               :title-caption title-caption :icon-caption icon-caption)
   (gl:viewport 0 0 (x size) (y size)))
 
-;;;
-;;; Open GL Texture Wrapper
-;;;
-
-(defclass image ()
-  ((name
-    :reader name
-    :initarg :name)
-   (source
-    :initarg :source)
-   texture
-   size)
-  (:documentation
-   "Wrapper over an Open GL texture."))
-
-(defvar *images* (make-hash-table))
-
-(defun unload-graphics ()
-  (gl:delete-textures
-   (loop for image being the hash-values in *images*
-      collect (slot-value image 'texture)
-      do (slot-makunbound image 'texture))))
-
-(defmethod make-instance ((class (eql (find-class 'image)))
-                          &rest initargs &key name source)
-  (or (when name (gethash name *images*))
-      (when (not source) (error "No such image named ~a." name))
-      (let ((source (enough-namestring (truename source))))
-        (setf (gethash name *images*)
-              (apply #'call-next-method class :source source initargs)))))
-
-(defmethod make-instance ((class (eql 'image)) &rest initargs)
-  (apply #'make-instance (find-class 'image) initargs))
-
 (defun load-and-convert-image (source)
   (assert (probe-file source))
   (let* ((image (sdl-image:load-image source))
@@ -95,27 +61,110 @@
          (sdl-base::pixel-data pixels)))
     (values texture surface)))
 
-(defun texture (image)
-  (declare (type image image))
-  (if (slot-boundp image 'texture)
-      (slot-value image 'texture)
-      (with-slots (source) image
+;;;
+;;; Sprite Sheets
+;;;
+
+(defclass sheet ()
+  ((name
+    :reader name
+    :initarg :name)
+   (source
+    :initarg :source)
+   texture
+   (size
+    :reader size)))
+
+(defvar *sheets* (make-hash-table))
+
+(defun unload-graphics ()
+  (gl:delete-textures
+   (loop for sheet being the hash-values in *sheets*
+      collect (slot-value sheet 'texture)
+      do (slot-makunbound sheet 'texture))))
+
+(defmethod make-instance ((class (eql (find-class 'sheet)))
+                          &rest initargs &key name source)
+  (or (when name (gethash name *sheets*))
+      (when (not source) (error "No such sprite-sheet named ~a." name))
+      (let ((sheet (call-next-method)))
+        (setf (gethash (name sheet) *sheets*) sheet))))
+
+(defmethod make-instance ((class (eql 'sheet)) &rest initargs)
+  (apply #'make-instance (find-class 'sheet) initargs))
+
+(defmethod initialize-instance :after ((sheet sheet) &key source)
+  (let ((config (make-pathname :type "config" :defaults source)))
+    (assert (probe-file source) (source) "Source file \"~a\" not found." source)
+    (assert (probe-file config) (config) "Config file \"~a\" not found." config)
+    (let* ((config-sexp
+            (with-open-file (s config) (with-standard-io-syntax (read s))))
+           (name (car config-sexp))
+           (options (cdr config-sexp)))
+      (setf (slot-value sheet 'name) name)
+      (labels ((coord (key alist) (apply #'complex (cdr (assoc key alist))))
+               (div (a b) (complex (/ (x a) (x b)) (/ (y a) (y b)))))
+        (let ((sheet-size (coord :size options)))
+          (iter (for image in (cdr (assoc :images options)))
+                (let ((offset (coord :offset (cdr image)))
+                      (size (coord :size (cdr image))))
+                  (make-instance 'image
+                                 :name (car image)
+                                 :sheet sheet
+                                 :size size
+                                 :tex-offset (div offset sheet-size)
+                                 :tex-size (div size sheet-size)))))))))
+
+(defmethod texture ((sheet sheet))
+  (if (slot-boundp sheet 'texture)
+      (slot-value sheet 'texture)
+      (with-slots (source) sheet
         (multiple-value-bind (texture surface) (load-image-to-texture source)
-          (setf (slot-value image 'texture) texture
-                (slot-value image 'size)
-                (complex (sdl:width surface) (sdl:height surface)))
+          (setf (slot-value sheet 'texture) texture)
           (values texture surface)))))
 
-(defmethod size ((image image))
-  ;; Automatically load the image texture.
-  (texture image)
-  (slot-value image 'size))
+(defmethod activate ((sheet sheet))
+  (gl:bind-texture :texture-2d (texture sheet)))
+
+;;;
+;;; Images
+;;;
+
+(defclass image ()
+  ((name
+    :reader name
+    :initarg :name)
+   (sheet
+    :initarg :sheet
+    :reader sheet)
+   (size
+    :initarg :size
+    :reader size)
+   (tex-offset
+    :initarg :tex-offset
+    :reader tex-offset)
+   (tex-size
+    :initarg :tex-size
+    :reader tex-size)))
+
+(defvar *images* (make-hash-table))
+
+(defmethod make-instance ((class (eql (find-class 'image)))
+                          &rest initargs &key name sheet)
+  (or (when name (gethash name *images*))
+      (unless sheet (error "No such image named ~a." name))
+      (setf (gethash name *images*) (call-next-method))))
+
+(defmethod make-instance ((class (eql 'image)) &rest initargs)
+  (apply #'make-instance (find-class 'image) initargs))
 
 (defmethod draw ((image image) xy z)
-  (let* ((size (size image))
-         (x1 (x xy)) (x2 (+ x1 (x size)))
-         (y1 (y xy)) (y2 (+ y1 (y size))))
-    (gl:tex-coord 0 0) (gl:vertex x1 y1 z)
-    (gl:tex-coord 1 0) (gl:vertex x2 y1 z)
-    (gl:tex-coord 1 1) (gl:vertex x2 y2 z)
-    (gl:tex-coord 0 1) (gl:vertex x1 y2 z)))
+  (with-slots (size tex-offset tex-size) image
+    (let* ((x1 (x xy)) (x2 (+ x1 (x size)))
+           (y1 (y xy)) (y2 (+ y1 (y size)))
+           (tx1 (x tex-offset)) (tx2 (+ tx1 (x tex-size)))
+           (ty1 (y tex-offset)) (ty2 (+ ty1 (y tex-size))))
+      (gl:tex-coord tx1 ty1) (gl:vertex x1 y1 z)
+      (gl:tex-coord tx2 ty1) (gl:vertex x2 y1 z)
+      (gl:tex-coord tx2 ty2) (gl:vertex x2 y2 z)
+      (gl:tex-coord tx1 ty2) (gl:vertex x1 y2 z))))

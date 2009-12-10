@@ -26,9 +26,13 @@
 (defvar *driver-system* :bunnyslayer)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (when (and (find-package :swank)
-             (not (eql swank:*communication-style* :spawn)))
-    (pushnew :blt-debug *features*)))
+  (when (find-package :swank)
+    (pushnew :blt-swank *features*)))
+
+#+blt-swank
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (when (not (eql swank:*communication-style* :spawn))
+    (pushnew :blt-swank *features*)))
 
 ;; Load and run main:
 (require :asdf)

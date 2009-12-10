@@ -40,15 +40,17 @@
 (defmethod game-init ((game mobile-game))
   (let ((root (make-instance 'component))
         (size #c(800 600))
-        (texture-pathname
-         (merge-pathnames "disp/texture.png" *resource-directory-pathname*)))
+        (sheet
+         (make-instance
+          'sheet
+          :source
+          (merge-pathnames "disp/sheet.png" *resource-directory-pathname*))))
     (loop for i from 0 to (test-size game)
        do (make-instance
            'mobile-object :parent root
            :offset (complex (random (x size)) (random (y size)))
            :veloc (complex (- (random 1.0) 0.5) (- (random 1.0) 0.5))
-           :image (make-instance 'image :name 'tex
-                                 :source texture-pathname)))
+           :image (make-instance 'image :name :explosion)))
     (let ((keys (make-instance 'actor)))
       (bind keys :key-down #'report-event)
       (bind keys :key-up #'report-event)
@@ -60,6 +62,9 @@
 (defmethod game-init :after ((game mobile-game))
   ;; uncork the frame rate and see how fast we go
   (setf (sdl:frame-rate) 100))
+
+(defmethod render :before ((game mobile-game) xy zmin zmax)
+  (activate (make-instance 'sheet :name :sheet)))
 
 (defmethod game-update :after ((game mobile-game))
   ;; report the frame rate

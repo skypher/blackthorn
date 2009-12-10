@@ -36,7 +36,7 @@
 
 (defpackage :blackthorn-graphics
   (:nicknames :blt-gfx)
-  (:use :cl)
+  (:use :cl :iter)
   (:import-from :sdl :set-caption)
   (:export
 
@@ -44,6 +44,8 @@
 
    ;; graphics.lisp
    :window
+   :sheet
+   :activate
    :image
    :unload-graphics
    :size
@@ -130,6 +132,8 @@
 
    ;; graphics.lisp
    :window
+   :sheet
+   :activate
    :image
    :size
    :x

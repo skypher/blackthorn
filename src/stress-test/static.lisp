@@ -30,14 +30,16 @@
 (defmethod game-init ((game static-game))
   (let ((root (make-instance 'component))
         (size #c(800 600))
-        (texture-pathname
-         (merge-pathnames "disp/texture.png" *resource-directory-pathname*)))
+        (sheet
+         (make-instance
+          'sheet
+          :source
+          (merge-pathnames "disp/sheet.png" *resource-directory-pathname*))))
     (loop for x from 0 to (x size) by 16
        do (loop for y from 0 to (y size) by 16
              do (make-instance
                  'sprite :parent root :offset (complex x y)
-                 :image (make-instance 'image :name 'tex
-                                       :source texture-pathname))))
+                 :image (make-instance 'image :name :explosion))))
     (setf (game-root game) root
           (game-view game)
           (make-instance 'component :offset #c(0 0) :size size))))
@@ -45,6 +47,9 @@
 (defmethod game-init :after ((game static-game))
   ;; uncork the frame rate and see how fast we go
   (setf (sdl:frame-rate) 100))
+
+(defmethod render :before ((game static-game) xy zmin zmax)
+  (activate (make-instance 'sheet :name :sheet)))
 
 (defmethod game-update :after ((game static-game))
   ;; report the frame reate
