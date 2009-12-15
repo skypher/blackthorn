@@ -41,7 +41,7 @@
   #+darwin
   (let* ((root (truename *default-pathname-defaults*))
          (exe (truename (directory-namestring (command-line-executable))))
-         (resources (merge-pathnames #p"../Resources" exe)))
+         (resources (merge-pathnames #p"../Resources/" exe)))
     (if (fad:directory-exists-p resources)
         (setf *default-pathname-defaults* exe
               *resource-pathname-defaults* resources)
