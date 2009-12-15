@@ -44,7 +44,7 @@
          (make-instance
           'sheet
           :source
-          (merge-pathnames "disp/sheet.png" *resource-directory-pathname*))))
+          (merge-pathnames "disp/sheet.png" *resource-pathname-defaults*))))
     (loop for i from 0 to (test-size game)
        do (make-instance
            'mobile-object :parent root

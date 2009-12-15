@@ -213,9 +213,7 @@
   (:export
 
    ;; main.lisp
-   :*resource-directory-pathname*
-   :*database-pathname*
-   :*save-file-pathname*
+   :*resource-pathname-defaults*
    :main
 
    ))

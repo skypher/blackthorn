@@ -34,7 +34,7 @@
          (make-instance
           'sheet
           :source
-          (merge-pathnames "disp/sheet.png" *resource-directory-pathname*))))
+          (merge-pathnames "disp/sheet.png" *resource-pathname-defaults*))))
     (loop for x from 0 to (x size) by 16
        do (loop for y from 0 to (y size) by 16
              do (make-instance

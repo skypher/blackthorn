@@ -29,39 +29,23 @@
 ;;; System paths
 ;;;
 
-(defvar *resource-directory-pathname*
+(defvar *resource-pathname-defaults*
   "The root directory which contains resources for the game. Normally, this
    is equivalent to *default-pathname-defaults*, but in some situations,
    e.g. Mac OS X applications, this refers to a different location.")
 
-(defvar *database-pathname* (make-pathname :directory '(:relative "game.db"))
-  "The directory to use as the game database. Considered relative to
-   *resource-directory-pathname*.")
-
-(defvar *save-file-pathname* "game.btg"
-  "The save file pathname. Considered relative to
-   *resource-directory-pathname*.")
 
 (defun setup-paths ()
-  (setf *resource-directory-pathname* *default-pathname-defaults*)
+  #-darwin
+  (setf *resource-pathname-defaults* (truename *default-pathname-defaults*))
   #+darwin
-  (let* ((executable
-          (truename
-           (merge-pathnames
-            (make-pathname :directory
-                           (pathname-directory (command-line-executable))))))
-         (resources
-          (merge-pathnames
-           (make-pathname :directory '(:relative :up "Resources"))
-           executable)))
-    (when (fad:directory-exists-p resources)
-      (setf *default-pathname-defaults* executable
-            *resource-directory-pathname* (truename resources))))
-  (setf *database-pathname*
-        (merge-pathnames *database-pathname* *resource-directory-pathname*)
-        *save-file-pathname*
-        (merge-pathnames *save-file-pathname*
-                         *resource-directory-pathname*)))
+  (let* ((root (truename *default-pathname-defaults*))
+         (exe (truename (directory-namestring (command-line-executable))))
+         (resources (merge-pathnames #p"../Resources" exe)))
+    (if (fad:directory-exists-p resources)
+        (setf *default-pathname-defaults* exe
+              *resource-pathname-defaults* resources)
+        (setf *resource-pathname-defaults* root))))
 
 ;;;
 ;;; Command-line option parsing
@@ -146,13 +130,6 @@
   ;; Initialization:
   (setup-paths)
   (load-dlls)
-
-  (let* ((options
-          (cli-parser:cli-parse (command-line-arguments) (cli-options)))
-         (mode (cli-get-mode options))
-         (file (or (gethash mode options) *save-file-pathname*)))
-    ;; do more with mode
-    (setf *save-file-pathname* file))
 
   (sdl:with-init ()
     (unless *game* (error "No game specified.~%"))

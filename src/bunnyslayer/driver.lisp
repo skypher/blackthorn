@@ -70,7 +70,7 @@
          (make-instance
           'sheet
           :source
-          (merge-pathnames "disp/sheet.png" *resource-directory-pathname*))))
+          (merge-pathnames "disp/sheet.png" *resource-pathname-defaults*))))
     (let ((hero (make-instance
                  'hero :parent root :offset (/ size 2)
                  :image (make-instance 'image :name :hero))))
