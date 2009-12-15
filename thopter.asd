@@ -23,36 +23,21 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(in-package :blackthorn-stress-test)
+(defpackage :thopter-asd
+  (:use :cl :asdf))
 
-(defclass static-game (game) ())
+(in-package :thopter-asd)
 
-(defmethod game-init ((game static-game))
-  (let ((root (make-instance 'component))
-        (size #c(800 600)))
-    (setf (game-root game) root
-          (game-view game) (make-instance 'component :size size)
-          (game-sheet game)
-          (make-instance 'sheet :source (resource "disp/sheet.png")))
-    (loop for x from 0 to (x size) by 16
-       do (loop for y from 0 to (y size) by 16
-             do (make-instance
-                 'sprite :parent root :offset (complex x y)
-                 :image (make-instance 'image :name :explosion))))))
-
-(defmethod game-init :after ((game static-game))
-  ;; uncork the frame rate and see how fast we go
-  (setf (sdl:frame-rate) 100))
-
-(defmethod game-update :after ((game static-game))
-  ;; report the frame reate
-  (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
-    (set-caption s s)))
-
-;; For interactive use:
-(defun static-test ()
-  (let ((*game* (make-instance 'static-game)))
-    (main :exit-when-done nil)))
-
-;; For non-interactive use:
-;(defparameter *game* (make-instance 'static-game))
+(defsystem thopter
+  :name "Thopter"
+  :author "Elliott Slaughter <elliottslaughter@gmail.com>"
+  :version "0.2"
+  :description "Thopter, a shooter game."
+  :components ((:module src
+                        :components
+                        ((:module thopter
+                                  :components
+                                  ((:file "package")
+                                   (:file "thopter"))
+                                  :serial t))))
+  :depends-on (:blackthorn))

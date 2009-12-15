@@ -67,7 +67,7 @@
   (let ((root (make-instance 'component))
         (size #c(800 600)))
     (setf (game-root game) root
-          (game-view game) (make-instance 'component :offset #c(0 0) :size size)
+          (game-view game) (make-instance 'component :size size)
           (game-sheet game)
           (make-instance 'sheet :source (resource "disp/sheet.png")))
     (let ((hero (make-instance

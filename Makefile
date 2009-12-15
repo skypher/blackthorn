@@ -51,7 +51,7 @@ endif
 endif
 
 # Which ASDF system to load:
-system := bunnyslayer
+system := thopter
 
 # Stardard drivers:
 prop := property.lisp
