@@ -65,22 +65,15 @@
 
 (defmethod game-init ((game bunnyslayer-game))
   (let ((root (make-instance 'component))
-        (size #c(800 600))
-        (sheet
-         (make-instance
-          'sheet
-          :source
-          (merge-pathnames "disp/sheet.png" *resource-pathname-defaults*))))
+        (size #c(800 600)))
+    (setf (game-root game) root
+          (game-view game) (make-instance 'component :offset #c(0 0) :size size)
+          (game-sheet game)
+          (make-instance 'sheet :source (resource "disp/sheet.png")))
     (let ((hero (make-instance
                  'hero :parent root :offset (/ size 2)
                  :image (make-instance 'image :name :hero))))
-      (subscribe (game-keys game) hero))
-    (setf (game-root game) root
-          (game-view game)
-          (make-instance 'component :offset #c(0 0) :size size))))
-
-(defmethod render :before ((game bunnyslayer-game) xy zmin zmax)
-  (activate (make-instance 'sheet :name :sheet)))
+      (subscribe (game-keys game) hero))))
 
 (defmethod game-update :after ((game bunnyslayer-game))
   ;; report the frame reate

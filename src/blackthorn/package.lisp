@@ -105,6 +105,7 @@
    :*game*
    :game-root
    :game-view
+   :game-sheet
    :game-keys
    :game-init
    :game-load
@@ -214,6 +215,7 @@
 
    ;; main.lisp
    :*resource-pathname-defaults*
+   :resource
    :main
 
    ))

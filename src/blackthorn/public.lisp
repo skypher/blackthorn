@@ -63,6 +63,12 @@
     @return{A @class{component}.}
     @short{Returns the view component of the game simulation.}"))
 
+(defgeneric game-view (game)
+  (:documentation
+   "@arg[game]{A @class{game}.}
+    @return{A @class{sheet}.}
+    @short{Returns the active sheet of the game.}"))
+
 (defgeneric game-keys (game)
   (:documentation
    "@arg[game]{A @class{game}.}

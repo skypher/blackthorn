@@ -39,12 +39,11 @@
 
 (defmethod game-init ((game mobile-game))
   (let ((root (make-instance 'component))
-        (size #c(800 600))
-        (sheet
-         (make-instance
-          'sheet
-          :source
-          (merge-pathnames "disp/sheet.png" *resource-pathname-defaults*))))
+        (size #c(800 600)))
+    (setf (game-root game) root
+          (game-view game) (make-instance 'component :offset #c(0 0) :size size)
+          (game-sheet game)
+          (make-instance 'sheet :source (resource "disp/sheet.png")))
     (loop for i from 0 to (test-size game)
        do (make-instance
            'mobile-object :parent root
@@ -54,17 +53,11 @@
     (let ((keys (make-instance 'actor)))
       (bind keys :key-down #'report-event)
       (bind keys :key-up #'report-event)
-      (subscribe (game-keys game) keys))
-    (setf (game-root game) root
-          (game-view game)
-          (make-instance 'component :offset #c(0 0) :size size))))
+      (subscribe (game-keys game) keys))))
 
 (defmethod game-init :after ((game mobile-game))
   ;; uncork the frame rate and see how fast we go
   (setf (sdl:frame-rate) 100))
-
-(defmethod render :before ((game mobile-game) xy zmin zmax)
-  (activate (make-instance 'sheet :name :sheet)))
 
 (defmethod game-update :after ((game mobile-game))
   ;; report the frame rate

@@ -32,6 +32,9 @@
    (view
     :accessor game-view
     :initform nil)
+   (sheet
+    :accessor game-sheet
+    :initform nil)
    (keys
     :accessor game-keys
     :initform (make-instance 'event-subscription :types '(:key-down :key-up)))
@@ -50,6 +53,7 @@
       (warn "No view object for game ~a: Unable to initialize window.~%" game)))
 
 (defmethod render ((game game) xy zmin zmax)
+  (activate (game-sheet game))
   (with-slots (offset size) (game-view game)
     (gl:with-pushed-matrix
       (gl:ortho 0 (x size) (y size) 0 -1 1)

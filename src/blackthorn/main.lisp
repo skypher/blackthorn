@@ -34,7 +34,6 @@
    is equivalent to *default-pathname-defaults*, but in some situations,
    e.g. Mac OS X applications, this refers to a different location.")
 
-
 (defun setup-paths ()
   #-darwin
   (setf *resource-pathname-defaults* (truename *default-pathname-defaults*))
@@ -46,6 +45,9 @@
         (setf *default-pathname-defaults* exe
               *resource-pathname-defaults* resources)
         (setf *resource-pathname-defaults* root))))
+
+(defun resource (pathname)
+  (merge-pathnames pathname *resource-pathname-defaults*))
 
 ;;;
 ;;; Command-line option parsing
