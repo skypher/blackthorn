@@ -71,9 +71,13 @@
           (game-sheet game)
           (make-instance 'sheet :source (resource "disp/thopter.png")))
     (let ((thopter (make-instance
-                 'thopter :parent root :offset (/ size 2)
+                 'thopter :parent root
+                 :offset (complex (/ (x size) 2) (* (y size) 3/4))
                  :image (make-instance 'image :name :thopter))))
-      (subscribe (game-keys game) thopter))))
+      (subscribe (game-keys game) thopter))
+    (make-instance 'sprite :parent root
+                   :offset (complex (/ (x size) 2) (/ (y size) 4))
+                   :image (make-instance 'image :name :enemy))))
 
 (defmethod game-update :after ((game thopter-game))
   ;; report the frame reate
