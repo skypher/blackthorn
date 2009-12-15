@@ -97,11 +97,9 @@
   (let ((config (make-pathname :type "config" :defaults source)))
     (assert (probe-file source) (source) "Source file \"~a\" not found." source)
     (assert (probe-file config) (config) "Config file \"~a\" not found." config)
-    (let* ((config-sexp
-            (with-open-file (s config) (with-standard-io-syntax (read s))))
-           (name (car config-sexp))
-           (options (cdr config-sexp)))
-      (setf (slot-value sheet 'name) name)
+    (let ((options
+           (with-open-file (s config) (with-standard-io-syntax (read s)))))
+      (setf (slot-value sheet 'name) (cadr (assoc :name options)))
       (labels ((coord (key alist) (apply #'complex (cdr (assoc key alist))))
                (div (a b) (complex (/ (x a) (x b)) (/ (y a) (y b)))))
         (let ((sheet-size (coord :size options)))

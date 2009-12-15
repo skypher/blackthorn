@@ -28,6 +28,7 @@
 (defclass thopter-game (game) ())
 
 (defclass thopter (sprite mobile) ())
+(defclass bullet (sprite mobile) ())
 
 (defmethod initialize-instance :after ((thopter thopter) &key)
   (bind-key-down thopter :sdl-key-up    #'move-north)
@@ -37,7 +38,8 @@
   (bind-key-down thopter :sdl-key-left  #'move-west)
   (bind-key-up   thopter :sdl-key-left  #'stop-west)
   (bind-key-down thopter :sdl-key-right #'move-east)
-  (bind-key-up   thopter :sdl-key-right #'stop-east))
+  (bind-key-up   thopter :sdl-key-right #'stop-east)
+  (bind-key-down thopter :sdl-key-space #'shoot))
 
 (defmethod move-north ((thopter thopter) event)
   (incf (veloc thopter) #c(0 -2)))
@@ -63,6 +65,13 @@
 (defmethod stop-east ((thopter thopter) event)
   (decf (veloc thopter) #c(2 0)))
 
+(defmethod shoot ((thopter thopter) event)
+  (with-slots (parent offset size veloc) thopter
+    (make-instance 'bullet :parent parent 
+		   :offset (+ offset (/ (x size) 2))
+		   :veloc (+ veloc #c(0 -4))
+		   :image (make-instance 'image :name :bullet))))
+
 (defmethod game-init ((game thopter-game))
   (let ((root (make-instance 'component))
         (size #c(800 600)))
@@ -76,7 +85,7 @@
                  :image (make-instance 'image :name :thopter))))
       (subscribe (game-keys game) thopter))
     (make-instance 'sprite :parent root
-                   :offset (complex (/ (x size) 2) (/ (y size) 4))
+                   :offset (complex (/ (x size) 2) (/ (y size) 4)) :depth 1
                    :image (make-instance 'image :name :enemy))))
 
 (defmethod game-update :after ((game thopter-game))
