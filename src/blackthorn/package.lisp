@@ -100,6 +100,15 @@
    :bind-key-up
    :unbind-key-up
 
+   ;; actor.lisp
+   :actor
+   :mobile
+   :veloc
+   :accel
+   :collidable
+   :collide
+   :event-hit
+
    ;; game.lisp
    :game
    :*game*
@@ -112,12 +121,6 @@
    :game-save
    :game-update
    :send
-
-   ;; actor.lisp
-   :actor
-   :mobile
-   :veloc
-   :accel
 
    ))
 
@@ -181,6 +184,15 @@
    :bind-key-up
    :unbind-key-up
 
+   ;; actor.lisp
+   :actor
+   :mobile
+   :veloc
+   :accel
+   :collidable
+   :collide
+   :event-hit
+
    ;; game.lisp
    :game
    :*game*
@@ -192,12 +204,6 @@
    :game-save
    :game-update
    :send
-
-   ;; actor.lisp
-   :actor
-   :mobile
-   :veloc
-   :accel
 
    ))
 

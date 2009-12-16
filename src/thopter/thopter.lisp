@@ -27,8 +27,9 @@
 
 (defclass thopter-game (game) ())
 
-(defclass thopter (sprite mobile) ())
-(defclass bullet (sprite mobile) ())
+(defclass thopter (sprite mobile collidable) ())
+(defclass bullet (sprite mobile collidable) ())
+(defclass enemy (sprite mobile collidable) ())
 
 (defmethod initialize-instance :after ((thopter thopter) &key)
   (bind-key-down thopter :sdl-key-up    #'move-north)
@@ -68,9 +69,13 @@
 (defmethod shoot ((thopter thopter) event)
   (with-slots (parent offset size veloc) thopter
     (make-instance 'bullet :parent parent 
-                   :offset (+ offset (/ (x size) 2)) :depth -1
+                   :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
                    :veloc (+ veloc #c(0 -5))
                    :image (make-instance 'image :name :bullet))))
+
+(defmethod collide ((bullet bullet) event)
+  (when (typep (event-hit event) 'enemy)
+    (detach (parent bullet) bullet)))
 
 (defmethod game-init ((game thopter-game))
   (let ((root (make-instance 'component))
@@ -84,9 +89,11 @@
                  :offset (complex (/ (x size) 2) (* (y size) 3/4))
                  :image (make-instance 'image :name :thopter))))
       (subscribe (game-keys game) thopter))
-    (make-instance 'sprite :parent root
-                   :offset (complex (/ (x size) 2) (/ (y size) 4)) :depth 1
-                   :image (make-instance 'image :name :enemy))))
+    (loop for i from -128 to 128 by 64
+       do (make-instance 'enemy :parent root
+                         :offset (complex (+ (/ (x size) 2) i) (/ (y size) 4))
+                         :depth 1
+                         :image (make-instance 'image :name :enemy)))))
 
 (defmethod game-update :after ((game thopter-game))
   ;; report the frame reate

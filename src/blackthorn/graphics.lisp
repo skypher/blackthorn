@@ -83,8 +83,7 @@
       collect (slot-value sheet 'texture)
       do (slot-makunbound sheet 'texture))))
 
-(defmethod make-instance ((class (eql (find-class 'sheet)))
-                          &rest initargs &key name source)
+(defmethod make-instance ((class (eql (find-class 'sheet))) &key name source)
   (or (when name (gethash name *sheets*))
       (when (not source) (error "No such sprite-sheet named ~a." name))
       (let ((sheet (call-next-method)))
@@ -147,8 +146,7 @@
 
 (defvar *images* (make-hash-table))
 
-(defmethod make-instance ((class (eql (find-class 'image)))
-                          &rest initargs &key name sheet)
+(defmethod make-instance ((class (eql (find-class 'image))) &key name sheet)
   (or (when name (gethash name *images*))
       (unless sheet (error "No such image named ~a." name))
       (setf (gethash name *images*) (call-next-method))))

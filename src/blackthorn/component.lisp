@@ -71,11 +71,13 @@
   `(loop for ,var across (slot-value ,component 'children)
       do (progn ,@body)))
 
-(defun walk-tree (component pre &optional post)
-  (when pre (funcall pre component))
-  (do-children (child component)
-    (walk-tree child pre post))
-  (when post (funcall post component)))
+(defun walk-tree (component func &optional test (xy #c(0 0)))
+  (when (or (not test) (funcall test component))
+    (with-slots (offset) component
+      (let ((xy (when xy (+ xy offset))))
+        (funcall func component xy)
+        (do-children (child component)
+          (walk-tree child func test xy))))))
 
 (defun first-neg-depth (children)
   (position-if #'(lambda (x) (< (slot-value x 'depth) 0)) children))

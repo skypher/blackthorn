@@ -53,3 +53,48 @@
   (with-slots (offset veloc accel) mobile
     (incf veloc accel)
     (incf offset veloc)))
+
+;;;
+;;; Collidables
+;;;
+
+(defclass collidable (actor)
+  ())
+
+(defgeneric collide (object event))
+(defmethod collide (object event)
+  (declare (ignore object event)))
+
+(defmethod initialize-instance :after ((collidable collidable) &key)
+  (bind collidable :collide #'collide))
+
+(defgeneric non-collidable-ancestor (object xy))
+(defmethod non-collidable-ancestor ((component component) xy)
+  (with-slots (offset) component
+    (values component (- xy offset))))
+
+(defmethod non-collidable-ancestor ((collidable collidable) xy)
+  (with-slots (parent offset) collidable
+    (if parent
+        (non-collidable-ancestor parent (- xy offset))
+        (values collidable (- xy offset)))))
+
+(defgeneric collide-p (o1 o2 xy1 xy2))
+(defmethod collide-p ((o1 collidable) o2 xy1 xy2)
+  (declare (ignore o1 o2 xy1 xy2)))
+
+(defmethod collide-p ((o1 collidable) (o2 collidable) xy1 xy2)
+  (let ((x1 (x xy1)) (y1 (y xy1))
+        (x2 (x xy2)) (y2 (y xy2))
+        (w1 (x (size o1))) (h1 (y (size o1)))
+        (w2 (x (size o2))) (h2 (y (size o2))))
+    (not (or (<= (+ x1 w1) x2)
+             (<= (+ x2 w2) x1)
+             (<= (+ y1 h1) y2)
+             (<= (+ y2 h2) y1)))))
+
+(defclass collision-event (event)
+  ((type :initform :collide)
+   (hit
+    :reader event-hit
+    :initarg :hit)))
