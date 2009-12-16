@@ -29,7 +29,15 @@
 
 (defclass thopter (sprite mobile collidable) ())
 (defclass bullet (sprite mobile collidable) ())
-(defclass enemy (sprite mobile collidable) ())
+(defclass enemy (sprite mobile collidable)
+  ((health
+    :accessor health
+    :initarg :health
+    :initform 0)))
+(defclass explosion (sprite mobile collidable)
+  ((ttl
+    :initarg :ttl
+    :initform 0)))
 
 (defmethod initialize-instance :after ((thopter thopter) &key)
   (bind-key-down thopter :sdl-key-up    #'move-north)
@@ -77,6 +85,24 @@
   (when (typep (event-hit event) 'enemy)
     (detach (parent bullet) bullet)))
 
+(defmethod collide ((enemy enemy) event)
+  (with-slots (parent offset depth veloc health) enemy
+    (when (typep (event-hit event) 'bullet)
+      (decf health)
+      (incf veloc (/ (veloc (event-hit event)) 20))
+      (when (<= health 0)
+        (make-instance 'explosion :parent parent
+                       :offset offset :depth depth :veloc veloc
+                       :image (make-instance 'image :name :explosion)
+                       :ttl 10)
+        (detach parent enemy)))))
+
+(defmethod update ((explosion explosion) event)
+  (with-slots (ttl) explosion
+    (decf ttl)
+    (when (<= ttl 0)
+      (detach (parent explosion) explosion))))
+
 (defmethod game-init ((game thopter-game))
   (let ((root (make-instance 'component))
         (size #c(800 600)))
@@ -85,15 +111,16 @@
           (game-sheet game)
           (make-instance 'sheet :source (resource "disp/thopter.png")))
     (let ((thopter (make-instance
-                 'thopter :parent root
-                 :offset (complex (/ (x size) 2) (* (y size) 3/4))
-                 :image (make-instance 'image :name :thopter))))
+                    'thopter :parent root
+                    :offset (complex (/ (x size) 2) (* (y size) 3/4))
+                    :image (make-instance 'image :name :thopter))))
       (subscribe (game-keys game) thopter))
     (loop for i from -128 to 128 by 64
        do (make-instance 'enemy :parent root
                          :offset (complex (+ (/ (x size) 2) i) (/ (y size) 4))
                          :depth 1
-                         :image (make-instance 'image :name :enemy)))))
+                         :image (make-instance 'image :name :enemy)
+                         :health 4))))
 
 (defmethod game-update :after ((game thopter-game))
   ;; report the frame reate

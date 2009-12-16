@@ -156,8 +156,8 @@
 
 (defmethod draw ((image image) xy z)
   (with-slots (size tex-offset tex-size) image
-    (let* ((x1 (x xy)) (x2 (+ x1 (x size)))
-           (y1 (y xy)) (y2 (+ y1 (y size)))
+    (let* ((x1 (truncate (x xy))) (x2 (+ x1 (x size)))
+           (y1 (truncate (y xy))) (y2 (+ y1 (y size)))
            (tx1 (x tex-offset)) (tx2 (+ tx1 (x tex-size)))
            (ty1 (y tex-offset)) (ty2 (+ ty1 (y tex-size))))
       (gl:tex-coord tx1 ty1) (gl:vertex x1 y1 z)
