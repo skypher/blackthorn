@@ -68,9 +68,9 @@
 (defmethod shoot ((thopter thopter) event)
   (with-slots (parent offset size veloc) thopter
     (make-instance 'bullet :parent parent 
-		   :offset (+ offset (/ (x size) 2))
-		   :veloc (+ veloc #c(0 -4))
-		   :image (make-instance 'image :name :bullet))))
+                   :offset (+ offset (/ (x size) 2)) :depth -1
+                   :veloc (+ veloc #c(0 -5))
+                   :image (make-instance 'image :name :bullet))))
 
 (defmethod game-init ((game thopter-game))
   (let ((root (make-instance 'component))

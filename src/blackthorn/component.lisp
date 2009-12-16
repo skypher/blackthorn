@@ -80,7 +80,7 @@
           (n (array-dimension children 0)))
       (if (not (zerop n))
           (let ((median (or (first-neg-depth children) n))
-                (dz (/ (- zmax zmin) n)))
+                (dz (/ (- zmax zmin) 2.0d0 n)))
             (iter (for child in-vector children below median)
                   (for z initially zmax then (- z dz))
                   (render child xy (- z dz) z))
