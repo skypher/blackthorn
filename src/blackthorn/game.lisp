@@ -65,7 +65,11 @@
 ;;;
 
 (defgeneric send-event (game target event))
-(defmethod send-event ((game game) target event)
+
+(defmethod send-event ((game game) target (event event))
+  (declare (ignore game target event)))
+
+(defmethod send-event ((game game) (target event-mixin) (event event))
   (containers:enqueue (event-queue game) (list target event)))
 
 (defun send (target event)
@@ -75,10 +79,10 @@
      delivered to the target object during the update portion of the game loop."
   (send-event *game* target event))
 
-(defgeneric event-update (object))
-
 (defmethod game-update ((game game))
-  (labels ((apply-dispatch-event (args) (apply #'dispatch-event args)))
-    (event-update (game-root game))
+  (labels ((enqueue-update (actor)
+             (send actor (make-instance 'event :type :update)))
+           (apply-dispatch-event (args) (apply #'dispatch-event args)))
+    (walk-tree (game-root game) #'enqueue-update)
     (containers:iterate-elements (event-queue game) #'apply-dispatch-event)
     (containers:empty! (event-queue game))))

@@ -35,13 +35,6 @@
 (defmethod initialize-instance :after ((actor actor) &key)
   (bind actor :update #'update))
 
-(defmethod event-update ((component component))
-  (do-children (child component)
-    (event-update child)))
-
-(defmethod event-update :before ((actor actor))
-  (send actor (make-instance 'event :type :update)))
-
 ;;;
 ;;; Mobiles
 ;;;
