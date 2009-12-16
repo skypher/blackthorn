@@ -110,6 +110,10 @@
   (when image
     (setf (size sprite) (size image))))
 
+(defmethod (setf image) :after (image (sprite sprite))
+  (when image
+    (setf (size sprite) (size image))))
+
 (defmethod draw ((sprite sprite) xy z)
   (with-slots (image) sprite
     (draw image xy z)))
