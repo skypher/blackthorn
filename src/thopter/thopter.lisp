@@ -81,6 +81,20 @@
                    :veloc (+ veloc #c(0 -5))
                    :image (make-instance 'image :name :bullet))))
 
+(defmethod update ((bullet bullet) event)
+  ;; TODO: doesn't work for nested objects. Need absolute-offset.
+  (with-slots (parent offset size) bullet
+    (with-slots ((view-offset offset) (view-size size)) (game-view *game*)
+      (let ((x1 (x offset)) (y1 (y offset))
+            (x2 (x view-offset)) (y2 (y view-offset))
+            (w1 (x size)) (h1 (y size))
+            (w2 (x view-size)) (h2 (y view-size)))
+        (when (or (<= (+ x1 w1) x2)
+                  (<= (+ x2 w2) x1)
+                  (<= (+ y1 h1) y2)
+                  (<= (+ y2 h2) y1))
+          (detach parent bullet))))))
+
 (defmethod collide ((bullet bullet) event)
   (when (typep (event-hit event) 'enemy)
     (detach (parent bullet) bullet)))
