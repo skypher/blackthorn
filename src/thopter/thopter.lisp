@@ -27,7 +27,11 @@
 
 (defclass thopter-game (game) ())
 
-(defclass thopter (sprite mobile collidable) ())
+(defclass thopter (sprite mobile collidable)
+  ((health
+    :accessor health
+    :initarg :health
+    :initform 0)))
 (defclass bullet (sprite mobile collidable) ())
 (defclass enemy (sprite mobile collidable)
   ((health
@@ -51,34 +55,46 @@
   (bind-key-down thopter :sdl-key-space #'shoot))
 
 (defmethod move-north ((thopter thopter) event)
-  (incf (veloc thopter) #c(0 -2)))
+  (incf (veloc thopter) #c(0 -4)))
 
 (defmethod stop-north ((thopter thopter) event)
-  (decf (veloc thopter) #c(0 -2)))
+  (decf (veloc thopter) #c(0 -4)))
 
 (defmethod move-south ((thopter thopter) event)
-  (incf (veloc thopter) #c(0 2)))
+  (incf (veloc thopter) #c(0 4)))
 
 (defmethod stop-south ((thopter thopter) event)
-  (decf (veloc thopter) #c(0 2)))
+  (decf (veloc thopter) #c(0 4)))
 
 (defmethod move-west ((thopter thopter) event)
-  (incf (veloc thopter) #c(-2 0)))
+  (incf (veloc thopter) #c(-4 0)))
 
 (defmethod stop-west ((thopter thopter) event)
-  (decf (veloc thopter) #c(-2 0)))
+  (decf (veloc thopter) #c(-4 0)))
 
 (defmethod move-east ((thopter thopter) event)
-  (incf (veloc thopter) #c(2 0)))
+  (incf (veloc thopter) #c(4 0)))
 
 (defmethod stop-east ((thopter thopter) event)
-  (decf (veloc thopter) #c(2 0)))
+  (decf (veloc thopter) #c(4 0)))
+
+(defmethod collide ((thopter thopter) event)
+  (with-slots (parent offset depth veloc health) thopter
+    (typecase (event-hit event)
+      (enemy     (decf health 4))
+      (explosion (decf health)))
+    (when (and parent (<= health 0))
+      (make-instance 'explosion :parent parent
+                     :offset offset :depth depth :veloc veloc
+                     :image (make-instance 'image :name :explosion)
+                     :ttl 10)
+      (detach parent thopter))))
 
 (defmethod shoot ((thopter thopter) event)
   (with-slots (parent offset size veloc) thopter
     (make-instance 'bullet :parent parent 
                    :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
-                   :veloc (+ veloc #c(0 -5))
+                   :veloc (+ veloc #c(0 -8))
                    :image (make-instance 'image :name :bullet))))
 
 (defmethod update ((bullet bullet) event)
@@ -101,36 +117,46 @@
 
 (defmethod update ((enemy enemy) event)
   (with-slots (parent (xy offset) (v veloc) accel) enemy
-    (let ((bullet (iter (for x in-vector (children parent))
-                        (when (or (typep x 'bullet) (typep x 'thopter))
-                          (finding x minimizing (dist xy (offset x)))))))
-      (with-slots ((xy2 offset) (v2 veloc)) bullet
-        (if (and bullet (< (dist xy xy2) 120))
-            (setf accel
-                  (/ (rot v2 (* pi 0.25d0 (signum (cross v2 (- xy xy2)))))
-                     30d0))
-            (let* ((c (/ (size (game-root *game*)) 2))
-                   (r (- xy c)))
-              (setf accel
-                    (+ ;; circular motion
-                     (* (unit (- r)) (min 4 (/ (dot v v) (abs r))))
-                     ;; correction for radius
-                     (* (unit (- r)) (/ (- (abs r) 250) 80d0))
-                     ;; correction for parallel veloc
-                     (/ (- (proj v r)) 10)
-                     ;; correction for tangential veloc
-                     (* (unit (norm v r)) (- 2 (abs (norm v r))) 0.1d0)))))))))
+    (labels
+        ((circular (r)
+           (+ ;; circular motion
+            (* (unit (- r)) (min 4 (/ (dot v v) (abs r))))
+            ;; correction for radius
+            (* (unit (- r)) (- (abs r) 250) 0.01d0)
+            ;; correction for parallel veloc
+            (* (- (proj v r)) 0.1d0)
+            ;; correction for tangential veloc
+            (* (unit (norm v r)) (- 2 (abs (norm v r))) 0.1d0)))
+         (away (xy2 v2)
+           (/ (rot v2 (* pi 0.25d0 (signum (cross v2 (- xy xy2))))) 30d0))
+         (toward (xy2 v2)
+           (unit (- xy2 xy))))
+      (let ((nearest (iter (for x in-vector (children parent))
+                           (when (or (typep x 'bullet) (typep x 'thopter))
+                             (finding x minimizing (dist xy (offset x))))))
+            (r (- xy (/ (size (game-root *game*)) 2))))
+        (setf accel
+              (if nearest
+                  (with-slots ((xy2 offset) (v2 veloc)) nearest
+                    (cond ((and (typep nearest 'bullet) (< (dist xy xy2) 120))
+                           (away xy2 v2))
+                          ((and (typep nearest 'thopter) (< (dist xy xy2) 200))
+                           (toward xy2 v2))
+                          (t (circular r))))
+                  (circular r)))))))
 
 (defmethod collide ((enemy enemy) event)
   (with-slots (parent offset depth veloc health) enemy
-    (when (typep (event-hit event) 'bullet)
-      (decf health)
-      (when (and parent (<= health 0))
-        (make-instance 'explosion :parent parent
-                       :offset offset :depth depth :veloc veloc
-                       :image (make-instance 'image :name :explosion)
-                       :ttl 10)
-        (detach parent enemy)))))
+    (typecase (event-hit event)
+      (bullet    (decf health))
+      (thopter   (decf health 4))
+      (explosion (decf health)))
+    (when (and parent (<= health 0))
+      (make-instance 'explosion :parent parent
+                     :offset offset :depth depth :veloc veloc
+                     :image (make-instance 'image :name :explosion)
+                     :ttl 10)
+      (detach parent enemy))))
 
 (defmethod update ((explosion explosion) event)
   (with-slots (ttl) explosion
@@ -149,7 +175,8 @@
     (let ((thopter (make-instance
                     'thopter :parent root
                     :offset (complex (/ (x size) 2) (* (y size) 3/4))
-                    :image (make-instance 'image :name :thopter))))
+                    :image (make-instance 'image :name :thopter)
+                    :health 4)))
       (subscribe (game-keys game) thopter))
     (loop for i from -128 to 128 by 64
        do (let* ((xy (complex (+ (/ (x size) 2) i) (/ (y size) 4)))
