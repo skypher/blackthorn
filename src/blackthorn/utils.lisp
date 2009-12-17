@@ -36,7 +36,10 @@
   (+ (* (realpart x) (realpart y)) (* (imagpart x) (imagpart y))))
 
 (defun proj (x y)
-  (/ (dot x y) (abs y)))
+  (* (unit y) (/ (dot x y) (abs y))))
+
+(defun norm (x y)
+  (- x (proj x y)))
 
 (defun dist (x y)
   (abs (- x y)))

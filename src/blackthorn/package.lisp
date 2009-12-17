@@ -64,6 +64,7 @@
    :unit
    :dot
    :proj
+   :norm
    :dist
    :theta
    :polar
@@ -148,6 +149,7 @@
    :unit
    :dot
    :proj
+   :norm
    :dist
    :theta
    :polar

@@ -100,24 +100,32 @@
     (detach (parent bullet) bullet)))
 
 (defmethod update ((enemy enemy) event)
-  (with-slots (parent offset veloc accel) enemy
+  (with-slots (parent (xy offset) (v veloc) accel) enemy
     (let ((bullet (iter (for x in-vector (children parent))
-                        (when (typep x 'bullet)
-                          (finding x minimizing (dist offset (offset x)))))))
-      (if (and bullet (< (dist offset (offset bullet)) 80))
-          (setf accel
-                (/ (rot (veloc bullet)
-                        (* pi 0.25d0
-                           (signum (cross (veloc bullet)
-                                          (- offset (offset bullet))))))
-                   30d0))
-          (setf accel (- (/ veloc 10d0)))))))
+                        (when (or (typep x 'bullet) (typep x 'thopter))
+                          (finding x minimizing (dist xy (offset x)))))))
+      (with-slots ((xy2 offset) (v2 veloc)) bullet
+        (if (and bullet (< (dist xy xy2) 120))
+            (setf accel
+                  (/ (rot v2 (* pi 0.25d0 (signum (cross v2 (- xy xy2)))))
+                     30d0))
+            (let* ((c (/ (size (game-root *game*)) 2))
+                   (r (- xy c)))
+              (setf accel
+                    (+ ;; circular motion
+                     (* (unit (- r)) (min 4 (/ (dot v v) (abs r))))
+                     ;; correction for radius
+                     (* (unit (- r)) (/ (- (abs r) 250) 80d0))
+                     ;; correction for parallel veloc
+                     (/ (- (proj v r)) 10)
+                     ;; correction for tangential veloc
+                     (* (unit (norm v r)) (- 2 (abs (norm v r))) 0.1d0)))))))))
 
 (defmethod collide ((enemy enemy) event)
   (with-slots (parent offset depth veloc health) enemy
     (when (typep (event-hit event) 'bullet)
       (decf health)
-      (when (<= health 0)
+      (when (and parent (<= health 0))
         (make-instance 'explosion :parent parent
                        :offset offset :depth depth :veloc veloc
                        :image (make-instance 'image :name :explosion)
@@ -131,8 +139,9 @@
       (detach (parent explosion) explosion))))
 
 (defmethod game-init ((game thopter-game))
-  (let ((root (make-instance 'component))
-        (size #c(800 600)))
+  (let* ((size #c(800 600))
+         (center (/ size 2))
+         (root (make-instance 'component :size size)))
     (setf (game-root game) root
           (game-view game) (make-instance 'component :size size)
           (game-sheet game)
@@ -143,11 +152,11 @@
                     :image (make-instance 'image :name :thopter))))
       (subscribe (game-keys game) thopter))
     (loop for i from -128 to 128 by 64
-       do (make-instance 'enemy :parent root
-                         :offset (complex (+ (/ (x size) 2) i) (/ (y size) 4))
-                         :depth 1
-                         :image (make-instance 'image :name :enemy)
-                         :health 4))))
+       do (let* ((xy (complex (+ (/ (x size) 2) i) (/ (y size) 4)))
+                 (v (* 2 (rot (unit (- center xy)) (/ pi 2)))))
+            (make-instance 'enemy :parent root :offset xy :veloc v :depth 1
+                           :image (make-instance 'image :name :enemy)
+                           :health 4)))))
 
 (defmethod game-update :after ((game thopter-game))
   ;; report the frame reate
