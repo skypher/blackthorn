@@ -26,7 +26,7 @@
 (in-package :cl-user)
 
 (defpackage :thopter
-  (:use :cl :blt-gfx :blt-phys :blt-user)
+  (:use :cl :iter :blt-gfx :blt-phys :blt-user)
   (:export
 
    ;; driver.lisp

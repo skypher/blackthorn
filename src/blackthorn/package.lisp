@@ -60,6 +60,16 @@
   (:use :cl :iter :blt-gfx)
   (:export
 
+   ;; utils.lisp
+   :unit
+   :dot
+   :proj
+   :dist
+   :theta
+   :polar
+   :rot
+   :cross
+
    ;; component.lisp
    :component
    :offset
@@ -133,6 +143,16 @@
   (:nicknames :blt)
   (:use :cl :blt-gfx :blt-phys)
   (:export
+
+   ;; utils.lisp
+   :unit
+   :dot
+   :proj
+   :dist
+   :theta
+   :polar
+   :rot
+   :cross
 
    ;; graphics.lisp
    :window

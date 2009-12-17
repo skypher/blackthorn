@@ -38,6 +38,21 @@
 (defun proj (x y)
   (/ (dot x y) (abs y)))
 
+(defun dist (x y)
+  (abs (- x y)))
+
+(defun theta (x)
+  (atan (imagpart x) (realpart x)))
+
+(defun polar (a)
+  (complex (cos a) (sin a)))
+
+(defun rot (x a)
+  (* (polar (+ (theta x) a)) (abs x)))
+
+(defun cross (x y)
+  (- (* (realpart x) (imagpart y)) (* (imagpart x) (realpart y))))
+
 ;;;
 ;;; Lists
 ;;;

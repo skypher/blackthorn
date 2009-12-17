@@ -96,14 +96,27 @@
           (detach parent bullet))))))
 
 (defmethod collide ((bullet bullet) event)
-  (when (typep (event-hit event) 'enemy)
+  (when (and (parent bullet) (typep (event-hit event) 'enemy))
     (detach (parent bullet) bullet)))
+
+(defmethod update ((enemy enemy) event)
+  (with-slots (parent offset veloc accel) enemy
+    (let ((bullet (iter (for x in-vector (children parent))
+                        (when (typep x 'bullet)
+                          (finding x minimizing (dist offset (offset x)))))))
+      (if (and bullet (< (dist offset (offset bullet)) 80))
+          (setf accel
+                (/ (rot (veloc bullet)
+                        (* pi 0.25d0
+                           (signum (cross (veloc bullet)
+                                          (- offset (offset bullet))))))
+                   30d0))
+          (setf accel (- (/ veloc 10d0)))))))
 
 (defmethod collide ((enemy enemy) event)
   (with-slots (parent offset depth veloc health) enemy
     (when (typep (event-hit event) 'bullet)
       (decf health)
-      (incf veloc (/ (veloc (event-hit event)) 20))
       (when (<= health 0)
         (make-instance 'explosion :parent parent
                        :offset offset :depth depth :veloc veloc
