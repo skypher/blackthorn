@@ -275,8 +275,11 @@
     (spawn-wave (+ 2 (level (game-wave game))))))
 
 (defmethod game-update :after ((game thopter-game))
-  ;; report the frame reate
-  (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
+  (let ((s (format nil "wave: ~a, health: ~a, fps: ~,2f"
+                   (level (game-wave game))
+                   (iter (for i in-vector (children (game-root game)))
+                         (when (typep i 'thopter) (return (health i))))
+                   (sdl:average-fps))))
     (set-caption s s))
 
   (when (and (zerop (iter (for i in-vector (children (game-root game)))
