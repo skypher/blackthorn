@@ -25,9 +25,7 @@
 
 (in-package :thopter)
 
-(defclass thopter-game (game) ())
-
-(defclass alarm (event-mixin)
+(defclass alarm (actor)
   ((timer
     :accessor timer
     :initarg :timer
@@ -43,7 +41,17 @@
     (when timer
       (decf timer)
       (when (< timer 0)
+        (setf timer nil)
         (send alarm (make-instance 'event :type :alarm))))))
+
+(defclass thopter-game (game)
+  ((wave
+    :accessor game-wave)))
+
+(defclass wave-controller (alarm)
+  ((level
+    :accessor level
+    :initform 0)))
 
 (defclass thopter (sprite mobile collidable)
   ((health
@@ -241,31 +249,45 @@
                  (typep (event-hit event) 'thopter)))
     (detach (parent health) health)))
 
+(defun spawn-wave (n)
+  (let* ((root (game-root *game*)) (size (size root)) (center (/ size 2)))
+    (loop for i from (* (1+ (floor n -2)) 128) to (* (floor n 2) 128) by 128
+       do (let* ((xy (complex (+ (/ (x size) 2) i) (* (y size) -0.05d0)))
+                 (v (* 2 (rot (unit (- center xy)) (/ pi 2)))))
+            (make-instance 'enemy :parent root :offset xy :veloc v :depth 1
+                           :image (make-instance 'image :name :enemy)
+                           :health 4 :timer 20)))))
+
 (defmethod game-init ((game thopter-game))
   (let* ((size #c(800 600))
-         (center (/ size 2))
          (root (make-instance 'component :size size)))
     (setf (game-root game) root
           (game-view game) (make-instance 'component :size size)
           (game-sheet game)
-          (make-instance 'sheet :source (resource "disp/thopter.png")))
+          (make-instance 'sheet :source (resource "disp/thopter.png"))
+          (game-wave game) (make-instance 'wave-controller :parent root))
     (let ((thopter (make-instance
                     'thopter :parent root
                     :offset (complex (/ (x size) 2) (* (y size) 3/4))
                     :image (make-instance 'anim :name :thopter)
                     :health 4)))
       (subscribe (game-keys game) thopter))
-    (loop for i from -128 to 128 by 64
-       do (let* ((xy (complex (+ (/ (x size) 2) i) (/ (y size) 4)))
-                 (v (* 2 (rot (unit (- center xy)) (/ pi 2)))))
-            (make-instance 'enemy :parent root :offset xy :veloc v :depth 1
-                           :image (make-instance 'image :name :enemy)
-                           :health 4)))))
+    (spawn-wave (+ 2 (level (game-wave game))))))
 
 (defmethod game-update :after ((game thopter-game))
   ;; report the frame reate
   (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
-    (set-caption s s)))
+    (set-caption s s))
+
+  (when (and (zerop (iter (for i in-vector (children (game-root game)))
+                          (when (typep i 'enemy) (count i))))
+             (not (timer (game-wave game))))
+    (setf (timer (game-wave game)) 30)))
+
+(defmethod alarm ((wave wave-controller) event)
+  (with-slots (level) wave
+    (incf level)
+    (spawn-wave (+ 2 level))))
 
 ;; For interactive use:
 (defun thopter ()
