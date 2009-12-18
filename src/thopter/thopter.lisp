@@ -58,10 +58,8 @@
     :initarg :health
     :initform 0)))
 (defclass enemy-bullet (sprite mobile collidable) ())
-(defclass explosion (sprite mobile collidable)
-  ((ttl
-    :initarg :ttl
-    :initform 0)))
+(defclass explosion (sprite mobile collidable alarm) ())
+(defclass health-pack (sprite mobile collidable) ())
 
 (defmethod initialize-instance :after ((thopter thopter) &key)
   (bind-key-down thopter :sdl-key-up    #'move-north)
@@ -103,12 +101,13 @@
     (typecase (event-hit event)
       (enemy-bullet (decf health))
       (enemy        (decf health 4))
-      (explosion    (decf health)))
+      (explosion    (decf health))
+      (health-pack  (incf health 2)))
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
                      :offset offset :depth depth :veloc veloc
                      :image (make-instance 'image :name :explosion)
-                     :ttl 10)
+                     :timer 10)
       (detach parent thopter))))
 
 (defmethod shoot ((thopter thopter) event)
@@ -179,14 +178,14 @@
                   (with-slots ((xy2 offset) (v2 veloc)) nearest
                     (cond ((and (typep nearest 'bullet) (< (dist xy xy2) 120))
                            (away xy2 v2))
-                          ((and (typep nearest 'thopter) (< (dist xy xy2) 200))
+                          ((and (typep nearest 'thopter) (< (dist xy xy2) 180))
                            (toward xy2 v2))
                           (t (circular r))))
                   (circular r)))))))
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer) enemy
-    (setf timer (+ 3 (random 20)))
+    (setf timer (+ 2 (random 25)))
     (make-instance 'enemy-bullet :parent parent 
                    :offset (+ offset (complex (/ (x size) 2) (y size)) #c(0 4))
                    :depth -1
@@ -196,21 +195,43 @@
 (defmethod collide ((enemy enemy) event)
   (with-slots (parent offset depth veloc health) enemy
     (typecase (event-hit event)
-      (bullet    (decf health))
-      (thopter   (decf health 4))
-      (explosion (decf health)))
+      (bullet      (decf health))
+      (thopter     (decf health 4))
+      (explosion   (decf health))
+      (health-pack (incf health 2)))
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
                      :offset offset :depth depth :veloc veloc
                      :image (make-instance 'image :name :explosion)
-                     :ttl 10)
+                     :timer 10)
       (detach parent enemy))))
 
-(defmethod update ((explosion explosion) event)
-  (with-slots (ttl) explosion
-    (decf ttl)
-    (when (<= ttl 0)
-      (detach (parent explosion) explosion))))
+(defmethod alarm ((explosion explosion) event)
+  (with-slots (parent offset depth veloc) explosion
+    (make-instance 'health-pack :parent parent
+                   :offset (+ offset #c(8 8)) :depth depth :veloc (/ veloc 2)
+                   :image (make-instance 'image :name :health))
+    (detach parent explosion)))
+
+(defmethod update ((health health-pack) event)
+  ;; TODO: doesn't work for nested objects. Need absolute-offset.
+  (with-slots (parent offset size) health
+    (with-slots ((view-offset offset) (view-size size)) (game-view *game*)
+      (let ((x1 (x offset)) (y1 (y offset))
+            (x2 (x view-offset)) (y2 (y view-offset))
+            (w1 (x size)) (h1 (y size))
+            (w2 (x view-size)) (h2 (y view-size)))
+        (when (or (<= (+ x1 w1) x2)
+                  (<= (+ x2 w2) x1)
+                  (<= (+ y1 h1) y2)
+                  (<= (+ y2 h2) y1))
+          (detach parent health))))))
+
+(defmethod collide ((health health-pack) event)
+  (when (and (parent health)
+             (or (typep (event-hit event) 'enemy)
+                 (typep (event-hit event) 'thopter)))
+    (detach (parent health) health)))
 
 (defmethod game-init ((game thopter-game))
   (let* ((size #c(800 600))
