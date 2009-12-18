@@ -115,6 +115,14 @@
     (make-instance 'bullet :parent parent 
                    :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
                    :veloc (+ veloc #c(0 -8))
+                   :image (make-instance 'image :name :bullet))
+    (make-instance 'bullet :parent parent 
+                   :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
+                   :veloc (+ veloc (rot #c(0 -8) (* pi 0.15d0)))
+                   :image (make-instance 'image :name :bullet))
+    (make-instance 'bullet :parent parent 
+                   :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
+                   :veloc (+ veloc (rot #c(0 -8) (* pi -0.15d0)))
                    :image (make-instance 'image :name :bullet))))
 
 (defmethod update ((bullet bullet) event)
