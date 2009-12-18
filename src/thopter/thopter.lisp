@@ -27,17 +27,37 @@
 
 (defclass thopter-game (game) ())
 
+(defclass alarm (event-mixin)
+  ((timer
+    :accessor timer
+    :initarg :timer
+    :initform nil)))
+
+(defgeneric alarm (object event))
+
+(defmethod initialize-instance :after ((alarm alarm) &key)
+  (bind alarm :alarm #'alarm))
+
+(defmethod update :before ((alarm alarm) event)
+  (with-slots (timer) alarm
+    (when timer
+      (decf timer)
+      (when (< timer 0)
+        (send alarm (make-instance 'event :type :alarm))))))
+
 (defclass thopter (sprite mobile collidable)
   ((health
     :accessor health
     :initarg :health
     :initform 0)))
 (defclass bullet (sprite mobile collidable) ())
-(defclass enemy (sprite mobile collidable)
-  ((health
+(defclass enemy (sprite mobile collidable alarm)
+  ((timer :initform 10)
+   (health
     :accessor health
     :initarg :health
     :initform 0)))
+(defclass enemy-bullet (sprite mobile collidable) ())
 (defclass explosion (sprite mobile collidable)
   ((ttl
     :initarg :ttl
@@ -81,8 +101,9 @@
 (defmethod collide ((thopter thopter) event)
   (with-slots (parent offset depth veloc health) thopter
     (typecase (event-hit event)
-      (enemy     (decf health 4))
-      (explosion (decf health)))
+      (enemy-bullet (decf health))
+      (enemy        (decf health 4))
+      (explosion    (decf health)))
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
                      :offset offset :depth depth :veloc veloc
@@ -115,6 +136,24 @@
   (when (and (parent bullet) (typep (event-hit event) 'enemy))
     (detach (parent bullet) bullet)))
 
+(defmethod update ((bullet enemy-bullet) event)
+  ;; TODO: doesn't work for nested objects. Need absolute-offset.
+  (with-slots (parent offset size) bullet
+    (with-slots ((view-offset offset) (view-size size)) (game-view *game*)
+      (let ((x1 (x offset)) (y1 (y offset))
+            (x2 (x view-offset)) (y2 (y view-offset))
+            (w1 (x size)) (h1 (y size))
+            (w2 (x view-size)) (h2 (y view-size)))
+        (when (or (<= (+ x1 w1) x2)
+                  (<= (+ x2 w2) x1)
+                  (<= (+ y1 h1) y2)
+                  (<= (+ y2 h2) y1))
+          (detach parent bullet))))))
+
+(defmethod collide ((bullet enemy-bullet) event)
+  (when (and (parent bullet) (typep (event-hit event) 'thopter))
+    (detach (parent bullet) bullet)))
+
 (defmethod update ((enemy enemy) event)
   (with-slots (parent (xy offset) (v veloc) accel) enemy
     (labels
@@ -144,6 +183,15 @@
                            (toward xy2 v2))
                           (t (circular r))))
                   (circular r)))))))
+
+(defmethod alarm ((enemy enemy) event)
+  (with-slots (parent offset size veloc timer) enemy
+    (setf timer 10)
+    (make-instance 'enemy-bullet :parent parent 
+                   :offset (+ offset (complex (/ (x size) 2) (y size)) #c(0 4))
+                   :depth -1
+                   :veloc (+ veloc #c(0 8))
+                   :image (make-instance 'image :name :bullet))))
 
 (defmethod collide ((enemy enemy) event)
   (with-slots (parent offset depth veloc health) enemy
