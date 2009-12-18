@@ -108,7 +108,7 @@
   (with-slots (parent offset depth veloc health) thopter
     (typecase (event-hit event)
       (enemy-bullet (decf health))
-      (enemy        (decf health 4))
+      (enemy        (decf health 8))
       (explosion    (decf health))
       (health-pack  (incf health 2)))
     (when (and parent (<= health 0))
@@ -212,7 +212,7 @@
   (with-slots (parent offset depth veloc health) enemy
     (typecase (event-hit event)
       (bullet      (decf health))
-      (thopter     (decf health 4))
+      (thopter     (decf health 8))
       (explosion   (decf health))
       (health-pack (incf health 2)))
     (when (and parent (<= health 0))
