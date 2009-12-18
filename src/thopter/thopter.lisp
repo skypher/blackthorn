@@ -186,7 +186,7 @@
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer) enemy
-    (setf timer 10)
+    (setf timer (+ 3 (random 20)))
     (make-instance 'enemy-bullet :parent parent 
                    :offset (+ offset (complex (/ (x size) 2) (y size)) #c(0 4))
                    :depth -1
