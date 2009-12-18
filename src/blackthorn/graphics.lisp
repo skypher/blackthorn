@@ -103,19 +103,19 @@
                (div (a b) (complex (/ (x a) (x b)) (/ (y a) (y b)))))
         (let ((sheet-size (coord :size options)))
           (iter (for image in (cdr (assoc :images options)))
-                (let ((offset (coord :offset (cdr image)))
-                      (size (coord :size (cdr image))))
+                (let ((offset (coord :offset image))
+                      (size (coord :size image)))
                   (make-instance 'image
-                                 :name (car image)
+                                 :name (cadr (assoc :name image))
                                  :sheet sheet
                                  :size size
                                  :tex-offset (div offset sheet-size)
                                  :tex-size (div size sheet-size))))
           (iter (for anim in (cdr (assoc :anims options)))
                 (make-instance 'anim
-                               :name (car anim)
+                               :name (cadr (assoc :name anim))
                                :images
-                               (iter (for i in (cdr (assoc :images (cdr anim))))
+                               (iter (for i in (cdr (assoc :images anim)))
                                      (collect (make-instance 'image :name i)
                                               result-type vector)))))))))
 
