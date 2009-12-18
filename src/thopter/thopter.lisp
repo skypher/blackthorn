@@ -191,7 +191,7 @@
                    :offset (+ offset (complex (/ (x size) 2) (y size)) #c(0 4))
                    :depth -1
                    :veloc (+ veloc #c(0 8))
-                   :image (make-instance 'image :name :bullet))))
+                   :image (make-instance 'image :name :enemy-bullet))))
 
 (defmethod collide ((enemy enemy) event)
   (with-slots (parent offset depth veloc health) enemy
