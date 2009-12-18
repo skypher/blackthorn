@@ -36,6 +36,31 @@
   (bind actor :update #'update))
 
 ;;;
+;;; Sprites
+;;;
+
+(defclass sprite (actor)
+  ((image
+    :accessor image
+    :initarg :image
+    :initform nil)))
+
+(defmethod initialize-instance :after ((sprite sprite) &key image)
+  (when image
+    (setf (size sprite) (size image))))
+
+(defmethod (setf image) :after (image (sprite sprite))
+  (when image
+    (setf (size sprite) (size image))))
+
+(defmethod draw ((sprite sprite) xy z)
+  (with-slots (image) sprite
+    (draw image xy z)))
+
+(defmethod update :before ((sprite sprite) event)
+  (next-image (image sprite)))
+
+;;;
 ;;; Mobiles
 ;;;
 

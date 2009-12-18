@@ -110,7 +110,14 @@
                                  :sheet sheet
                                  :size size
                                  :tex-offset (div offset sheet-size)
-                                 :tex-size (div size sheet-size)))))))))
+                                 :tex-size (div size sheet-size))))
+          (iter (for anim in (cdr (assoc :anims options)))
+                (make-instance 'anim
+                               :name (car anim)
+                               :images
+                               (iter (for i in (cdr (assoc :images (cdr anim))))
+                                     (collect (make-instance 'image :name i)
+                                              result-type vector)))))))))
 
 (defmethod texture ((sheet sheet))
   (if (slot-boundp sheet 'texture)
@@ -132,17 +139,17 @@
     :reader name
     :initarg :name)
    (sheet
-    :initarg :sheet
-    :reader sheet)
+    :reader sheet
+    :initarg :sheet)
    (size
-    :initarg :size
-    :reader size)
+    :reader size
+    :initarg :size)
    (tex-offset
-    :initarg :tex-offset
-    :reader tex-offset)
+    :reader tex-offset
+    :initarg :tex-offset)
    (tex-size
-    :initarg :tex-size
-    :reader tex-size)))
+    :reader tex-size
+    :initarg :tex-size)))
 
 (defvar *images* (make-hash-table))
 
@@ -164,3 +171,51 @@
       (gl:tex-coord tx2 ty1) (gl:vertex x2 y1 z)
       (gl:tex-coord tx2 ty2) (gl:vertex x2 y2 z)
       (gl:tex-coord tx1 ty2) (gl:vertex x1 y2 z))))
+
+(defmethod next-image ((image image))
+  ;; nop so that next-image can be used on images which are not anims
+  (declare (ignore image)))
+
+;;;
+;;; Animations
+;;;
+
+(defclass anim ()
+  ((name
+    :reader name
+    :initarg :name)
+   (images
+    :reader images
+    :initarg :images)
+   (index
+    :reader index
+    :initform 0)
+   (size
+    :reader size)))
+
+(defvar *anims* (make-hash-table))
+
+(defmethod make-instance ((class (eql (find-class 'anim)))
+                          &rest initargs &key name images)
+  (or (when name
+        (let ((basis (gethash name *anims*)))
+          (when basis
+            (apply #'call-next-method class :images (images basis) initargs))))
+      (unless images (error "No such anim named ~a." name))
+      (setf (gethash name *anims*) (call-next-method))))
+
+(defmethod make-instance ((class (eql 'anim)) &rest initargs)
+  (apply #'make-instance (find-class 'anim) initargs))
+
+(defmethod initialize-instance :after ((anim anim) &key)
+  (with-slots (images index size) anim
+    (setf size (size (aref images index)))))
+
+(defmethod draw ((anim anim) xy z)
+  (with-slots (images index) anim
+    (draw (aref images index) xy z)))
+
+(defmethod next-image ((anim anim))
+  (with-slots (images index size) anim
+    (setf index (mod (1+ index) (array-dimension images 0))
+          size (size (aref images index)))))

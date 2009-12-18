@@ -52,6 +52,8 @@
    :x
    :y
    :draw
+   :anim
+   :next-image
 
    ))
 
@@ -165,6 +167,8 @@
    :x
    :y
    :draw
+   :anim
+   :next-image
 
    ;; component.lisp
    :component

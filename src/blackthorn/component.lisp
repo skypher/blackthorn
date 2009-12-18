@@ -103,25 +103,3 @@
 
 (defmethod update ((component component) event)
   (declare (ignore component event)))
-
-;;;
-;;; Sprites
-;;;
-
-(defclass sprite (component)
-  ((image
-    :accessor image
-    :initarg :image
-    :initform nil)))
-
-(defmethod initialize-instance :after ((sprite sprite) &key image)
-  (when image
-    (setf (size sprite) (size image))))
-
-(defmethod (setf image) :after (image (sprite sprite))
-  (when image
-    (setf (size sprite) (size image))))
-
-(defmethod draw ((sprite sprite) xy z)
-  (with-slots (image) sprite
-    (draw image xy z)))

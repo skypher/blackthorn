@@ -244,7 +244,7 @@
     (let ((thopter (make-instance
                     'thopter :parent root
                     :offset (complex (/ (x size) 2) (* (y size) 3/4))
-                    :image (make-instance 'image :name :thopter)
+                    :image (make-instance 'anim :name :thopter)
                     :health 4)))
       (subscribe (game-keys game) thopter))
     (loop for i from -128 to 128 by 64
