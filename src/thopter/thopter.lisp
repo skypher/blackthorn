@@ -184,7 +184,7 @@
       (upgrade-bullet (incf firepower)))
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
-                     :offset offset :depth depth :veloc veloc
+                     :offset offset :depth depth :veloc (/ veloc 2)
                      :image (make-instance 'image :name :explosion)
                      :timer 10)
       (detach parent thopter))))
@@ -247,7 +247,7 @@
                                             ((upgrade-bullet) :upgrade-bullet)
                                             ((health-pack) :health)))))
         (make-instance 'explosion :parent parent
-                       :offset offset :depth depth :veloc veloc
+                       :offset offset :depth depth :veloc (/ veloc 2)
                        :image (make-instance 'image :name :explosion)
                        :timer 10
                        :drop-class drop-class :drop-image drop-image)
@@ -258,7 +258,7 @@
     (when drop-class
       (make-instance drop-class :parent parent
                      :offset (+ offset (/ (- size (size drop-image)) 2))
-                     :depth depth :veloc (/ veloc 2) :image drop-image))
+                     :depth depth :veloc (/ veloc 4) :image drop-image))
     (detach parent explosion)))
 
 (defmethod collide ((health health-pack) event)
@@ -311,7 +311,7 @@
   (when (and (zerop (iter (for i in-vector (children (game-root game)))
                           (when (typep i 'enemy) (count i))))
              (not (timer (game-wave game))))
-    (setf (timer (game-wave game)) 30)))
+    (setf (timer (game-wave game)) 90)))
 
 (defmethod alarm ((wave wave-controller) event)
   (with-slots (level) wave
