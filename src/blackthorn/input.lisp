@@ -30,7 +30,11 @@
 ;;;
 
 (defclass key-event (event)
-  ((key
+  ((host
+    :reader event-host
+    :initarg :host
+    :initform nil)
+   (key
     :reader event-key
     :initarg :key)
    (mod
@@ -48,7 +52,11 @@
 ;;;
 
 (defclass key-mixin (event-mixin)
-  ((key-down-handlers
+  ((host
+    :reader event-host
+    :initarg :host
+    :initform nil)
+   (key-down-handlers
     :reader key-down-handlers
     :initform (make-hash-table))
    (key-up-handlers
@@ -89,14 +97,18 @@
 
 (defgeneric dispatch-key-down (object event))
 (defmethod dispatch-key-down ((object key-mixin) (event key-event))
-  (with-slots (key-down-handlers) object
-    (let ((handler (gethash (event-key event) key-down-handlers)))
-      (when handler
-        (funcall handler object event)))))
+  (with-slots (host key-down-handlers) object
+    (with-slots ((event-host host) (event-key key)) event
+      (let ((handler (gethash event-key key-down-handlers)))
+        (when (and (or (not host) (not event-host) (eql host event-host))
+                   handler)
+          (funcall handler object event))))))
 
 (defgeneric dispatch-key-up (object event))
 (defmethod dispatch-key-up ((object key-mixin) (event key-event))
-  (with-slots (key-up-handlers) object
-    (let ((handler (gethash (event-key event) key-up-handlers)))
-      (when handler
-        (funcall handler object event)))))
+  (with-slots (host key-up-handlers) object
+    (with-slots ((event-host host) (event-key key)) event
+      (let ((handler (gethash event-key key-up-handlers)))
+        (when (and (or (not host) (not event-host) (eql host event-host))
+                   handler)
+          (funcall handler object event))))))

@@ -239,7 +239,7 @@
 
 (defpackage :blackthorn-user
   (:nicknames :blt-user)
-  (:use :cl :blt)
+  (:use :cl :blt :iter)
   (:shadow :room)
   #+allegro (:import-from :cl-user :exit)
   (:import-from :blt-gfx :unload-graphics)
@@ -248,6 +248,7 @@
    ;; main.lisp
    :*resource-pathname-defaults*
    :resource
+   :*mode*
    :main
 
    ))

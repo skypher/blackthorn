@@ -229,7 +229,7 @@
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer) enemy
-    (setf timer (+ 2 (random 25)))
+    (setf timer (+ 2 (mt19937:random 25)))
     (shoot enemy event)))
 
 (defmethod collide ((enemy enemy) event)
@@ -241,7 +241,9 @@
       (health-pack (incf health 2))
       (upgrade-bullet (incf firepower)))
     (when (and parent (<= health 0))
-      (let* ((drop-class (if (zerop (random 2)) 'upgrade-bullet 'health-pack))
+      (let* ((drop-class (if (zerop (mt19937:random 2))
+                             'upgrade-bullet
+                             'health-pack))
              (drop-image
               (make-instance 'image :name (ecase drop-class
                                             ((upgrade-bullet) :upgrade-bullet)
@@ -290,12 +292,27 @@
           (game-sheet game)
           (make-instance 'sheet :source (resource "disp/thopter.png"))
           (game-wave game) (make-instance 'wave-controller :parent root))
-    (let ((thopter (make-instance
-                    'thopter :parent root
-                    :offset (complex (/ (x size) 2) (* (y size) 3/4))
-                    :image (make-instance 'anim :name :thopter)
-                    :health 4 :firepower 3)))
-      (subscribe (game-keys game) thopter))
+    (ecase *mode*
+      ((:normal
+        (let ((thopter (make-instance
+                        'thopter :parent root
+                        :offset (complex (/ (x size) 2) (* (y size) 3/4))
+                        :image (make-instance 'anim :name :thopter)
+                        :health 4 :firepower 3)))
+          (subscribe (game-keys game) thopter))))
+      ((:server :client)
+        (let ((thopter1 (make-instance
+                         'thopter :host :server :parent root
+                         :offset (complex (/ (x size) 2) (* (y size) 3/4))
+                         :image (make-instance 'anim :name :thopter)
+                         :health 4 :firepower 3))
+              (thopter2 (make-instance
+                         'thopter :host :client :parent root
+                         :offset (complex (/ (x size) 2) (* (y size) 3/4))
+                         :image (make-instance 'anim :name :thopter)
+                         :health 4 :firepower 3)))
+          (subscribe (game-keys game) thopter1)
+          (subscribe (game-keys game) thopter2))))
     (spawn-wave (+ 2 (level (game-wave game))))))
 
 (defmethod game-update :after ((game thopter-game))

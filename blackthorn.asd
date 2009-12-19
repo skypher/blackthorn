@@ -54,6 +54,11 @@
                :cl-fad
                :iterate
                :cl-containers
+               :mt19937
+
+               ;; Networking and Serialization
+               :usocket
+               :cl-store
 
                ;; Graphics:
                :lispbuilder-sdl

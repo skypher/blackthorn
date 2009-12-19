@@ -64,10 +64,7 @@ atdoc := atdoc.lisp
 # Select which driver to run (load by default).
 driver := ${load}
 
-# Specify which game file to load (none by default).
-
-mode := save
-file := game.btg
+args :=
 
 # Specify the run command for the installer.
 ifeq (${cl}, allegro)
@@ -127,27 +124,35 @@ load:
 
 .PHONY: load-allegro
 load-allegro:
-	alisp +B +s ${driver} -e "(defparameter *driver-system* '|${system}|)" -- --${mode}=${file}
+	alisp +B +s ${driver} -e "(defparameter *driver-system* '|${system}|)" -- ${args}
 
 .PHONY: load-sbcl
 load-sbcl:
-	sbcl --eval "(defparameter *driver-system* \"${system}\")" --load ${driver} -- --${mode}=${file}
+	sbcl --eval "(defparameter *driver-system* \"${system}\")" --load ${driver} -- ${args}
 
 .PHONY: load-clisp
 load-clisp:
-	clisp -x "(defparameter *driver-system* \"${system}\")" -x "(load \"${driver}\")" -- --${mode}=${file}
+	clisp -x "(defparameter *driver-system* \"${system}\")" -x "(load \"${driver}\")" -- ${args}
 
 .PHONY: load-ecl
 load-ecl:
 ifneq ($(shell which ecl.exe),)
-	ecl.exe -eval "(defparameter *driver-system* \"${system}\")" -load ${driver} -- --${mode}=${file}
+	ecl.exe -eval "(defparameter *driver-system* \"${system}\")" -load ${driver} -- ${args}
 else
-	ecl -eval "(defparameter *driver-system* \"${system}\")" -load ${driver} -- --${mode}=${file}
+	ecl -eval "(defparameter *driver-system* \"${system}\")" -load ${driver} -- ${args}
 endif
 
 .PHONY: load-clozure
 load-clozure:
-	ccl --eval "(defparameter *driver-system* \"${system}\")" --load ${driver} -- --${mode}=${file}
+	ccl --eval "(defparameter *driver-system* \"${system}\")" --load ${driver} -- ${args}
+
+.PHONY: server
+server:
+	$(MAKE) args="--server=127.0.0.1 --port=8888" new
+
+.PHONY: client
+client:
+	$(MAKE) args="--connect=127.0.0.1 --port=8888" new
 
 .PHONY: slime
 slime:

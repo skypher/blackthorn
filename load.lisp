@@ -23,7 +23,7 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(defvar *driver-system* :bunnyslayer)
+(defvar *driver-system* :thopter)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (when (find-package :swank)
