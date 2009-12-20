@@ -293,22 +293,22 @@
           (make-instance 'sheet :source (resource "disp/thopter.png"))
           (game-wave game) (make-instance 'wave-controller :parent root))
     (ecase *mode*
-      ((:normal
-        (let ((thopter (make-instance
-                        'thopter :parent root
-                        :offset (complex (/ (x size) 2) (* (y size) 3/4))
-                        :image (make-instance 'anim :name :thopter)
-                        :health 4 :firepower 3)))
-          (subscribe (game-keys game) thopter))))
+      ((:normal)
+       (let ((thopter (make-instance
+                       'thopter :host :normal :parent root
+                       :offset (complex (/ (x size) 2) (* (y size) 3/4))
+                       :image (make-instance 'anim :name :thopter)
+                       :health 4 :firepower 3)))
+         (subscribe (game-keys game) thopter)))
       ((:server :client)
         (let ((thopter1 (make-instance
                          'thopter :host :server :parent root
-                         :offset (complex (/ (x size) 2) (* (y size) 3/4))
+                         :offset (complex (* (x size) 1/4) (* (y size) 3/4))
                          :image (make-instance 'anim :name :thopter)
                          :health 4 :firepower 3))
               (thopter2 (make-instance
                          'thopter :host :client :parent root
-                         :offset (complex (/ (x size) 2) (* (y size) 3/4))
+                         :offset (complex (* (x size) 3/4) (* (y size) 3/4))
                          :image (make-instance 'anim :name :thopter)
                          :health 4 :firepower 3)))
           (subscribe (game-keys game) thopter1)
@@ -317,7 +317,9 @@
 
 (defmethod game-update :after ((game thopter-game))
   (let* ((thopter (iter (for i in-vector (children (game-root game)))
-                       (when (typep i 'thopter) (return i))))
+                        (when (and (typep i 'thopter)
+                                   (eql (event-host i) *mode*))
+                          (return i))))
          (s (format nil "wave: ~a, health: ~a, firepower ~a, fps: ~,2f"
                     (level (game-wave game))
                     (when thopter (health thopter))

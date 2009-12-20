@@ -102,6 +102,7 @@
    ;; input.lisp
    :key-event
    :key-mixin
+   :event-host
    :event-key
    :event-mod
    :event-mod-key
@@ -199,6 +200,7 @@
    ;; input.lisp
    :key-event
    :key-mixin
+   :event-host
    :event-key
    :event-mod
    :event-mod-key
