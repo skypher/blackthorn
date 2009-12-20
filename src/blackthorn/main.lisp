@@ -247,20 +247,20 @@
              (t
               (error "Server didn't understand request.~%")))))
     ((:client)
-     (handler-case
-         (let* ((client-events (containers:collect-elements input-queue))
-                (response
-                 (net-send-request
-                  `((:request :update) (:events ,client-events)))))
-           (unless (equal (assoc :response response) '(:response :update))
-             (error "Client didn't understand response.~%"))
-           (let ((server-events (cadr (assoc :events response))))
-             (iter (for e in server-events) (send *game* e))
-             (iter (for e in client-events) (send *game* e))
-             (containers:empty! input-queue)))
-       (stream-error () ; TODO: shouldn't this be end-of-file ?
-         (format t "Disconnected from server. Quitting.~%")
-         (throw 'main-loop nil))))
+     (let* ((client-events (containers:collect-elements input-queue))
+            (response
+             (net-send-request
+              `((:request :update) (:events ,client-events)))))
+       (cond ((equal (assoc :response response) '(:response :update))
+              (let ((server-events (cadr (assoc :events response))))
+                (iter (for e in server-events) (send *game* e))
+                (iter (for e in client-events) (send *game* e))
+                (containers:empty! input-queue)))
+             ((equal (assoc :response response) '(:response :quit))
+              (format t "Disconnected from server. Quitting.~%")
+              (throw 'main-loop nil))
+             (t
+              (error "Client didn't understand response.~%")))))
     ((:normal)
      (let ((events (containers:collect-elements input-queue)))
        (iter (for e in events) (send *game* e))
@@ -269,7 +269,10 @@
 (defun net-game-quit ()
   (ecase *mode*
     ((:server)
-     (format t "Server shutting down.~%"))
+     (format t "Server disconnecting from client.~%")
+     (with-serve-request (request :timeout nil :max 1)
+       `((:response :quit)))
+     (format t "Disconnected.~%"))
     ((:client)
      (format t "Attempting to disconnect...~%")
      (net-send `((:request :quit)))
