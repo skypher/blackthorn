@@ -127,7 +127,7 @@
          (find (apply #'min (mapcar #'x modes)) modes :key #'x)))))
 
 ;;;
-;;; Networking
+;;; Network - Sockets and Serialization
 ;;;
 
 (defvar *mode*)
@@ -168,6 +168,12 @@
                    (progn ,@body)
                    (usocket:socket-stream connection))))))))
 
+(defun net-send (message)
+  (assert (eql *mode* :client))
+  (usocket:with-client-socket
+      (socket stream *host* *port* :element-type '(unsigned-byte 8))
+    (cl-store:store message stream)))
+
 (defun net-send-request (message)
   (assert (eql *mode* :client))
   (usocket:with-client-socket
@@ -175,6 +181,100 @@
     (cl-store:store message stream)
     (force-output stream)
     (cl-store:restore stream)))
+
+;;;
+;;; Network - Game Protocol
+;;;
+
+(defun net-game-connect ()
+  (ecase *mode*
+    ((:server)
+     (format t "Waiting for connection. Please start client.~%")
+     (with-serve-request (request :timeout nil :max 1)
+       (if (equal (assoc :request request) '(:request :connect))
+           `((:response :connect) (:random-state ,mt19937:*random-state*))
+           (error "Server didn't understand request.~%")))
+     (format t "Connected.~%"))
+    ((:client)
+     (format t "Attempting to connect...~%")
+     (handler-case
+         (let ((response (net-send-request '((:request :connect)))))
+           (unless (equal (assoc :response response) '(:response :connect))
+             (error "Client didn't understand response.~%"))
+           (setf mt19937:*random-state* (cadr (assoc :random-state response))))
+       (usocket:connection-refused-error ()
+         (format t "Unable to connect to server. Quitting.~%")
+         (throw 'main-init nil)))
+     (format t "Connected.~%"))
+    ((:normal))))
+
+(defun net-game-start ()
+  (ecase *mode*
+    ((:server)
+     (format t "Server waiting for client to start.~%")
+     (with-serve-request (request :timeout nil :max 1)
+       (if (equal (assoc :request request) '(:request :start))
+           `((:response :start))
+           (error "Server didn't understand request.~%")))
+     (format t "Starting.~%"))
+    ((:client)
+     (format t "Attempting to start...~%")
+     (handler-case
+         (let ((response (net-send-request '((:request :start)))))
+           (unless (equal (assoc :response response) '(:response :start))
+             (error "Client didn't understand response.~%")))
+       (usocket:connection-refused-error ()
+         (format t "Disconnected from server. Quitting.~%")
+         (throw 'main-loop nil)))
+     (format t "Starting.~%"))
+    ((:normal))))
+
+(defun net-game-update (input-queue)
+  (ecase *mode*
+    ((:server)
+     (with-serve-request (request :timeout nil :max 1)
+       (cond ((equal (assoc :request request) '(:request :update))
+              (let ((server-events
+                     (containers:collect-elements input-queue))
+                    (client-events (cadr (assoc :events request))))
+                (iter (for e in server-events) (send *game* e))
+                (iter (for e in client-events) (send *game* e))
+                (containers:empty! input-queue)
+                `((:response :update) (:events ,server-events))))
+             ((equal (assoc :request request) '(:request :quit))
+              (format t "Disconnected from client. Quitting.~%")
+              (throw 'main-loop nil))
+             (t
+              (error "Server didn't understand request.~%")))))
+    ((:client)
+     (handler-case
+         (let* ((client-events (containers:collect-elements input-queue))
+                (response
+                 (net-send-request
+                  `((:request :update) (:events ,client-events)))))
+           (unless (equal (assoc :response response) '(:response :update))
+             (error "Client didn't understand response.~%"))
+           (let ((server-events (cadr (assoc :events response))))
+             (iter (for e in server-events) (send *game* e))
+             (iter (for e in client-events) (send *game* e))
+             (containers:empty! input-queue)))
+       (stream-error () ; TODO: shouldn't this be end-of-file ?
+         (format t "Disconnected from server. Quitting.~%")
+         (throw 'main-loop nil))))
+    ((:normal)
+     (let ((events (containers:collect-elements input-queue)))
+       (iter (for e in events) (send *game* e))
+       (containers:empty! input-queue)))))
+
+(defun net-game-quit ()
+  (ecase *mode*
+    ((:server)
+     (format t "Server shutting down.~%"))
+    ((:client)
+     (format t "Attempting to disconnect...~%")
+     (net-send `((:request :quit)))
+     (format t "Disconnected.~%"))
+    ((:normal))))
 
 ;;;
 ;;; Main Game Driver
@@ -193,111 +293,56 @@
 
   (setf mt19937:*random-state* (mt19937:make-random-state t))
 
-  (ecase *mode*
-    ((:server)
-     (format t "Waiting for connection. Please start client.~%")
-     (with-serve-request (request :timeout nil :max 1)
-       (if (equal (assoc :request request) '(:request :connect))
-           `((:response :connect) (:random-state ,mt19937:*random-state*))
-           (error "Server didn't understand request.~%"))))
-    ((:client)
-     (format t "Attempting to connect...~%")
-     (let ((response (net-send-request '((:request :connect)))))
-       (unless (equal (assoc :response response) '(:response :connect))
-         (error "Client didn't understand response.~%"))
-       (setf mt19937:*random-state* (cadr (assoc :random-state response)))))
-    ((:normal)))
-  (format t "Connected.~%")
+  (catch 'main-init
+    (net-game-connect)
 
-  (sdl:with-init ()
-    (game-init *game*)
+    (sdl:with-init ()
+      (game-init *game*)
 
-    (gl:enable :texture-2d)
-    (gl:enable :blend)
-    (gl:blend-func :src-alpha :one-minus-src-alpha)
-    (gl:clear-color 0 0 0 0)
+      (gl:enable :texture-2d)
+      (gl:enable :blend)
+      (gl:blend-func :src-alpha :one-minus-src-alpha)
+      (gl:clear-color 0 0 0 0)
+      (gl:enable :depth-test)
+      (gl:depth-func :lequal)
+      (gl:matrix-mode :modelview)
+      (gl:load-identity)
 
-    (gl:enable :depth-test)
-    (gl:depth-func :lequal)
+      ;; Main loop:
+      (let ((input-queue (make-instance 'containers:basic-queue)))
+        (catch 'main-loop
+          (net-game-start)
 
-    (gl:matrix-mode :modelview)
-    (gl:load-identity)
+          (sdl:with-events ()
+            (:quit-event () (net-game-quit) t)
+            (:key-down-event (:key k :mod m :mod-key m-k :unicode u)
+              (containers:enqueue
+               input-queue
+               (make-instance 'key-event :host *mode* :type :key-down :key k
+                              :mod m :mod-key m-k :unicode u)))
+            (:key-up-event (:key k :mod m :mod-key m-k :unicode u)
+              (containers:enqueue
+               input-queue
+               (make-instance 'key-event :host *mode* :type :key-up :key k
+                              :mod m :mod-key m-k :unicode u)))
+            (:idle ()
+              (gl:clear :color-buffer-bit :depth-buffer-bit)
+              (render *game* #c(0 0) 1d0 -1d0)
+              (gl:flush)
+              (sdl:update-display)
 
-    (ecase *mode*
-      ((:server)
-       (format t "Server waiting for client to start.~%")
-       (with-serve-request (request :timeout nil :max 1)
-         (if (equal (assoc :request request) '(:request :start))
-             `((:response :start))
-             (error "Server didn't understand request.~%"))))
-      ((:client)
-       (format t "Attempting to start...~%")
-       (let ((response (net-send-request '((:request :start)))))
-         (unless (equal (assoc :response response) '(:response :start))
-           (error "Client didn't understand response.~%"))))
-      ((:normal)))
-    (format t "Starting.~%")
+              #+blt-debug
+              (let ((connection (or swank::*emacs-connection*
+                                    (swank::default-connection))))
+                (when (and connection
+                           (not (eql swank:*communication-style* :spawn)))
+                  (swank::handle-requests connection t)))
 
-    ;; Main loop:
-    (let ((input-queue (make-instance 'containers:basic-queue)))
-      (sdl:with-events ()
-        (:quit-event () t) ; t for quit, (return-from main) for toplevel
-        (:key-down-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-          (containers:enqueue
-           input-queue
-           (make-instance 'key-event :host *mode* :type :key-down
-                          :key key :mod mod :mod-key mod-key :unicode unicode)))
-        (:key-up-event (:key key :mod mod :mod-key mod-key :unicode unicode)
-          (containers:enqueue
-           input-queue
-           (make-instance
-            'key-event :host *mode* :type :key-up
-            :key key :mod mod :mod-key mod-key :unicode unicode)))
-        (:idle ()
-          (gl:clear :color-buffer-bit :depth-buffer-bit)
-          (render *game* #c(0 0) 1d0 -1d0)
-          (gl:flush)
-          (sdl:update-display)
-
-          #+blt-debug
-          (let ((connection
-                 (or swank::*emacs-connection* (swank::default-connection))))
-            (when (and connection
-                       (not (eql swank:*communication-style* :spawn)))
-              (swank::handle-requests connection t)))
-
-          
-          (ecase *mode*
-            ((:server)
-             (with-serve-request (request :timeout nil :max 1)
-               (if (equal (assoc :request request) '(:request :update))
-                   (let ((server-events
-                          (containers:collect-elements input-queue))
-                         (client-events (cadr (assoc :events request))))
-                     (iter (for e in server-events) (send *game* e))
-                     (iter (for e in client-events) (send *game* e))
-                     (containers:empty! input-queue)
-                     `((:response :update) (:events ,server-events)))
-                   (error "Server didn't understand request.~%"))))
-            ((:client)
-             (let* ((client-events (containers:collect-elements input-queue))
-                    (response
-                     (net-send-request
-                      `((:request :update) (:events ,client-events)))))
-               (unless (equal (assoc :response response) '(:response :update))
-                 (error "Client didn't understand response.~%"))
-               (let ((server-events (cadr (assoc :events response))))
-                 (iter (for e in server-events) (send *game* e))
-                 (iter (for e in client-events) (send *game* e))
-                 (containers:empty! input-queue))))
-            ((:normal)
-             (let ((events (containers:collect-elements input-queue)))
-               (iter (for e in events) (send *game* e))
-               (containers:empty! input-queue))))
-
-          (game-update *game*)))))
+              (net-game-update input-queue)
+              (game-update *game*))))))
+    (unload-graphics))
 
   ;; Finalization:
-  (unload-graphics)
+  (net-exit)
   (when exit-when-done
     (exit)))

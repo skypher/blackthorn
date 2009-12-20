@@ -148,11 +148,11 @@ load-clozure:
 
 .PHONY: server
 server:
-	$(MAKE) args="--server=127.0.0.1 --port=8888" new
+	$(MAKE) args="--server=127.0.0.1 --port=12345" new
 
 .PHONY: client
 client:
-	$(MAKE) args="--connect=127.0.0.1 --port=8888" new
+	$(MAKE) args="--connect=127.0.0.1 --port=12345" new
 
 .PHONY: slime
 slime:
