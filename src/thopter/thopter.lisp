@@ -222,6 +222,15 @@
                      :timer 10)
       (detach parent thopter))))
 
+(defmethod update :after ((thopter thopter) event)
+  (with-slots (parent offset size) thopter
+    (when (< (x offset) 0) (setf offset (complex 0 (y offset))))
+    (when (< (y offset) 0) (setf offset (x offset)))
+    (when (> (x offset) (- (x (size parent)) (x size)))
+      (setf offset (complex (- (x (size parent)) (x size)) (y offset))))
+    (when (> (y offset) (- (y (size parent)) (y size)))
+      (setf offset (complex (x offset) (- (y (size parent)) (y size)))))))
+
 (defmethod collide ((bullet bullet) event)
   (when (and (parent bullet) (typep (event-hit event) 'enemy))
     (detach (parent bullet) bullet)))
