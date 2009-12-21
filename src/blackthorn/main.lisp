@@ -343,6 +343,7 @@
 
               (net-game-update input-queue)
               (game-update *game*))))))
+    #-clozure ;; FIXME: This causes a crash on Clozure builds on Windows.
     (unload-graphics))
 
   ;; Finalization:

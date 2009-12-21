@@ -31,7 +31,8 @@
   (:import-from :cl-user :*driver-system*)
   #+allegro (:import-from :excl :exit :generate-application :run-shell-command)
   #+sbcl (:import-from :sb-ext :save-lisp-and-die)
-  #+clisp (:import-from :ext :quit :saveinitmem))
+  #+clisp (:import-from :ext :quit :saveinitmem)
+  #+clozure (:import-from :ccl :quit :save-application))
 
 (in-package :blt-build)
 
@@ -176,3 +177,12 @@
 #+clisp
 (saveinitmem +build-exe+ :init-function #'blt-user:main :executable t :norc t)
 #+clisp (quit)
+
+;;;
+;;; Make main executable, CCL.
+;;;
+
+#+clozure
+(save-application +build-exe+ :toplevel-function #'blt-user:main
+                  :prepend-kernel t)
+#+clozure (quit)
