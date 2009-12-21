@@ -197,8 +197,14 @@
   (when (and (parent bullet) (typep (event-hit event) 'thopter))
     (detach (parent bullet) bullet)))
 
+(defun nearest-object (component type)
+  (with-slots (offset parent) component
+    (iter (for x in-vector (children parent))
+          (when (typep x type)
+            (finding x minimizing (dist offset (offset x)))))))
+
 (defmethod update ((enemy enemy) event)
-  (with-slots (parent (xy offset) (v veloc) accel) enemy
+  (with-slots (parent (xy offset) (v veloc) (s size) accel health) enemy
     (labels
         ((circular (r)
            (+ ;; circular motion
@@ -209,23 +215,32 @@
             (* (- (proj v r)) 0.1d0)
             ;; correction for tangential veloc
             (* (unit (norm v r)) (- 2 (abs (norm v r))) 0.1d0)))
-         (away (xy2 v2)
-           (/ (rot v2 (* pi 0.25d0 (signum (cross v2 (- xy xy2))))) 30d0))
-         (toward (xy2 v2)
-           (unit (- xy2 xy))))
-      (let ((nearest (iter (for x in-vector (children parent))
-                           (when (or (typep x 'bullet) (typep x 'thopter))
-                             (finding x minimizing (dist xy (offset x))))))
+         (away (object)
+           (with-slots ((xy2 offset) (v2 veloc)) object
+             (unit (rot v2 (* pi 0.25d0 (signum (cross v2 (- xy xy2))))))))
+         (toward (object)
+           (with-slots ((xy2 offset) (s2 size)) object
+             (unit (- xy2 xy (/ s2 2d0) (/ s -2d0))))))
+      (let ((nearest-thopter (nearest-object enemy 'thopter))
+            (nearest-health (nearest-object enemy 'health-pack))
+            (nearest-bullet (nearest-object enemy 'bullet))
+            (nearest-upgrade (nearest-object enemy 'upgrade-bullet))
             (r (- xy (/ (size (game-root *game*)) 2))))
         (setf accel
-              (if nearest
-                  (with-slots ((xy2 offset) (v2 veloc)) nearest
-                    (cond ((and (typep nearest 'bullet) (< (dist xy xy2) 120))
-                           (away xy2 v2))
-                          ((and (typep nearest 'thopter) (< (dist xy xy2) 180))
-                           (toward xy2 v2))
-                          (t (circular r))))
-                  (circular r)))))))
+              (cond ((and nearest-thopter
+                          (< (dist xy (offset nearest-thopter)) 180))
+                     (toward nearest-thopter))
+                    ((and nearest-health
+                          (< (dist xy (offset nearest-health)) 180))
+                     (toward nearest-health))
+                    ((and nearest-bullet
+                          (< (dist xy (offset nearest-bullet)) 120))
+                     (* (away nearest-bullet)
+                        (if (> health 1) 0.5d0 0.75d0)))
+                    ((and nearest-upgrade
+                          (< (dist xy (offset nearest-upgrade)) 180))
+                     (toward nearest-upgrade))
+                    (t (circular r))))))))
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer) enemy
@@ -282,7 +297,7 @@
                  (v (* 2 (rot (unit (- center xy)) (/ pi 2)))))
             (make-instance 'enemy :parent root :offset xy :veloc v :depth 1
                            :image (make-instance 'image :name :enemy)
-                           :health 4 :timer 20)))))
+                           :health 4 :firepower (ceiling n 5) :timer 20)))))
 
 (defmethod game-init ((game thopter-game))
   (let* ((size #c(800 600))
@@ -305,12 +320,12 @@
                          'thopter :host :server :parent root
                          :offset (complex (* (x size) 1/4) (* (y size) 3/4))
                          :image (make-instance 'anim :name :thopter)
-                         :health 4 :firepower 3))
+                         :health 4 :firepower 1))
               (thopter2 (make-instance
                          'thopter :host :client :parent root
                          :offset (complex (* (x size) 3/4) (* (y size) 3/4))
                          :image (make-instance 'anim :name :thopter)
-                         :health 4 :firepower 3)))
+                         :health 4 :firepower 1)))
           (subscribe (game-keys game) thopter1)
           (subscribe (game-keys game) thopter2))))
     (spawn-wave (+ 2 (level (game-wave game))))))
