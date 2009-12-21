@@ -99,8 +99,13 @@
    (health
     :accessor health
     :initarg :health
+    :initform 0)
+   (missiles
+    :accessor missiles
+    :initarg :missiles
     :initform 0)))
 (defclass bullet (sprite mobile collidable transient) ())
+(defclass missile (sprite mobile collidable transient) ())
 (defclass enemy (sprite mobile collidable alarm shooter)
   ((timer :initform 10)
    (bullet-class :initform 'enemy-bullet)
@@ -121,6 +126,7 @@
     :initform nil)))
 (defclass health-pack (sprite mobile collidable transient) ())
 (defclass upgrade-bullet (sprite mobile collidable transient) ())
+(defclass upgrade-missile (sprite mobile collidable transient) ())
 
 (defmethod initialize-instance :after ((thopter thopter) &key)
   (bind-key-down thopter :sdl-key-up    #'move-north)
@@ -132,7 +138,8 @@
   (bind-key-down thopter :sdl-key-right #'move-east)
   (bind-key-up   thopter :sdl-key-right #'stop-east)
   (bind-key-down thopter :sdl-key-space #'shoot)
-  (bind-key-down thopter :sdl-key-m     #'missile))
+  (bind-key-down thopter :sdl-key-lctrl #'missile)
+  (bind-key-down thopter :sdl-key-lalt #'missile))
 
 (defmethod move-north ((thopter thopter) event)
   (incf (veloc thopter) #c(0 -4)))
@@ -157,20 +164,6 @@
 
 (defmethod stop-east ((thopter thopter) event)
   (decf (veloc thopter) #c(4 0)))
-
-(defclass missile (sprite mobile collidable transient) ())
-
-(defmethod missile ((thopter thopter) event)
-  (with-slots (parent offset size veloc)
-      thopter
-      (make-instance 'missile
-                     :parent parent 
-                     :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
-                     :veloc (+ veloc #c(0 -4))
-                     :image (make-instance 'image :name :upgrade-bullet))))
-(defmethod update ((missile missile) event)
-  (with-slots (accel offset) missile
-      (setf accel (unit (- (offset (nearest-object missile 'enemy)) offset)))))
     
 (defun nearest-object (component type)
   (with-slots (offset parent) component
@@ -195,14 +188,33 @@
                           :veloc (+ veloc (rot bullet-veloc (* i 0.15d0 pi)))
                           :image bullet-image)))))
 
+(defmethod missile ((thopter thopter) event)
+  (with-slots (parent offset size veloc missiles) thopter
+    (when (> missiles 0)
+      (decf missiles)
+      (make-instance 'missile
+                     :parent parent 
+                     :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
+                     :veloc (+ veloc #c(0 -8))
+                     :image (make-instance 'image :name :missile)))))
+
+(defmethod update ((missile missile) event)
+  (with-slots (parent offset veloc accel) missile
+    (let ((nearest-enemy (nearest-object missile 'enemy)))
+      (if nearest-enemy
+          (setf veloc (* (unit veloc) (min (abs veloc) 8d0))
+                accel (unit (- (offset nearest-enemy) offset)))
+          (setf accel 0)))))
+
 (defmethod collide ((thopter thopter) event)
-  (with-slots (parent offset depth veloc health firepower) thopter
+  (with-slots (parent offset depth veloc health firepower missiles) thopter
     (typecase (event-hit event)
       (enemy-bullet (decf health))
       (enemy        (decf health 8))
       (explosion    (decf health))
       (health-pack  (incf health 2))
-      (upgrade-bullet (incf firepower)))
+      (upgrade-bullet (incf firepower))
+      (upgrade-missile (incf missiles)))
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
                      :offset offset :depth depth :veloc (/ veloc 2)
@@ -214,15 +226,19 @@
   (when (and (parent bullet) (typep (event-hit event) 'enemy))
     (detach (parent bullet) bullet)))
 
+(defmethod collide ((missile missile) event)
+  (with-slots (parent offset depth veloc) missile
+    (when (and parent (or (typep (event-hit event) 'enemy)
+                          (typep (event-hit event) 'explosion)))
+      (make-instance 'explosion :parent parent
+                     :offset offset :depth depth :veloc (/ veloc 2)
+                     :image (make-instance 'image :name :explosion)
+                     :timer 10)
+      (detach parent missile))))
+
 (defmethod collide ((bullet enemy-bullet) event)
   (when (and (parent bullet) (typep (event-hit event) 'thopter))
     (detach (parent bullet) bullet)))
-
-(defun nearest-object (component type)
-  (with-slots (offset parent) component
-    (iter (for x in-vector (children parent))
-          (when (typep x type)
-            (finding x minimizing (dist offset (offset x)))))))
 
 (defmethod update ((enemy enemy) event)
   (with-slots (parent (xy offset) (v veloc) (s size) accel health) enemy
@@ -272,17 +288,21 @@
   (with-slots (parent offset depth veloc health firepower) enemy
     (typecase (event-hit event)
       (bullet      (decf health))
+      (missile     (decf health))
       (thopter     (decf health 8))
       (explosion   (decf health))
       (health-pack (incf health 2))
       (upgrade-bullet (incf firepower)))
     (when (and parent (<= health 0))
-      (let* ((drop-class (if (zerop (mt19937:random 2))
-                             'upgrade-bullet
-                             'health-pack))
+      (let* ((random-choice (mt19937:random 3))
+             (drop-class (ecase random-choice
+                           ((0) 'upgrade-bullet)
+                           ((1) 'upgrade-missile)
+                           ((2) 'health-pack)))
              (drop-image
               (make-instance 'image :name (ecase drop-class
                                             ((upgrade-bullet) :upgrade-bullet)
+                                            ((upgrade-missile) :upgrade-missile)
                                             ((health-pack) :health)))))
         (make-instance 'explosion :parent parent
                        :offset offset :depth depth :veloc (/ veloc 2)
@@ -311,9 +331,15 @@
                  (typep (event-hit event) 'thopter)))
     (detach (parent upgrade) upgrade)))
 
+(defmethod collide ((upgrade upgrade-missile) event)
+  (when (and (parent upgrade)
+             (or (typep (event-hit event) 'enemy)
+                 (typep (event-hit event) 'thopter)))
+    (detach (parent upgrade) upgrade)))
+
 (defun spawn-wave (n)
   (let* ((root (game-root *game*)) (size (size root)) (center (/ size 2)))
-    (loop for i from (* (1+ (floor n -2)) 128) to (* (floor n 2) 128) by 128
+    (loop for i from (* (1+ (floor n -2)) 64) to (* (floor n 2) 64) by 64
        do (let* ((xy (complex (+ (/ (x size) 2) i) (* (y size) -0.05d0)))
                  (v (* 2 (rot (unit (- center xy)) (/ pi 2)))))
             (make-instance 'enemy :parent root :offset xy :veloc v :depth 1
@@ -334,19 +360,19 @@
                        'thopter :host :normal :parent root
                        :offset (complex (/ (x size) 2) (* (y size) 3/4))
                        :image (make-instance 'anim :name :thopter)
-                       :health 4 :firepower 3)))
+                       :health 4 :firepower 3 :missiles 2)))
          (subscribe (game-keys game) thopter)))
       ((:server :client)
         (let ((thopter1 (make-instance
                          'thopter :host :server :parent root
                          :offset (complex (* (x size) 1/4) (* (y size) 3/4))
                          :image (make-instance 'anim :name :thopter)
-                         :health 4 :firepower 1))
+                         :health 4 :firepower 1 :missiles 1))
               (thopter2 (make-instance
                          'thopter :host :client :parent root
                          :offset (complex (* (x size) 3/4) (* (y size) 3/4))
                          :image (make-instance 'anim :name :thopter)
-                         :health 4 :firepower 1)))
+                         :health 4 :firepower 1 :missiles 1)))
           (subscribe (game-keys game) thopter1)
           (subscribe (game-keys game) thopter2))))
     (spawn-wave (+ 2 (level (game-wave game))))))
@@ -356,17 +382,19 @@
                         (when (and (typep i 'thopter)
                                    (eql (event-host i) *mode*))
                           (return i))))
-         (s (format nil "wave: ~a, health: ~a, firepower ~a, fps: ~,2f"
-                    (level (game-wave game))
-                    (when thopter (health thopter))
-                    (when thopter (firepower thopter))
-                    (sdl:average-fps))))
+         (s (format
+             nil "wave: ~a, health: ~a, firepower: ~a, missiles: ~a, fps: ~,2f"
+             (level (game-wave game))
+             (when thopter (health thopter))
+             (when thopter (firepower thopter))
+             (when thopter (missiles thopter))
+             (sdl:average-fps))))
     (set-caption s s))
 
   (when (and (zerop (iter (for i in-vector (children (game-root game)))
                           (when (typep i 'enemy) (count i))))
              (not (timer (game-wave game))))
-    (setf (timer (game-wave game)) 90)))
+    (setf (timer (game-wave game)) 120)))
 
 (defmethod alarm ((wave wave-controller) event)
   (with-slots (level) wave

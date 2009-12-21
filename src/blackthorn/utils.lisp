@@ -30,7 +30,7 @@
 ;;;
 
 (defun unit (x)
-  (/ x (abs x)))
+  (if (zerop x) x (/ x (abs x))))
 
 (defun dot (x y)
   (+ (* (realpart x) (realpart y)) (* (imagpart x) (imagpart y))))
