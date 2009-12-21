@@ -292,7 +292,7 @@
 
 (defun spawn-wave (n)
   (let* ((root (game-root *game*)) (size (size root)) (center (/ size 2)))
-    (loop for i from (* (1+ (floor n -2)) 128) to (* (floor n 2) 128) by 128
+    (loop for i from (* (1+ (floor n -2)) 64) to (* (floor n 2) 64) by 64
        do (let* ((xy (complex (+ (/ (x size) 2) i) (* (y size) -0.05d0)))
                  (v (* 2 (rot (unit (- center xy)) (/ pi 2)))))
             (make-instance 'enemy :parent root :offset xy :veloc v :depth 1
@@ -345,7 +345,7 @@
   (when (and (zerop (iter (for i in-vector (children (game-root game)))
                           (when (typep i 'enemy) (count i))))
              (not (timer (game-wave game))))
-    (setf (timer (game-wave game)) 90)))
+    (setf (timer (game-wave game)) 120)))
 
 (defmethod alarm ((wave wave-controller) event)
   (with-slots (level) wave
