@@ -378,7 +378,7 @@
               (thopter2 (make-instance
                          'thopter :host :client :parent root
                          :offset (complex (* (x size) 3/4) (* (y size) 3/4))
-                         :image (make-instance 'anim :name :thopter)
+                         :image (make-instance 'anim :name :thopter2)
                          :health 4 :firepower 1 :missiles 1)))
           (subscribe (game-keys game) thopter1)
           (subscribe (game-keys game) thopter2))))
