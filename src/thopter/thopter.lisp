@@ -131,7 +131,8 @@
   (bind-key-up   thopter :sdl-key-left  #'stop-west)
   (bind-key-down thopter :sdl-key-right #'move-east)
   (bind-key-up   thopter :sdl-key-right #'stop-east)
-  (bind-key-down thopter :sdl-key-space #'shoot))
+  (bind-key-down thopter :sdl-key-space #'shoot)
+  (bind-key-down thopter :sdl-key-m     #'missile))
 
 (defmethod move-north ((thopter thopter) event)
   (incf (veloc thopter) #c(0 -4)))
@@ -156,6 +157,26 @@
 
 (defmethod stop-east ((thopter thopter) event)
   (decf (veloc thopter) #c(4 0)))
+
+(defclass missile (sprite mobile collidable transient) ())
+
+(defmethod missile ((thopter thopter) event)
+  (with-slots (parent offset size veloc)
+      thopter
+      (make-instance 'missile
+                     :parent parent 
+                     :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
+                     :veloc (+ veloc #c(0 -4))
+                     :image (make-instance 'image :name :upgrade-bullet))))
+(defmethod update ((missile missile) event)
+  (with-slots (accel offset) missile
+      (setf accel (unit (- (offset (nearest-object missile 'enemy)) offset)))))
+    
+(defun nearest-object (component type)
+  (with-slots (offset parent) component
+    (iter (for x in-vector (children parent))
+          (when (typep x type)
+            (finding x minimizing (dist offset (offset x)))))))
 
 (defmethod shoot ((shooter shooter) event)
   (with-slots (parent offset size veloc firepower
