@@ -234,13 +234,15 @@
     (detach (parent bullet) bullet)))
 
 (defmethod collide ((missile missile) event)
-  (with-slots (parent offset depth veloc) missile
+  (with-slots (parent offset size depth veloc) missile
     (when (and parent (or (typep (event-hit event) 'enemy)
                           (typep (event-hit event) 'explosion)))
-      (make-instance 'explosion :parent parent
-                     :offset offset :depth depth :veloc (/ veloc 2)
-                     :image (make-instance 'image :name :explosion)
-                     :timer 10)
+      (let ((explosion (make-instance 'image :name :explosion)))
+        (make-instance 'explosion :parent parent
+                       :offset (+ offset (/ size 2) (/ (size explosion) -2))
+                       :depth depth :veloc (/ veloc 2)
+                       :image explosion
+                       :timer 10))
       (detach parent missile))))
 
 (defmethod collide ((bullet enemy-bullet) event)
