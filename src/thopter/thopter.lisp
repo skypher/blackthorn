@@ -103,7 +103,7 @@
     :initarg :missiles
     :initform 0)))
 (defclass bullet (sprite mobile collidable transient) ())
-(defclass missile (sprite mobile collidable transient) ())
+(defclass missile (sprite mobile collidable alarm) ())
 (defclass enemy (sprite mobile collidable alarm shooter)
   ((timer :initform 10)
    (bullet-class :initform 'enemy-bullet)
@@ -194,7 +194,8 @@
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
                      :veloc (+ veloc #c(0 -8))
-                     :image (make-instance 'image :name :missile)))))
+                     :image (make-instance 'image :name :missile)
+                     :timer 120))))
 
 (defmethod update ((missile missile) event)
   (with-slots (parent offset veloc accel) missile
@@ -237,6 +238,17 @@
   (with-slots (parent offset size depth veloc) missile
     (when (and parent (or (typep (event-hit event) 'enemy)
                           (typep (event-hit event) 'explosion)))
+      (let ((explosion (make-instance 'image :name :explosion)))
+        (make-instance 'explosion :parent parent
+                       :offset (+ offset (/ size 2) (/ (size explosion) -2))
+                       :depth depth :veloc (/ veloc 2)
+                       :image explosion
+                       :timer 10))
+      (detach parent missile))))
+
+(defmethod alarm ((missile missile) event)
+  (with-slots (parent offset size depth veloc) missile
+    (when parent
       (let ((explosion (make-instance 'image :name :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
