@@ -78,7 +78,7 @@
   (list (make-instance 'cli-parser:cli-option
                        :abbr "s"
                        :full "server"
-                       :requires-arguments t)
+                       :requires-arguments :optional)
         (make-instance 'cli-parser:cli-option
                        :abbr "c"
                        :full "connect"
@@ -89,12 +89,15 @@
                        :requires-arguments t)))
 
 (defun cli-get-mode (options)
-  (let ((server (car (gethash "server" options)))
-        (client (car (gethash "connect" options)))
-        (port (car (gethash "port" options))))
-    (or (when server (list :server server (parse-integer port)))
-        (when client (list :client client (parse-integer port)))
-        (list :normal nil nil))))
+  (let ((port (car (gethash "port" options))))
+    (or
+     (multiple-value-bind (value exists) (gethash "server" options)
+       (when exists
+         (list :server (car value) (when port (parse-integer port)))))
+     (multiple-value-bind (value exists) (gethash "connect" options)
+       (when exists
+         (list :client (car value) (when port (parse-integer port)))))
+     (list :normal nil nil))))
 
 ;;;
 ;;; Video modes
@@ -139,9 +142,13 @@
   (assert (not (boundp '*mode*)))
   (ecase mode
     ((:server)
-     (let ((socket
-            (usocket:socket-listen host port :element-type '(unsigned-byte 8))))
-       (setf *mode* :server *host* host *port* port *server-socket* socket)))
+     (let* ((host (or host usocket:*wildcard-host*))
+            (port (or port usocket:*auto-port*))
+            (socket (usocket:socket-listen
+                     host port :element-type '(unsigned-byte 8))))
+       (setf *mode* :server
+             *host* host *port* (usocket:get-local-port socket)
+             *server-socket* socket)))
     (:client
      (setf *mode* :client *host* host *port* port))
     (:normal
@@ -189,7 +196,8 @@
 (defun net-game-connect ()
   (ecase *mode*
     ((:server)
-     (format t "Waiting for connection. Please start client.~%")
+     (format t "Waiting for a connection on port ~a. Please start client.~%"
+             *port*)
      (with-serve-request (request :timeout nil :max 1)
        (if (equal (assoc :request request) '(:request :connect))
            `((:response :connect) (:random-state ,mt19937:*random-state*))
