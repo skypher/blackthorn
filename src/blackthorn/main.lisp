@@ -158,8 +158,11 @@
     ` (let ((,m ,max) (,time ,timeout))
         (assert (eql *mode* :server))
         (loop for ,i from 0 while (or (not ,m) (< ,i ,m))
-           while (usocket:wait-for-input
-                  *server-socket* :timeout ,time :ready-only t)
+           while
+           #+(not (and sbcl windows))
+           (usocket:wait-for-input
+            *server-socket* :timeout ,time :ready-only t)
+           #+(and sbcl windows) t
            do (usocket:with-connected-socket
                   (connection (usocket:socket-accept *server-socket*))
                 (let ((,request
