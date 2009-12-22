@@ -196,7 +196,7 @@
       (make-instance 'missile
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
-                     :veloc (+ veloc #c(0 -8))
+                     :veloc (+ veloc #c(0 -4))
                      :image (make-instance 'image :name :missile)
                      :timer 120))))
 
@@ -204,8 +204,8 @@
   (with-slots (parent offset veloc accel) missile
     (let ((nearest-enemy (nearest-object missile 'enemy)))
       (if nearest-enemy
-          (setf veloc (* (unit veloc) (min (abs veloc) 8d0))
-                accel (unit (- (offset nearest-enemy) offset)))
+          (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
+                accel (* (unit (- (offset nearest-enemy) offset)) 2d0))
           (setf accel 0)))))
 
 (defmethod collide ((thopter thopter) event)
@@ -286,23 +286,34 @@
       (let ((nearest-thopter (nearest-object enemy 'thopter))
             (nearest-health (nearest-object enemy 'health-pack))
             (nearest-bullet (nearest-object enemy 'bullet))
-            (nearest-upgrade (nearest-object enemy 'upgrade-bullet))
+            (nearest-missile (nearest-object enemy 'missile))
+            (nearest-upgrade-b (nearest-object enemy 'upgrade-bullet))
+            (nearest-upgrade-m (nearest-object enemy 'upgrade-missile))
             (r (- xy (/ (size (game-root *game*)) 2))))
         (setf v (* (unit v) (min (abs v) (+ 8d0 (* 2d0 difficulty))))
               accel
               (cond ((and nearest-thopter
                           (< (dist xy (offset nearest-thopter)) 180))
-                     (toward nearest-thopter))
+                     (* (toward nearest-thopter) (max 0.5d0 difficulty)))
                     ((and nearest-health
                           (< (dist xy (offset nearest-health)) 180))
-                     (toward nearest-health))
+                     (* (toward nearest-health) (max 0.5d0 difficulty)))
+                    ((and nearest-missile
+                          (< (dist xy (offset nearest-missile)) 120))
+                     (* (away nearest-missile)
+                        (+ 0.5d0 (* 0.1d0 difficulty))
+                        (if (> health 1) 1d0 1.5d0)))
                     ((and nearest-bullet
                           (< (dist xy (offset nearest-bullet)) 120))
                      (* (away nearest-bullet)
-                        (if (> health 1) 0.5d0 0.75d0)))
-                    ((and nearest-upgrade
-                          (< (dist xy (offset nearest-upgrade)) 180))
-                     (toward nearest-upgrade))
+                        (+ 0.5d0 (* 0.1d0 difficulty))
+                        (if (> health 1) 1d0 1.5d0)))
+                    ((and nearest-upgrade-b
+                          (< (dist xy (offset nearest-upgrade-b)) 180))
+                     (* (toward nearest-upgrade-b) (max 0.5d0 difficulty)))
+                    ((and nearest-upgrade-m
+                          (< (dist xy (offset nearest-upgrade-m)) 180))
+                     (* (toward nearest-upgrade-m) (max 0.5d0 difficulty)))
                     (t (circular r))))))))
 
 (defmethod alarm ((enemy enemy) event)
@@ -372,7 +383,7 @@
                            :image (make-instance 'image :name :enemy)
                            :health 4 :timer 20
                            :firepower (max 1 (ceiling w 3))
-                           :difficulty (floor w 3))))))
+                           :difficulty (floor w 5))))))
 
 (defmethod game-init ((game thopter-game))
   (let* ((size #c(800 600))
