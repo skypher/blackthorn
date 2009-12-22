@@ -196,7 +196,7 @@
       (make-instance 'missile
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
-                     :veloc (+ veloc #c(0 -4))
+                     :veloc veloc
                      :image (make-instance 'image :name :missile)
                      :timer 120))))
 
