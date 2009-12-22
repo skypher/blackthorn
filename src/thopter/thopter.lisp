@@ -197,15 +197,33 @@
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
                      :veloc veloc
-                     :image (make-instance 'image :name :missile)
+                     :image (make-instance 'image :name :missile-n)
                      :timer 120))))
 
 (defmethod update ((missile missile) event)
-  (with-slots (parent offset veloc accel) missile
+  (with-slots (parent offset veloc accel image) missile
     (let ((nearest-enemy (nearest-object missile 'enemy)))
       (if nearest-enemy
           (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
-                accel (* (unit (- (offset nearest-enemy) offset)) 2d0))
+                accel (* (unit (- (offset nearest-enemy) offset)) 2d0)
+                image (let ((theta (theta veloc)))
+                        (make-instance 'image :name
+                                       (cond ((or (> theta (* 0.875 pi))
+                                                  (< theta (* -0.875 pi)))
+                                              :missile-w)
+                                             ((> theta (* 0.625 pi))
+                                              :missile-sw)
+                                             ((> theta (* 0.375 pi))
+                                              :missile-s)
+                                             ((> theta (* 0.125 pi))
+                                              :missile-se)
+                                             ((< theta (* -0.625 pi))
+                                              :missile-nw)
+                                             ((< theta (* -0.375 pi))
+                                              :missile-n)
+                                             ((< theta (* -0.125 pi))
+                                              :missile-ne)
+                                             (t :missile-e)))))
           (setf accel 0)))))
 
 (defmethod collide ((thopter thopter) event)
