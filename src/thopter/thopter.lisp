@@ -113,6 +113,9 @@
    (health
     :accessor health
     :initarg :health
+    :initform 0)
+   (difficulty
+    :initarg :difficulty
     :initform 0)))
 (defclass enemy-bullet (sprite mobile collidable transient) ())
 (defclass explosion (sprite mobile collidable alarm)
@@ -262,7 +265,8 @@
     (detach (parent bullet) bullet)))
 
 (defmethod update ((enemy enemy) event)
-  (with-slots (parent (xy offset) (v veloc) (s size) accel health) enemy
+  (with-slots (parent (xy offset) (v veloc) (s size) accel health difficulty)
+      enemy
     (labels
         ((circular (r)
            (+ ;; circular motion
@@ -284,7 +288,8 @@
             (nearest-bullet (nearest-object enemy 'bullet))
             (nearest-upgrade (nearest-object enemy 'upgrade-bullet))
             (r (- xy (/ (size (game-root *game*)) 2))))
-        (setf accel
+        (setf v (* (unit v) (min (abs v) (+ 8d0 (* 2d0 difficulty))))
+              accel
               (cond ((and nearest-thopter
                           (< (dist xy (offset nearest-thopter)) 180))
                      (toward nearest-thopter))
@@ -358,14 +363,16 @@
                  (typep (event-hit event) 'thopter)))
     (detach (parent upgrade) upgrade)))
 
-(defun spawn-wave (n)
+(defun spawn-wave (w n)
   (let* ((root (game-root *game*)) (size (size root)) (center (/ size 2)))
     (loop for i from (* (1+ (floor n -2)) 64) to (* (floor n 2) 64) by 64
        do (let* ((xy (complex (+ (/ (x size) 2) i) (* (y size) -0.05d0)))
                  (v (* 2 (rot (unit (- center xy)) (/ pi 2)))))
             (make-instance 'enemy :parent root :offset xy :veloc v :depth 1
                            :image (make-instance 'image :name :enemy)
-                           :health 4 :firepower (ceiling n 5) :timer 20)))))
+                           :health 4 :timer 20
+                           :firepower (max 1 (ceiling w 3))
+                           :difficulty (floor w 3))))))
 
 (defmethod game-init ((game thopter-game))
   (let* ((size #c(800 600))
@@ -396,7 +403,7 @@
                          :health 4 :firepower 3 :missiles 1)))
           (subscribe (game-keys game) thopter1)
           (subscribe (game-keys game) thopter2))))
-    (spawn-wave (+ 2 (level (game-wave game))))))
+    (spawn-wave (level (game-wave game)) (+ 2 (level (game-wave game))))))
 
 (defmethod game-update :after ((game thopter-game))
   (let* ((thopter (iter (for i in-vector (children (game-root game)))
@@ -420,7 +427,7 @@
 (defmethod alarm ((wave wave-controller) event)
   (with-slots (level) wave
     (incf level)
-    (spawn-wave (+ 2 level))))
+    (spawn-wave level (+ 2 level))))
 
 ;; For interactive use:
 (defun thopter ()
