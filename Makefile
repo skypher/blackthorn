@@ -201,8 +201,8 @@ atdoc:
 install-w32:
 	-$(call get-properties)
 	$(MAKE) dist
-	cp -r w32/bt.ico w32/chp w32/is_user_admin.nsh COPYRIGHT bin
-	awk "{gsub(/@NAME@/, \"${name}\");print}" w32/install.nsi | awk "{gsub(/@LONGNAME@/, \"${longname}\");print}" | awk "{gsub(/@VERSION@/, \"${version}\");print}" | awk "{gsub(/@DESCRIPTION@/, \"${description}\");print}" | awk "{gsub(/@URL@/, \"${url}\");print}" | awk "{gsub(/@COMMAND@/, \"${command}\");print}" > bin/install.nsi
+	cp -r windows/bt.ico windows/chp windows/is_user_admin.nsh COPYRIGHT bin
+	awk "{gsub(/@NAME@/, \"${name}\");print}" windows/install.nsi | awk "{gsub(/@LONGNAME@/, \"${longname}\");print}" | awk "{gsub(/@VERSION@/, \"${version}\");print}" | awk "{gsub(/@DESCRIPTION@/, \"${description}\");print}" | awk "{gsub(/@URL@/, \"${url}\");print}" | awk "{gsub(/@COMMAND@/, \"${command}\");print}" > bin/install.nsi
 	makensis bin/install.nsi
 	mv bin/*-install.exe .
 
