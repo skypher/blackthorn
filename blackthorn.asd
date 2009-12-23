@@ -44,6 +44,7 @@
                                    (:file "event")
                                    (:file "input")
                                    (:file "actor")
+                                   (:file "collision")
                                    (:file "game")
                                    (:file "library")
                                    (:file "main"))
@@ -54,6 +55,7 @@
                :cl-fad
                :iterate
                :cl-containers
+               :spatial-trees
                :mt19937
 
                ;; Networking and Serialization
