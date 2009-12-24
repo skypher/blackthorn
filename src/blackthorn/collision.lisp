@@ -33,7 +33,8 @@
 
 (defclass collidable (actor)
   ((collision-rect
-    :accessor collision-rect)))
+    :accessor collision-rect
+    :initform (rectangles:make-rectangle :lows '(0 0) :highs '(0 0)))))
 
 (defgeneric collide (object event))
 (defmethod collide (object event)
@@ -52,12 +53,13 @@
 (defmethod insert-node (tree node xy)
   (declare (ignore tree node)))
 (defmethod insert-node (tree (node collidable) xy)
-  (with-slots (size collision-rect) node
+  (with-slots (size (rect collision-rect)) node
     (when (not (zerop size))
-      (setf collision-rect
-            (rectangles:make-rectangle
-             :lows (complex->truncated-list xy)
-             :highs (complex->truncated-list (+ xy size #c(-1 -1)))))
+      ;; Rects are supposed to be immutable, but this hack nets an extra
+      ;; 10-20% fps on the collidable stress test with 1000 objects.
+      (with-slots ((lows rectangles::lows) (highs rectangles::highs)) rect
+        (setf lows (complex->truncated-list xy)
+              highs (complex->truncated-list (+ xy size #c(-1 -1)))))
       (spatial-trees:insert node tree))))
 
 (defgeneric search-node (tree node thunk))
