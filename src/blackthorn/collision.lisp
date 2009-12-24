@@ -43,7 +43,7 @@
   (bind collidable :collide #'collide))
 
 (defun make-rtree ()
-  (spatial-trees:make-spatial-tree :r :rectfun #'collision-rect))
+  (spatial-trees:make-spatial-tree :greene :rectfun #'collision-rect))
 
 (defun complex->truncated-list (i)
   (list (truncate (x i)) (truncate (y i))))
