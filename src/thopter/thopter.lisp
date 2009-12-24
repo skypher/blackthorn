@@ -201,7 +201,7 @@
                      :timer 120))))
 
 (defmethod update ((missile missile) event)
-  (with-slots (parent offset veloc accel image) missile
+  (with-slots (parent offset size veloc accel image) missile
     (let* ((nearest-enemy (nearest-object missile 'enemy))
            (theta (theta veloc))
            (new-image (make-instance 'image :name
@@ -223,7 +223,9 @@
                                            (t :missile-e)))))
       (if nearest-enemy
           (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
-                accel (* (unit (- (offset nearest-enemy) offset)) 2d0)
+                accel (* 2d0 (unit (- (+ (offset nearest-enemy)
+                                         (/ (size nearest-enemy) 2d0))
+                                      (+ offset (/ size 2d0)))))
                 offset (+ offset (/ (size image) 2d0) (/ (size new-image) -2d0))
                 image new-image)
           (setf accel 0)))))
