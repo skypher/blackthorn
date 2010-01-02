@@ -76,5 +76,5 @@
 
 (defmethod update :before ((mobile mobile) event)
   (with-slots (offset veloc accel) mobile
-    (incf veloc accel)
-    (incf offset veloc)))
+    (incf offset veloc)
+    (incf veloc accel)))

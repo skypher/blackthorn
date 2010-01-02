@@ -143,29 +143,29 @@
   (bind-key-down thopter :sdl-key-lalt #'missile))
 
 (defmethod move-north ((thopter thopter) event)
-  (incf (veloc thopter) #c(0 -4)))
+  (incf (accel thopter) #c(0 -2)))
 
 (defmethod stop-north ((thopter thopter) event)
-  (decf (veloc thopter) #c(0 -4)))
+  (decf (accel thopter) #c(0 -2)))
 
 (defmethod move-south ((thopter thopter) event)
-  (incf (veloc thopter) #c(0 4)))
+  (incf (accel thopter) #c(0 2)))
 
 (defmethod stop-south ((thopter thopter) event)
-  (decf (veloc thopter) #c(0 4)))
+  (decf (accel thopter) #c(0 2)))
 
 (defmethod move-west ((thopter thopter) event)
-  (incf (veloc thopter) #c(-4 0)))
+  (incf (accel thopter) #c(-2 0)))
 
 (defmethod stop-west ((thopter thopter) event)
-  (decf (veloc thopter) #c(-4 0)))
+  (decf (accel thopter) #c(-2 0)))
 
 (defmethod move-east ((thopter thopter) event)
-  (incf (veloc thopter) #c(4 0)))
+  (incf (accel thopter) #c(2 0)))
 
 (defmethod stop-east ((thopter thopter) event)
-  (decf (veloc thopter) #c(4 0)))
-    
+  (decf (accel thopter) #c(2 0)))
+
 (defun nearest-object (component type)
   (with-slots (offset parent) component
     (iter (for x in-vector (children parent))
@@ -247,13 +247,16 @@
       (detach parent thopter))))
 
 (defmethod update :after ((thopter thopter) event)
-  (with-slots (parent offset size) thopter
+  (with-slots (parent offset size veloc) thopter
+    ;; Clamp thopter on screen.
     (when (< (x offset) 0) (setf offset (complex 0 (y offset))))
     (when (< (y offset) 0) (setf offset (x offset)))
     (when (> (x offset) (- (x (size parent)) (x size)))
       (setf offset (complex (- (x (size parent)) (x size)) (y offset))))
     (when (> (y offset) (- (y (size parent)) (y size)))
-      (setf offset (complex (x offset) (- (y (size parent)) (y size)))))))
+      (setf offset (complex (x offset) (- (y (size parent)) (y size)))))
+    ;; Limit thopter velocity.
+    (setf veloc (* (unit veloc) (min 4d0 (abs veloc))))))
 
 (defmethod collide ((bullet bullet) event)
   (when (and (parent bullet) (typep (event-hit event) 'enemy))
