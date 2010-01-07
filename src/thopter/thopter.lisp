@@ -140,31 +140,31 @@
   (bind-key-up   thopter :sdl-key-right #'stop-east)
   (bind-key-down thopter :sdl-key-space #'shoot)
   (bind-key-down thopter :sdl-key-lctrl #'missile)
-  (bind-key-down thopter :sdl-key-lalt #'missile))
+  (bind-key-down thopter :sdl-key-lalt  #'missile))
 
 (defmethod move-north ((thopter thopter) event)
-  (incf (accel thopter) #c(0 -2)))
+  (incf (veloc thopter) #c(0 -4)))
 
 (defmethod stop-north ((thopter thopter) event)
-  (decf (accel thopter) #c(0 -2)))
+  (decf (veloc thopter) #c(0 -4)))
 
 (defmethod move-south ((thopter thopter) event)
-  (incf (accel thopter) #c(0 2)))
+  (incf (veloc thopter) #c(0 4)))
 
 (defmethod stop-south ((thopter thopter) event)
-  (decf (accel thopter) #c(0 2)))
+  (decf (veloc thopter) #c(0 4)))
 
 (defmethod move-west ((thopter thopter) event)
-  (incf (accel thopter) #c(-2 0)))
+  (incf (veloc thopter) #c(-4 0)))
 
 (defmethod stop-west ((thopter thopter) event)
-  (decf (accel thopter) #c(-2 0)))
+  (decf (veloc thopter) #c(-4 0)))
 
 (defmethod move-east ((thopter thopter) event)
-  (incf (accel thopter) #c(2 0)))
+  (incf (veloc thopter) #c(4 0)))
 
 (defmethod stop-east ((thopter thopter) event)
-  (decf (accel thopter) #c(2 0)))
+  (decf (veloc thopter) #c(4 0)))
 
 (defun nearest-object (component type)
   (with-slots (offset parent) component
@@ -254,9 +254,7 @@
     (when (> (x offset) (- (x (size parent)) (x size)))
       (setf offset (complex (- (x (size parent)) (x size)) (y offset))))
     (when (> (y offset) (- (y (size parent)) (y size)))
-      (setf offset (complex (x offset) (- (y (size parent)) (y size)))))
-    ;; Limit thopter velocity.
-    (setf veloc (* (unit veloc) (min 4d0 (abs veloc))))))
+      (setf offset (complex (x offset) (- (y (size parent)) (y size)))))))
 
 (defmethod collide ((bullet bullet) event)
   (when (and (parent bullet) (typep (event-hit event) 'enemy))
