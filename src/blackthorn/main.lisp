@@ -311,6 +311,7 @@
     (net-game-connect)
 
     (sdl:with-init ()
+      (init-mixer)
       (game-init *game*)
 
       (gl:enable :texture-2d)
@@ -355,7 +356,8 @@
               (net-game-update input-queue)
               (game-update *game*))))))
     #-clozure ;; FIXME: This causes a crash on Clozure builds on Windows.
-    (unload-graphics))
+    (unload-graphics)
+    (unload-mixer))
 
   ;; Finalization:
   (net-exit)

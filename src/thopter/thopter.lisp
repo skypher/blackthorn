@@ -437,7 +437,11 @@
                          :health 4 :firepower 3 :missiles 1)))
           (subscribe (game-keys game) thopter1)
           (subscribe (game-keys game) thopter2))))
-    (spawn-wave (level (game-wave game)) (+ 2 (level (game-wave game))))))
+    (spawn-wave (level (game-wave game)) (+ 2 (level (game-wave game))))
+    (play
+     (make-instance
+      'sample :name :music :source (resource "sound/music.mp3") :type :music)
+     :loop t)))
 
 (defmethod game-update :after ((game thopter-game))
   (let* ((thopter (iter (for i in-vector (children (game-root game)))

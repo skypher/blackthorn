@@ -81,7 +81,8 @@
   (gl:delete-textures
    (loop for sheet being the hash-values in *sheets*
       collect (slot-value sheet 'texture)
-      do (slot-makunbound sheet 'texture))))
+      do (slot-makunbound sheet 'texture)))
+  (clrhash *sheets*))
 
 (defmethod make-instance ((class (eql (find-class 'sheet))) &key name source)
   (or (when name (gethash name *sheets*))

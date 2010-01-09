@@ -40,6 +40,7 @@
                                    (:file "public")
                                    (:file "utils")
                                    (:file "graphics")
+                                   (:file "music")
                                    (:file "component")
                                    (:file "event")
                                    (:file "input")
@@ -62,7 +63,8 @@
                :usocket
                :cl-store
 
-               ;; Graphics:
+               ;; Graphics and Sound:
                :lispbuilder-sdl
                :lispbuilder-sdl-image
+               :lispbuilder-sdl-mixer
                :cl-opengl))

@@ -57,6 +57,19 @@
 
    ))
 
+(defpackage :blackthorn-mixer
+  (:nicknames :blt-mixer)
+  (:use :cl)
+  (:export
+
+   ;; music.lisp
+   :init-mixer
+   :unload-mixer
+   :sample
+   :play
+
+   ))
+
 (defpackage :blackthorn-physics
   (:nicknames :blt-phys)
   (:use :cl :iter :blt-gfx)
@@ -145,7 +158,7 @@
 
 (defpackage :blackthorn
   (:nicknames :blt)
-  (:use :cl :blt-gfx :blt-phys)
+  (:use :cl :blt-gfx :blt-mixer :blt-phys)
   (:export
 
    ;; utils.lisp
@@ -160,6 +173,7 @@
    :cross
 
    ;; graphics.lisp
+   :set-caption
    :window
    :sheet
    :activate
@@ -170,6 +184,12 @@
    :draw
    :anim
    :next-image
+
+   ;; music.lisp
+   :init-mixer
+   :unload-mixer
+   :sample
+   :play
 
    ;; component.lisp
    :component
@@ -226,6 +246,7 @@
    :*game*
    :game-root
    :game-view
+   :game-sheet
    :game-keys
    :game-init
    :game-load
