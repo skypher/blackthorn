@@ -416,7 +416,7 @@
           (game-sheet game)
           (make-instance 'sheet :source (resource "disp/thopter.png"))
           (game-wave game) (make-instance 'wave-controller :parent root))
-    (ecase *mode*
+    (ecase *host*
       ((:normal)
        (let ((thopter (make-instance
                        'thopter :host :normal :parent root
@@ -446,7 +446,7 @@
 (defmethod game-update :after ((game thopter-game))
   (let* ((thopter (iter (for i in-vector (children (game-root game)))
                         (when (and (typep i 'thopter)
-                                   (eql (event-host i) *mode*))
+                                   (eql (event-host i) *host*))
                           (return i))))
          (s (format
              nil "wave: ~a, health: ~a, firepower: ~a, missiles: ~a, fps: ~,2f"
