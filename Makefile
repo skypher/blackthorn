@@ -175,7 +175,7 @@ prof:
 dist:
 	rm -rf bin
 	mkdir bin
-	cp -r $(wildcard lib/*) disp bin
+	cp -r $(wildcard lib/*) disp sound bin
 	$(MAKE) driver="${dist}" new
 
 .PHONY: README
@@ -223,7 +223,7 @@ install-mac:
 	mkdir "${longname}.app" "${longname}.app/Contents" "${longname}.app/Contents/MacOS" "${longname}.app/Contents/Frameworks" "${longname}.app/Contents/Resources"
 	awk "{gsub(/@NAME@/, \"${name}\");print}" macosx/Info.plist | awk "{gsub(/@LONGNAME@/, \"${longname}\");print}" | awk "{gsub(/@VERSION@/, \"${version}\");print}" | awk "{gsub(/@DESCRIPTION@/, \"${description}\");print}" | awk "{gsub(/@URL@/, \"${url}\");print}" > "${longname}.app/Contents/Info.plist"
 	cp -r $(wildcard lib/*.framework) "${longname}.app/Contents/Frameworks"
-	cp -r disp "${longname}.app/Contents/Resources"
+	cp -r disp sound "${longname}.app/Contents/Resources"
 	cp bin/main "${longname}.app/Contents/MacOS"
 	cp macosx/PkgInfo COPYRIGHT "${longname}.app/Contents"
 	tar cfz "${name}-${version}-macos.tar.gz" "${longname}.app"
