@@ -103,7 +103,7 @@
     :initarg :missiles
     :initform 0)))
 (defclass bullet (sprite mobile collidable alarm)
-  ((timer :initform 90)))
+  ((timer :initform 60)))
 (defclass missile (sprite mobile collidable alarm)
   ((timer :initform 120)))
 (defclass enemy (sprite mobile collidable alarm shooter)
@@ -120,7 +120,7 @@
     :initarg :difficulty
     :initform 0)))
 (defclass enemy-bullet (sprite mobile collidable alarm)
-  ((timer :initform 90)))
+  ((timer :initform 60)))
 (defclass explosion (sprite mobile collidable alarm)
   ((drop-class
     :initarg :drop-class
@@ -351,7 +351,7 @@
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer) enemy
-    (setf timer (+ 5 (mt19937:random 35)))
+    (setf timer (+ 5 (mt19937:random 30) (mt19937:random 30)))
     (shoot enemy event)))
 
 (defmethod collide ((enemy enemy) event)
