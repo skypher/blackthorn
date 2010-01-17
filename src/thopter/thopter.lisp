@@ -438,6 +438,7 @@
           (subscribe (game-keys game) thopter1)
           (subscribe (game-keys game) thopter2))))
     (spawn-wave (level (game-wave game)) (+ 2 (level (game-wave game))))
+    #-(and sbcl linux) ;; FIXME: sdl-mixer currently fails on Linux.
     (play
      (make-instance
       'sample :name :music :source (resource "sound/music.mp3") :type :music)
