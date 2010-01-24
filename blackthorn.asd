@@ -47,6 +47,7 @@
                                    (:file "actor")
                                    (:file "collision")
                                    (:file "game")
+                                   (:file "network")
                                    (:file "library")
                                    (:file "main"))
                                   :serial t))))
@@ -61,6 +62,7 @@
 
                ;; Networking and Serialization
                :usocket
+               :flexi-streams
                :cl-store
 
                ;; Graphics and Sound:

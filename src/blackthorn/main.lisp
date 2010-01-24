@@ -130,169 +130,19 @@
          (find (apply #'min (mapcar #'x modes)) modes :key #'x)))))
 
 ;;;
-;;; Network - Sockets and Serialization
-;;;
-
-(defvar *mode*)
-(defvar *host*)
-(defvar *port*)
-(defvar *server-socket*)
-
-(defun net-init (mode host port)
-  (assert (not (boundp '*mode*)))
-  (ecase mode
-    ((:server)
-     (let* ((host (or host usocket:*wildcard-host*))
-            (port (or port usocket:*auto-port*))
-            (socket (usocket:socket-listen
-                     host port :element-type '(unsigned-byte 8))))
-       (setf *mode* :server
-             *host* host *port* (usocket:get-local-port socket)
-             *server-socket* socket)))
-    (:client
-     (setf *mode* :client *host* host *port* port))
-    (:normal
-     (setf *mode* :normal))))
-
-(defun net-exit ()
-  (assert (boundp '*mode*))
-  (when (eql *mode* :server)
-    (usocket:socket-close *server-socket*))
-  (makunbound '*mode*))
-
-(defmacro with-serve-request ((request &key (timeout 0) max) &body body)
-  (let ((i (gensym)) (m (gensym)) (time (gensym)))
-    ` (let ((,m ,max) (,time ,timeout))
-        (assert (eql *mode* :server))
-        (loop for ,i from 0 while (or (not ,m) (< ,i ,m))
-           while
-           #+(not (and sbcl windows))
-           (usocket:wait-for-input
-            *server-socket* :timeout ,time :ready-only t)
-           #+(and sbcl windows) t
-           do (usocket:with-connected-socket
-                  (connection (usocket:socket-accept *server-socket*))
-                (let ((,request
-                       (cl-store:restore (usocket:socket-stream connection))))
-                  (cl-store:store
-                   (progn ,@body)
-                   (usocket:socket-stream connection))))))))
-
-(defun net-send (message)
-  (assert (eql *mode* :client))
-  (usocket:with-client-socket
-      (socket stream *host* *port* :element-type '(unsigned-byte 8))
-    (cl-store:store message stream)))
-
-(defun net-send-request (message)
-  (assert (eql *mode* :client))
-  (usocket:with-client-socket
-      (socket stream *host* *port* :element-type '(unsigned-byte 8))
-    (cl-store:store message stream)
-    (force-output stream)
-    (cl-store:restore stream)))
-
-;;;
-;;; Network - Game Protocol
-;;;
-
-(defun net-game-connect ()
-  (ecase *mode*
-    ((:server)
-     (format t "Waiting for a connection on port ~a. Please start client.~%"
-             *port*)
-     (with-serve-request (request :timeout nil :max 1)
-       (if (equal (assoc :request request) '(:request :connect))
-           `((:response :connect) (:random-state ,mt19937:*random-state*))
-           (error "Server didn't understand request.~%")))
-     (format t "Connected.~%"))
-    ((:client)
-     (format t "Attempting to connect...~%")
-     (handler-case
-         (let ((response (net-send-request '((:request :connect)))))
-           (unless (equal (assoc :response response) '(:response :connect))
-             (error "Client didn't understand response.~%"))
-           (setf mt19937:*random-state* (cadr (assoc :random-state response))))
-       (usocket:connection-refused-error ()
-         (format t "Unable to connect to server. Quitting.~%")
-         (throw 'main-init nil)))
-     (format t "Connected.~%"))
-    ((:normal))))
-
-(defun net-game-start ()
-  (ecase *mode*
-    ((:server)
-     (format t "Server waiting for client to start.~%")
-     (with-serve-request (request :timeout nil :max 1)
-       (if (equal (assoc :request request) '(:request :start))
-           `((:response :start))
-           (error "Server didn't understand request.~%")))
-     (format t "Starting.~%"))
-    ((:client)
-     (format t "Attempting to start...~%")
-     (handler-case
-         (let ((response (net-send-request '((:request :start)))))
-           (unless (equal (assoc :response response) '(:response :start))
-             (error "Client didn't understand response.~%")))
-       (usocket:connection-refused-error ()
-         (format t "Disconnected from server. Quitting.~%")
-         (throw 'main-loop nil)))
-     (format t "Starting.~%"))
-    ((:normal))))
-
-(defun net-game-update (input-queue)
-  (ecase *mode*
-    ((:server)
-     (with-serve-request (request :timeout nil :max 1)
-       (cond ((equal (assoc :request request) '(:request :update))
-              (let ((server-events
-                     (containers:collect-elements input-queue))
-                    (client-events (cadr (assoc :events request))))
-                (iter (for e in server-events) (send *game* e))
-                (iter (for e in client-events) (send *game* e))
-                (containers:empty! input-queue)
-                `((:response :update) (:events ,server-events))))
-             ((equal (assoc :request request) '(:request :quit))
-              (format t "Disconnected from client. Quitting.~%")
-              (throw 'main-loop nil))
-             (t
-              (error "Server didn't understand request.~%")))))
-    ((:client)
-     (let* ((client-events (containers:collect-elements input-queue))
-            (response
-             (net-send-request
-              `((:request :update) (:events ,client-events)))))
-       (cond ((equal (assoc :response response) '(:response :update))
-              (let ((server-events (cadr (assoc :events response))))
-                (iter (for e in server-events) (send *game* e))
-                (iter (for e in client-events) (send *game* e))
-                (containers:empty! input-queue)))
-             ((equal (assoc :response response) '(:response :quit))
-              (format t "Disconnected from server. Quitting.~%")
-              (throw 'main-loop nil))
-             (t
-              (error "Client didn't understand response.~%")))))
-    ((:normal)
-     (let ((events (containers:collect-elements input-queue)))
-       (iter (for e in events) (send *game* e))
-       (containers:empty! input-queue)))))
-
-(defun net-game-quit ()
-  (ecase *mode*
-    ((:server)
-     (format t "Server disconnecting from client.~%")
-     (with-serve-request (request :timeout nil :max 1)
-       `((:response :quit)))
-     (format t "Disconnected.~%"))
-    ((:client)
-     (format t "Attempting to disconnect...~%")
-     (net-send `((:request :quit)))
-     (format t "Disconnected.~%"))
-    ((:normal))))
-
-;;;
 ;;; Main Game Driver
 ;;;
+
+(defvar *host*)
+
+(defun main-init-abort-handler ()
+  (throw 'main-init nil))
+
+(defun main-loop-abort-handler ()
+  (throw 'main-loop nil))
+
+(defun main-process-event (event)
+  (send *game* event))
 
 (defun main (&key (exit-when-done t))
   "Main entry point for the game. Deals with initialization, finalization, and the main game loop."
@@ -303,12 +153,13 @@
   (unless *game* (error "No game specified.~%"))
 
   (let ((options (cli-parser:cli-parse (command-line-arguments) (cli-options))))
-    (apply #'net-init (cli-get-mode options)))
+    (apply #'net-init (cli-get-mode options))
+    (setf *host* blt-net::*mode*))
 
   (setf mt19937:*random-state* (mt19937:make-random-state t))
 
   (catch 'main-init
-    (net-game-connect)
+    (net-game-connect #'main-init-abort-handler)
 
     (sdl:with-init ()
       (init-mixer)
@@ -326,19 +177,19 @@
       ;; Main loop:
       (let ((input-queue (make-instance 'containers:basic-queue)))
         (catch 'main-loop
-          (net-game-start)
+          (net-game-start #'main-loop-abort-handler)
 
           (sdl:with-events ()
             (:quit-event () (net-game-quit) t)
             (:key-down-event (:key k :mod m :mod-key m-k :unicode u)
               (containers:enqueue
                input-queue
-               (make-instance 'key-event :host *mode* :type :key-down :key k
+               (make-instance 'key-event :host *host* :type :key-down :key k
                               :mod m :mod-key m-k :unicode u)))
             (:key-up-event (:key k :mod m :mod-key m-k :unicode u)
               (containers:enqueue
                input-queue
-               (make-instance 'key-event :host *mode* :type :key-up :key k
+               (make-instance 'key-event :host *host* :type :key-up :key k
                               :mod m :mod-key m-k :unicode u)))
             (:idle ()
               (gl:clear :color-buffer-bit :depth-buffer-bit)
@@ -353,7 +204,8 @@
                            (not (eql swank:*communication-style* :spawn)))
                   (swank::handle-requests connection t)))
 
-              (net-game-update input-queue)
+              (net-game-update input-queue #'main-process-event
+                               #'main-loop-abort-handler)
               (game-update *game*))))))
     #-clozure ;; FIXME: This causes a crash on Clozure builds on Windows.
     (unload-graphics)

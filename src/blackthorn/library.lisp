@@ -33,7 +33,6 @@
 
 ; from http://lispbuilder.svn.sourceforge.net/viewvc/lispbuilder/trunk/lispbuilder-sdl/cffi/library.lisp
 (defun load-sdl-dlls ()
-  "Loads dlls needed to run SDL."
   #+darwin
   (let ((frameworks
          (merge-pathnames
@@ -58,7 +57,6 @@
 
 ; from http://lispbuilder.svn.sourceforge.net/viewvc/lispbuilder/trunk/lispbuilder-sdl-image/cffi/library.lisp
 (defun load-sdl-image-dlls ()
-  "Loads dlls needed to run SDL_image."
   (cffi:define-foreign-library sdl-image
     (:darwin (:framework "SDL_image"))
     (:windows (:or "SDL_image.dll" "SDL_image1.2.dll"))
@@ -67,7 +65,19 @@
                 "libSDL_image.so")))
   (cffi:use-foreign-library sdl-image))
 
+; from lispbuilder-sdl-mixer/cffi/library.lisp
+(defun load-sdl-mixer-dlls ()
+  (cffi:define-foreign-library sdl-mixer
+    (:darwin (:framework "SDL_mixer"))
+    (:windows "SDL_mixer.dll")
+    (:unix (:or "libSDL_mixer"
+                "libSDL_mixer.so"
+                "libSDL_mixer-1.2.so"
+                "libSDL_mixer-1.2.so.0")))
+  (cffi:use-foreign-library sdl-mixer))
+
 (defun load-dlls ()
   "Loads dlls needed to run SDL, SDL_image, and SDL_gfx."
   (load-sdl-dlls)
-  (load-sdl-image-dlls))
+  (load-sdl-image-dlls)
+  (load-sdl-mixer-dlls))
