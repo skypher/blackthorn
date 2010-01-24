@@ -140,7 +140,8 @@
   (bind-key-up   thopter :sdl-key-right #'stop-east)
   (bind-key-down thopter :sdl-key-space #'shoot)
   (bind-key-down thopter :sdl-key-lctrl #'missile)
-  (bind-key-down thopter :sdl-key-lalt  #'missile))
+  (bind-key-down thopter :sdl-key-lalt  #'missile)
+  (bind-key-down thopter :sdl-key-r     #'ressurect))
 
 (defmethod move-north ((thopter thopter) event)
   (incf (veloc thopter) #c(0 -4)))
@@ -199,6 +200,11 @@
                      :veloc veloc
                      :image (make-instance 'image :name :missile-n)
                      :timer 120))))
+
+(defmethod ressurect ((thopter thopter) event)
+    (when (<= (health thopter) 0)
+      (setf (health thopter) 2)))
+     ; (setf (parent thopter) (parent (nearest-object thopter 'enemy)))))
 
 (defmethod update ((missile missile) event)
   (with-slots (parent offset size veloc accel image) missile
@@ -288,18 +294,21 @@
     (detach (parent bullet) bullet)))
 
 (defmethod update ((enemy enemy) event)
-  (with-slots (parent (xy offset) (v veloc) (s size) accel health difficulty)
+  (with-slots (parent offset size (xy offset) (v veloc) (s size) accel health difficulty)
       enemy
     (labels
         ((circular (r)
            (+ ;; circular motion
             (* (unit (- r)) (min 4 (/ (dot v v) (abs r))))
-            ;; correction for radius
-            (* (unit (- r)) (- (abs r) 250) 0.01d0)
+            ;; correction for radius 
+            (radius-correction r)
             ;; correction for parallel veloc
             (* (- (proj v r)) 0.1d0)
             ;; correction for tangential veloc
             (* (unit (norm v r)) (- 2 (abs (norm v r))) 0.1d0)))
+	 ;; correction for radius, available for use
+	 (radius-correction (r)
+	   (* (unit (- r)) (- (abs r) 250) 0.01d0))
          (away (object)
            (with-slots ((xy2 offset) (v2 veloc)) object
              (unit (rot v2 (* pi 0.25d0 (signum (cross v2 (- xy xy2))))))))
@@ -323,14 +332,16 @@
                      (* (toward nearest-health) (max 0.5d0 difficulty)))
                     ((and nearest-missile
                           (< (dist xy (offset nearest-missile)) 120))
-                     (* (away nearest-missile)
-                        (+ 0.5d0 (* 0.1d0 difficulty))
-                        (if (> health 1) 1d0 1.5d0)))
+                     (+ (* (away nearest-missile)
+			  (+ 0.5d0 (* 0.1d0 difficulty))
+			  (if (> health 1) 1d0 1.5d0))
+			(radius-correction r)))
                     ((and nearest-bullet
                           (< (dist xy (offset nearest-bullet)) 120))
-                     (* (away nearest-bullet)
-                        (+ 0.5d0 (* 0.1d0 difficulty))
-                        (if (> health 1) 1d0 1.5d0)))
+                     (+ (* (away nearest-bullet)
+                          (+ 0.5d0 (* 0.1d0 difficulty))
+                          (if (> health 1) 1d0 1.5d0))
+			(radius-correction r)))
                     ((and nearest-upgrade-b
                           (< (dist xy (offset nearest-upgrade-b)) 180))
                      (* (toward nearest-upgrade-b) (max 0.5d0 difficulty)))
@@ -338,6 +349,13 @@
                           (< (dist xy (offset nearest-upgrade-m)) 180))
                      (* (toward nearest-upgrade-m) (max 0.5d0 difficulty)))
                     (t (circular r))))))))
+    ;; clamp enemies on screen
+    ;(when (< (x offset) 0) (setf offset (complex 0 (y offset))))
+    ;(when (< (y offset) 0) (setf offset (x offset)))
+    ;(when (> (x offset) (- (x (size parent)) (x size)))
+    ;  (setf offset (complex (- (x (size parent)) (x size)) (y offset))))
+    ;(when (> (y offset) (- (y (size parent)) (y size)))
+    ;  (setf offset (complex (x offset) (- (y (size parent)) (y size)))))))
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer) enemy
