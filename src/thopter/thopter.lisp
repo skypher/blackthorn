@@ -102,8 +102,10 @@
     :accessor missiles
     :initarg :missiles
     :initform 0)))
-(defclass bullet (sprite mobile collidable transient) ())
-(defclass missile (sprite mobile collidable alarm) ())
+(defclass bullet (sprite mobile collidable alarm)
+  ((timer :initform 60)))
+(defclass missile (sprite mobile collidable alarm)
+  ((timer :initform 120)))
 (defclass enemy (sprite mobile collidable alarm shooter)
   ((timer :initform 10)
    (bullet-class :initform 'enemy-bullet)
@@ -117,7 +119,8 @@
    (difficulty
     :initarg :difficulty
     :initform 0)))
-(defclass enemy-bullet (sprite mobile collidable transient) ())
+(defclass enemy-bullet (sprite mobile collidable alarm)
+  ((timer :initform 60)))
 (defclass explosion (sprite mobile collidable alarm)
   ((drop-class
     :initarg :drop-class
@@ -200,8 +203,7 @@
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
                      :veloc veloc
-                     :image (make-instance 'image :name :missile-n)
-                     :timer 120))))
+                     :image (make-instance 'image :name :missile-n)))))
 
 (defmethod update ((missile missile) event)
   (with-slots (parent offset size veloc accel image) missile
@@ -263,6 +265,10 @@
   (when (and (parent bullet) (typep (event-hit event) 'enemy))
     (detach (parent bullet) bullet)))
 
+(defmethod alarm ((bullet bullet) event)
+  (when (parent bullet)
+    (detach (parent bullet) bullet)))
+
 (defmethod collide ((missile missile) event)
   (with-slots (parent offset size depth veloc) missile
     (when (and parent (or (typep (event-hit event) 'enemy)
@@ -288,6 +294,10 @@
 
 (defmethod collide ((bullet enemy-bullet) event)
   (when (and (parent bullet) (typep (event-hit event) 'thopter))
+    (detach (parent bullet) bullet)))
+
+(defmethod alarm ((bullet enemy-bullet) event)
+  (when (parent bullet)
     (detach (parent bullet) bullet)))
 
 (defmethod update ((enemy enemy) event)
@@ -349,7 +359,7 @@
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer) enemy
-    (setf timer (+ 2 (mt19937:random 25)))
+    (setf timer (+ 5 (mt19937:random 30) (mt19937:random 30)))
     (shoot enemy event)))
 
 (defmethod collide ((enemy enemy) event)
@@ -424,7 +434,7 @@
           (game-sheet game)
           (make-instance 'sheet :source (resource "disp/thopter.png"))
           (game-wave game) (make-instance 'wave-controller :parent root))
-    (ecase *mode*
+    (ecase *host*
       ((:normal)
        (let ((thopter (make-instance
                        'thopter :host :normal :parent root
@@ -454,7 +464,7 @@
 (defmethod game-update :after ((game thopter-game))
   (let* ((thopter (iter (for i in-vector (children (game-root game)))
                         (when (and (typep i 'thopter)
-                                   (eql (event-host i) *mode*))
+                                   (eql (event-host i) *host*))
                           (return i))))
          (s (format
              nil "wave: ~a, health: ~a, firepower: ~a, missiles: ~a, fps: ~,2f"

@@ -34,6 +34,21 @@
 ;;; intended for internal use.
 ;;;
 
+(defpackage :blackthorn-net
+  (:nicknames :blt-net)
+  (:use :cl :iter)
+  (:export
+
+   ;; network.lisp
+   :net-init
+   :net-exit
+   :net-game-connect
+   :net-game-start
+   :net-game-update
+   :net-game-quit
+
+   ))
+
 (defpackage :blackthorn-graphics
   (:nicknames :blt-gfx)
   (:use :cl :iter)
@@ -262,7 +277,7 @@
 
 (defpackage :blackthorn-user
   (:nicknames :blt-user)
-  (:use :cl :blt :iter)
+  (:use :cl :blt :blt-net :iter)
   (:shadow :room)
   #+allegro (:import-from :cl-user :exit)
   (:import-from :blt-gfx :unload-graphics)
@@ -271,7 +286,7 @@
    ;; main.lisp
    :*resource-pathname-defaults*
    :resource
-   :*mode*
+   :*host*
    :main
 
    ))
