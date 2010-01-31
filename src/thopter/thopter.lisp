@@ -175,7 +175,7 @@
 (defun nearest-object (component type)
   (with-slots (offset parent) component
     (iter (for x in-vector (children parent))
-          (when (typep x type)
+          (when (and (typep x type) (not (equal component x)))
             (finding x minimizing (dist offset (offset x)))))))
 
 (defmethod shoot ((shooter shooter) event)
@@ -192,7 +192,7 @@
          to (floor firepower 2)
          do (make-instance bullet-class :parent parent 
                           :offset bullet-offset :depth -1
-                          :veloc (+ veloc (rot bullet-veloc (* i 0.15d0 pi)))
+                          :veloc (+ veloc (rot bullet-veloc (* i 0.1495d0 pi)))
                           :image bullet-image)))))
 
 (defmethod missile ((thopter thopter) event)
@@ -316,6 +316,13 @@
          ;; correction for radius, available for use
          (radius-correction (r)
            (* (unit (- r)) (- (abs r) 250) 0.01d0))
+         ;; steer away from nearest enemy
+         (enemy-correction (nearest-enemy)
+           (if (and nearest-enemy
+                (< (dist xy (offset nearest-enemy)) 32))
+             (* (away nearest-enemy) 
+                (/ (- 32 (dist xy (offset nearest-enemy))) 10.0d0))
+             0))
          (away (object)
            (with-slots ((xy2 offset) (v2 veloc)) object
              (unit (rot v2 (* pi 0.25d0 (signum (cross v2 (- xy xy2))))))))
@@ -331,7 +338,7 @@
             (r (- xy (/ (size (game-root *game*)) 2))))
         (setf v (* (unit v) (min (abs v) (+ 8d0 (* 2d0 difficulty))))
               accel
-              (cond ((and nearest-thopter
+              (+ (cond ((and nearest-thopter
                           (< (dist xy (offset nearest-thopter)) 180))
                      (* (toward nearest-thopter) (max 0.5d0 difficulty)))
                     ((and nearest-health
@@ -355,7 +362,8 @@
                     ((and nearest-upgrade-m
                           (< (dist xy (offset nearest-upgrade-m)) 180))
                      (* (toward nearest-upgrade-m) (max 0.5d0 difficulty)))
-                    (t (circular r))))))))
+                    (t (circular r)))
+                (enemy-correction (nearest-object enemy 'enemy))))))))
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer) enemy
