@@ -339,31 +339,31 @@
         (setf v (* (unit v) (min (abs v) (+ 8d0 (* 2d0 difficulty))))
               accel
               (+ (cond ((and nearest-thopter
-                          (< (dist xy (offset nearest-thopter)) 180))
-                     (* (toward nearest-thopter) (max 0.5d0 difficulty)))
-                    ((and nearest-health
-                          (< (dist xy (offset nearest-health)) 180))
-                     (* (toward nearest-health) (max 0.5d0 difficulty)))
-                    ((and nearest-missile
-                          (< (dist xy (offset nearest-missile)) 120))
-                     (+ (* (away nearest-missile)
-                          (+ 0.5d0 (* 0.1d0 difficulty))
-                          (if (> health 1) 1d0 1.5d0))
-                        (radius-correction r)))
-                    ((and nearest-bullet
-                          (< (dist xy (offset nearest-bullet)) 120))
-                     (+ (* (away nearest-bullet)
-                          (+ 0.5d0 (* 0.1d0 difficulty))
-                          (if (> health 1) 1d0 1.5d0))
-                        (radius-correction r)))
-                    ((and nearest-upgrade-b
-                          (< (dist xy (offset nearest-upgrade-b)) 180))
-                     (* (toward nearest-upgrade-b) (max 0.5d0 difficulty)))
-                    ((and nearest-upgrade-m
-                          (< (dist xy (offset nearest-upgrade-m)) 180))
-                     (* (toward nearest-upgrade-m) (max 0.5d0 difficulty)))
-                    (t (circular r)))
-                (enemy-correction (nearest-object enemy 'enemy))))))))
+                             (< (dist xy (offset nearest-thopter)) 180))
+                        (* (toward nearest-thopter) (max 0.5d0 difficulty)))
+                       ((and nearest-health
+                             (< (dist xy (offset nearest-health)) 180))
+                        (* (toward nearest-health) (max 0.5d0 difficulty)))
+                       ((and nearest-missile
+                             (< (dist xy (offset nearest-missile)) 120))
+                        (+ (* (away nearest-missile)
+                              (+ 0.5d0 (* 0.1d0 difficulty))
+                              (if (> health 1) 1d0 1.5d0))
+                           (radius-correction r)))
+                       ((and nearest-bullet
+                             (< (dist xy (offset nearest-bullet)) 120))
+                        (+ (* (away nearest-bullet)
+                              (+ 0.5d0 (* 0.1d0 difficulty))
+                              (if (> health 1) 1d0 1.5d0))
+                           (radius-correction r)))
+                       ((and nearest-upgrade-b
+                             (< (dist xy (offset nearest-upgrade-b)) 180))
+                        (* (toward nearest-upgrade-b) (max 0.5d0 difficulty)))
+                       ((and nearest-upgrade-m
+                             (< (dist xy (offset nearest-upgrade-m)) 180))
+                        (* (toward nearest-upgrade-m) (max 0.5d0 difficulty)))
+                       (t (circular r)))
+                 (enemy-correction (nearest-object enemy 'enemy))))))))
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer) enemy

@@ -57,7 +57,6 @@
                :cl-fad
                :iterate
                :cl-containers
-               :spatial-trees
                :mt19937
 
                ;; Networking and Serialization

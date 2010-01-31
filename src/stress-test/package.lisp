@@ -36,4 +36,7 @@
    ;;mobile.lisp
    :mobile-test
 
+   ;;collidable.lisp
+   :collidable-test
+
    ))

@@ -39,6 +39,7 @@
                                   :components
                                   ((:file "package")
                                    (:file "static")
-                                   (:file "mobile"))
+                                   (:file "mobile")
+                                   (:file "collidable"))
                                   :serial t))))
   :depends-on (:blackthorn))
