@@ -26,4 +26,5 @@ lib/*
 doc/*
 *.app
 *.exe
+*.dll
 *.tar.gz
