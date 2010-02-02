@@ -32,9 +32,7 @@
 (defgeneric collision-rect (object))
 
 (defclass collidable (actor)
-  ((collision-squares
-    :initform (make-array 10 :fill-pointer 0 :adjustable t))
-   (collision-offset
+  ((collision-offset
     :initform #c(0 0))))
 
 (defgeneric collide (object event))
@@ -55,38 +53,46 @@
   (declare (ignore grid node)))
 (defmethod insert-node (grid (node collidable) xy)
   (with-slots ((grid collision-grid) (square-size collision-square-size)) grid
-    (with-slots (size (squares collision-squares) collision-offset) node
+    (with-slots (size (offset collision-offset)) node
       (when (not (zerop size))
-        (let ((x1 (truncate (x xy) square-size))
-              (y1 (truncate (y xy) square-size))
-              (x2 (truncate (+ (x xy) (x size)) square-size))
-              (y2 (truncate (+ (y xy) (y size)) square-size)))
-          (setf collision-offset xy (fill-pointer squares) 0)
-          (iter (for i from x1 to x2)
-                (iter (for j from y1 to y2)
-                      (push node (gethash (complex i j) grid))
-                      (vector-push-extend (complex i j) squares))))))))
+        (let ((i1 (truncate (x xy) square-size))
+              (j1 (truncate (y xy) square-size))
+              (i2 (truncate (+ (x xy) (x size)) square-size))
+              (j2 (truncate (+ (y xy) (y size)) square-size)))
+          (setf offset xy)
+          (iter (for i from i1 to i2)
+                (iter (for j from j1 to j2)
+                      (push node (gethash (complex i j) grid)))))))))
 
 (defgeneric search-node (grid node thunk))
 (defmethod search-node (grid node thunk)
   (declare (ignore grid node thunk)))
-(defmethod search-node (grid (node collidable) thunk)
-  (with-slots ((grid collision-grid)) grid
-    (with-slots ((squares collision-squares)) node
-      (iter (for square in-vector squares)
-            (iter (for other in (gethash square grid))
+(let ((collisions (make-hash-table)))
+  (defmethod search-node (grid (node collidable) thunk)
+    (with-slots ((grid collision-grid) (square-size collision-square-size)) grid
+      (with-slots ((s1 size) (xy1 collision-offset)) node
+        (let ((i1 (truncate (x xy1) square-size))
+              (j1 (truncate (y xy1) square-size))
+              (i2 (truncate (+ (x xy1) (x s1)) square-size))
+              (j2 (truncate (+ (y xy1) (y s1)) square-size))
+              (x1 (x xy1)) (y1 (y xy1)) (w1 (x s1)) (h1 (y s1)))
+          (iter
+           (for i from i1 to i2)
+           (iter
+            (for j from j1 to j2)
+            (iter (for other in (gethash (complex i j) grid))
                   (when (not (eql node other))
-                    (with-slots ((xy1 collision-offset) (s1 size)) node
-                      (with-slots ((xy2 collision-offset) (s2 size)) other
-                        (let ((x1 (x xy1)) (y1 (y xy1))
-                              (x2 (x xy2)) (y2 (y xy2))
-                              (w1 (x s1)) (h1 (y s1))
-                              (w2 (x s2)) (h2 (y s2)))
-                          (unless (or (<= (+ x1 w1) x2)
-                                      (<= (+ x2 w2) x1)
-                                      (<= (+ y1 h1) y2)
-                                      (<= (+ y2 h2) y1))
-                            (funcall thunk node other)))))))))))
+                    (with-slots ((xy2 collision-offset) (s2 size)) other
+                      (let ((x2 (x xy2)) (y2 (y xy2)) (w2 (x s2)) (h2 (y s2)))
+                        (unless (or (<= (+ x1 w1) x2)
+                                    (<= (+ x2 w2) x1)
+                                    (<= (+ y1 h1) y2)
+                                    (<= (+ y2 h2) y1))
+                          (setf (gethash other collisions) t)))))))))
+        (iter (for (other nil) in-hashtable collisions)
+              (funcall thunk node other))
+        (clrhash collisions)
+        nil))))
 
 (defvar *collision-grid*)
 
