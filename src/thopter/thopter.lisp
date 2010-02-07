@@ -247,7 +247,7 @@
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
                      :offset offset :depth depth :veloc (/ veloc 2)
-                     :image (make-instance 'image :name :explosion)
+                     :image (make-instance 'anim :name :explosion)
                      :timer 10)
       (detach parent thopter))))
 
@@ -273,7 +273,7 @@
   (with-slots (parent offset size depth veloc) missile
     (when (and parent (or (typep (event-hit event) 'enemy)
                           (typep (event-hit event) 'explosion)))
-      (let ((explosion (make-instance 'image :name :explosion)))
+      (let ((explosion (make-instance 'anim :name :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
                        :depth depth :veloc (/ veloc 2)
@@ -284,7 +284,7 @@
 (defmethod alarm ((missile missile) event)
   (with-slots (parent offset size depth veloc) missile
     (when parent
-      (let ((explosion (make-instance 'image :name :explosion)))
+      (let ((explosion (make-instance 'anim :name :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
                        :depth depth :veloc (/ veloc 2)
@@ -392,7 +392,7 @@
                                             ((health-pack) :health)))))
         (make-instance 'explosion :parent parent
                        :offset offset :depth depth :veloc (/ veloc 2)
-                       :image (make-instance 'image :name :explosion)
+                       :image (make-instance 'anim :name :explosion)
                        :timer 10
                        :drop-class drop-class :drop-image drop-image)
         (detach parent enemy)))))
