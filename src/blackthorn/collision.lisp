@@ -30,10 +30,15 @@
 ;;;
 
 (defgeneric collision-rect (object))
+(defgeneric reactive-collisions-only-p (object))
 
 (defclass collidable (actor)
   ((collision-offset
-    :initform #c(0 0))))
+    :initform #c(0 0))
+   (reactive-collisions-only-p
+    :accessor reactive-collisions-only-p
+    :initarg :reactive-collisions-only-p
+    :initform nil)))
 
 (defgeneric collide (object event))
 (defmethod collide (object event)
@@ -82,23 +87,27 @@
   (declare (ignore grid node thunk)))
 (let ((collisions (make-hash-table)))
   (defmethod collision-grid-search-node (grid (node collidable) thunk)
-    (with-slots ((s1 size) (xy1 collision-offset)) node
-      (let ((x1 (x xy1)) (y1 (y xy1)) (w1 (x s1)) (h1 (y s1)))
-        (with-collision-grid-iterate (nodes (grid xy1 (+ xy1 s1)))
-          (iter (for other in nodes)
-                (when (not (eql node other))
-                  (with-slots ((xy2 collision-offset) (s2 size)) other
-                    (let ((x2 (x xy2)) (y2 (y xy2))
-                          (w2 (x s2)) (h2 (y s2)))
-                      (unless (or (<= (+ x1 w1) x2)
-                                  (<= (+ x2 w2) x1)
-                                  (<= (+ y1 h1) y2)
-                                  (<= (+ y2 h2) y1))
-                        (setf (gethash other collisions) t))))))))
-      (iter (for (other nil) in-hashtable collisions)
-            (funcall thunk node other))
-      (clrhash collisions)
-      nil)))
+    (with-slots ((s1 size) (xy1 collision-offset)
+                 (r1-p reactive-collisions-only-p)) node
+      (unless r1-p
+        (let ((x1 (x xy1)) (y1 (y xy1)) (w1 (x s1)) (h1 (y s1)))
+          (with-collision-grid-iterate (nodes (grid xy1 (+ xy1 s1)))
+            (iter (for other in nodes)
+                  (when (not (eql node other))
+                    (with-slots ((xy2 collision-offset) (s2 size)) other
+                      (let ((x2 (x xy2)) (y2 (y xy2))
+                            (w2 (x s2)) (h2 (y s2)))
+                        (unless (or (<= (+ x1 w1) x2)
+                                    (<= (+ x2 w2) x1)
+                                    (<= (+ y1 h1) y2)
+                                    (<= (+ y2 h2) y1))
+                          (setf (gethash other collisions) t))))))))
+        (iter (for (other nil) in-hashtable collisions)
+              (with-slots ((r2-p reactive-collisions-only-p)) other
+                (funcall thunk node other)
+                (when r2-p (funcall thunk other node))))
+        (clrhash collisions)
+        nil))))
 
 (defun collision-grid-search-nearest (grid node size &key (test (constantly t)))
   (with-slots ((offset collision-offset)) node

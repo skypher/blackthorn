@@ -103,9 +103,11 @@
     :initarg :missiles
     :initform 0)))
 (defclass bullet (sprite mobile collidable alarm)
-  ((timer :initform 60)))
+  ((timer :initform 60)
+   (reactive-collisions-only-p :initform t)))
 (defclass missile (sprite mobile collidable alarm)
-  ((timer :initform 120)))
+  ((timer :initform 120)
+   (reactive-collisions-only-p :initform t)))
 (defclass enemy (sprite mobile collidable alarm shooter)
   ((timer :initform 10)
    (bullet-class :initform 'enemy-bullet)
@@ -120,17 +122,22 @@
     :initarg :difficulty
     :initform 0)))
 (defclass enemy-bullet (sprite mobile collidable alarm)
-  ((timer :initform 60)))
+  ((timer :initform 60)
+   (reactive-collisions-only-p :initform t)))
 (defclass explosion (sprite mobile collidable alarm)
   ((drop-class
     :initarg :drop-class
     :initform nil)
    (drop-image
     :initarg :drop-image
-    :initform nil)))
-(defclass health-pack (sprite mobile collidable transient) ())
-(defclass upgrade-bullet (sprite mobile collidable transient) ())
-(defclass upgrade-missile (sprite mobile collidable transient) ())
+    :initform nil)
+   (reactive-collisions-only-p :initform t)))
+(defclass health-pack (sprite mobile collidable transient)
+  ((reactive-collisions-only-p :initform t)))
+(defclass upgrade-bullet (sprite mobile collidable transient)
+  ((reactive-collisions-only-p :initform t)))
+(defclass upgrade-missile (sprite mobile collidable transient)
+  ((reactive-collisions-only-p :initform t)))
 
 (defmethod initialize-instance :after ((thopter thopter) &key)
   (bind-key-down thopter :sdl-key-up    #'move-north)

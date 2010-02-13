@@ -150,6 +150,7 @@
 
    ;; collision.lisp
    :collidable
+   :reactive-collisions-only-p
    :collide
    :find-nearest-object
    :collision-event
@@ -259,6 +260,7 @@
 
    ;; collision.lisp
    :collidable
+   :reactive-collisions-only-p
    :collide
    :find-nearest-object
    :collision-event
