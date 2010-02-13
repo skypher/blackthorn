@@ -48,10 +48,10 @@
    (collision-square-size
     :initform 32)))
 
-(defgeneric insert-node (grid node xy))
-(defmethod insert-node (grid node xy)
+(defgeneric collision-grid-insert-node (grid node xy))
+(defmethod collision-grid-insert-node (grid node xy)
   (declare (ignore grid node)))
-(defmethod insert-node (grid (node collidable) xy)
+(defmethod collision-grid-insert-node (grid (node collidable) xy)
   (with-slots ((grid collision-grid) (square-size collision-square-size)) grid
     (with-slots (size (offset collision-offset)) node
       (when (not (zerop size))
@@ -64,11 +64,11 @@
                 (iter (for j from j1 to j2)
                       (push node (gethash (complex i j) grid)))))))))
 
-(defgeneric search-node (grid node thunk))
-(defmethod search-node (grid node thunk)
+(defgeneric collision-grid-search-node (grid node thunk))
+(defmethod collision-grid-search-node (grid node thunk)
   (declare (ignore grid node thunk)))
 (let ((collisions (make-hash-table)))
-  (defmethod search-node (grid (node collidable) thunk)
+  (defmethod collision-grid-search-node (grid (node collidable) thunk)
     (with-slots ((grid collision-grid) (square-size collision-square-size)) grid
       (with-slots ((s1 size) (xy1 collision-offset)) node
         (let ((i1 (truncate (x xy1) square-size))
@@ -94,20 +94,61 @@
         (clrhash collisions)
         nil))))
 
+(defun collision-grid-search-nearest (grid node size &key (test (constantly t)))
+  (with-slots ((grid collision-grid) (square-size collision-square-size)) grid
+    (with-slots ((offset collision-offset)) node
+      (let* ((xy1 (- offset (complex size size)))
+             (xy2 (+ offset (complex size size)))
+             (i1 (truncate (x xy1) square-size))
+             (j1 (truncate (y xy1) square-size))
+             (i2 (truncate (x xy2) square-size))
+             (j2 (truncate (y xy2) square-size)))
+        (iter
+         (for i from i1 to i2)
+         (let ((min
+                (iter
+                 (for j from j1 to j2)
+                 (let ((min
+                        (iter
+                         (for other in (gethash (complex i j) grid))
+                         (when (funcall test other)
+                           (with-slots ((other-offset collision-offset)) other
+                             (finding other minimizing
+                                      (dist offset other-offset)))))))
+                   (when min
+                     (with-slots ((min-offset collision-offset)) min
+                       (finding min minimizing (dist offset min-offset))))))))
+           (when min
+             (with-slots ((min-offset collision-offset)) min
+               (finding min minimizing (dist offset min-offset))))))))))
+
 (defvar *collision-grid*)
 
-(defun find-collisions (root thunk)
+(defun collision-grid-update (root)
   (unless (boundp '*collision-grid*)
     (setf *collision-grid* (make-instance 'collision-grid)))
   (labels ((insert-helper (node xy)
-             (insert-node *collision-grid* node xy))
-           (search-helper (node xy)
-             (declare (ignore xy))
-             (search-node *collision-grid* node thunk)))
+             (collision-grid-insert-node *collision-grid* node xy)))
     (with-slots (collision-grid) *collision-grid*
       (clrhash  collision-grid))
-    (walk-tree root #'insert-helper)
+    (walk-tree root #'insert-helper)))
+
+(defun collision-grid-search (root thunk)
+  (labels ((search-helper (node xy)
+             (declare (ignore xy))
+             (collision-grid-search-node *collision-grid* node thunk)))
     (walk-tree root #'search-helper)))
+
+(defun find-collisions (root thunk)
+  (collision-grid-update root)
+  (collision-grid-search root thunk))
+
+(defun find-nearest-object (node size &key (test (constantly t)))
+  (collision-grid-search-nearest *collision-grid* node size :test test))
+
+;;;
+;;; Collision Events
+;;;
 
 (defclass collision-event (event)
   ((type :initform :collide)

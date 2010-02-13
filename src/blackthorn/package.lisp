@@ -151,6 +151,9 @@
    :collide
    :event-hit
 
+   ;; collision.lisp
+   :find-nearest-object
+
    ;; game.lisp
    :game
    :*game*
@@ -255,6 +258,9 @@
    :collidable
    :collide
    :event-hit
+
+   ;; collision.lisp
+   :find-nearest-object
 
    ;; game.lisp
    :game

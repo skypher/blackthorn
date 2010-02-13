@@ -172,11 +172,10 @@
 (defmethod stop-east ((thopter thopter) event)
   (decf (veloc thopter) #c(4 0)))
 
-(defun nearest-object (component type)
-  (with-slots (offset parent) component
-    (iter (for x in-vector (children parent))
-          (when (and (typep x type) (not (equal component x)))
-            (finding x minimizing (dist offset (offset x)))))))
+(defun nearest-object (component type radius)
+  (find-nearest-object
+   component radius
+   :test #'(lambda (x) (and (typep x type) (and (not (eql component x)))))))
 
 (defmethod shoot ((shooter shooter) event)
   (with-slots (parent offset size veloc firepower
@@ -207,7 +206,7 @@
 
 (defmethod update ((missile missile) event)
   (with-slots (parent offset size veloc accel image) missile
-    (let* ((nearest-enemy (nearest-object missile 'enemy))
+    (let* ((nearest-enemy (nearest-object missile 'enemy 200))
            (theta (theta veloc))
            (new-image (make-instance 'image :name
                                      (cond ((or (> theta (* 0.875 pi))
@@ -329,12 +328,12 @@
          (toward (object)
            (with-slots ((xy2 offset) (s2 size)) object
              (unit (- xy2 xy (/ s2 2d0) (/ s -2d0))))))
-      (let ((nearest-thopter (nearest-object enemy 'thopter))
-            (nearest-health (nearest-object enemy 'health-pack))
-            (nearest-bullet (nearest-object enemy 'bullet))
-            (nearest-missile (nearest-object enemy 'missile))
-            (nearest-upgrade-b (nearest-object enemy 'upgrade-bullet))
-            (nearest-upgrade-m (nearest-object enemy 'upgrade-missile))
+      (let ((nearest-thopter (nearest-object enemy 'thopter 180))
+            (nearest-health (nearest-object enemy 'health-pack 180))
+            (nearest-bullet (nearest-object enemy 'bullet 120))
+            (nearest-missile (nearest-object enemy 'missile 120))
+            (nearest-upgrade-b (nearest-object enemy 'upgrade-bullet 180))
+            (nearest-upgrade-m (nearest-object enemy 'upgrade-missile 180))
             (r (- xy (/ (size (game-root *game*)) 2))))
         (setf v (* (unit v) (min (abs v) (+ 8d0 (* 2d0 difficulty))))
               accel
@@ -363,7 +362,7 @@
                              (< (dist xy (offset nearest-upgrade-m)) 180))
                         (* (toward nearest-upgrade-m) (max 0.5d0 difficulty)))
                        (t (circular r)))
-                 (enemy-correction (nearest-object enemy 'enemy))))))))
+                 (enemy-correction (nearest-object enemy 'enemy 30))))))))
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer) enemy
