@@ -25,7 +25,17 @@
 
 (in-package :blackthorn-stress-test)
 
-(defclass static-game (game) ())
+(defclass static-game (game)
+  ((test-size
+    :reader test-size
+    :initarg :test-size
+    :initform 5000)))
+
+(defclass static-object (sprite) ())
+
+(defmethod report-event ((object actor) (event key-event))
+  (declare (ignore object))
+  (format t "~a: ~a~%" (event-type event) (event-key event)))
 
 (defmethod game-init ((game static-game))
   (let ((root (make-instance 'component))
@@ -34,25 +44,29 @@
           (game-view game) (make-instance 'component :size size)
           (game-sheet game)
           (make-instance 'sheet :source (resource "disp/sheet.png")))
-    (loop for x from 0 to (x size) by 16
-       do (loop for y from 0 to (y size) by 16
-             do (make-instance
-                 'sprite :parent root :offset (complex x y)
-                 :image (make-instance 'image :name :explosion))))))
+    (loop for i from 0 to (test-size game)
+       do (make-instance
+           'static-object :parent root
+           :offset (complex (random (x size)) (random (y size)))
+           :image (make-instance 'image :name :explosion)))
+    (let ((keys (make-instance 'actor)))
+      (bind keys :key-down #'report-event)
+      (bind keys :key-up #'report-event)
+      (subscribe (game-keys game) keys))))
 
 (defmethod game-init :after ((game static-game))
   ;; uncork the frame rate and see how fast we go
   (setf (sdl:frame-rate) 100))
 
 (defmethod game-update :after ((game static-game))
-  ;; report the frame reate
+  ;; report the frame rate
   (let ((s (format nil "fps: ~,2f" (sdl:average-fps))))
     (set-caption s s)))
 
 ;; For interactive use:
-(defun static-test ()
-  (let ((*game* (make-instance 'static-game)))
+(defun static-test (&optional (n 5000))
+  (let ((*game* (make-instance 'static-game :test-size n)))
     (main :exit-when-done nil)))
 
 ;; For non-interactive use:
-;(defparameter *game* (make-instance 'static-game))
+(defparameter *game* (make-instance 'static-game :test-size 5000))

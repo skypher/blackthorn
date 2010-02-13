@@ -82,4 +82,4 @@
     (main :exit-when-done nil)))
 
 ;; For non-interactive use:
-(defvar *game* (make-instance 'mobile-game :test-size 5000))
+;(defparameter *game* (make-instance 'mobile-game :test-size 5000))

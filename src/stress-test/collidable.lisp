@@ -82,4 +82,4 @@
     (main :exit-when-done nil)))
 
 ;; For non-interactive use:
-(defparameter *game* (make-instance 'collidable-game :test-size 2000))
+;(defparameter *game* (make-instance 'collidable-game :test-size 2000))
