@@ -206,7 +206,7 @@
 
 (defmethod update ((missile missile) event)
   (with-slots (parent offset size veloc accel image) missile
-    (let* ((nearest-enemy (nearest-object missile 'enemy 200))
+    (let* ((nearest-enemy (nearest-object missile 'enemy 400))
            (theta (theta veloc))
            (new-image (make-instance 'image :name
                                      (cond ((or (> theta (* 0.875 pi))
