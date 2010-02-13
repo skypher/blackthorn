@@ -48,79 +48,68 @@
    (collision-square-size
     :initform 32)))
 
+(defmacro with-collision-grid-iterate ((var (grid xy1 xy2) &key outer-label)
+                                       &body body)
+  (with-gensyms (g sq i1 j1 i2 j2 i j)
+    (once-only (xy1 xy2)
+      `(with-slots ((,g collision-grid) (,sq collision-square-size)) grid
+         (let ((,i1 (truncate (x ,xy1) ,sq))
+               (,j1 (truncate (y ,xy1) ,sq))
+               (,i2 (truncate (x ,xy2) ,sq))
+               (,j2 (truncate (y ,xy2) ,sq)))
+           (iter ,@(when outer-label (list outer-label))
+                 (for ,i from ,i1 to ,i2)
+                 (iter (for ,j from ,j1 to ,j2)
+                       (symbol-macrolet
+                           (,(when var `(,var (gethash (complex ,i ,j) ,g))))
+                         ,@body))))))))
+
 (defgeneric collision-grid-insert-node (grid node xy))
 (defmethod collision-grid-insert-node (grid node xy)
   (declare (ignore grid node)))
 (defmethod collision-grid-insert-node (grid (node collidable) xy)
-  (with-slots ((grid collision-grid) (square-size collision-square-size)) grid
+  (labels ((push-node (nodes)
+             (format t "pushing node ~a to ~a~%" node nodes)
+             (push node nodes)))
     (with-slots (size (offset collision-offset)) node
       (when (not (zerop size))
-        (let ((i1 (truncate (x xy) square-size))
-              (j1 (truncate (y xy) square-size))
-              (i2 (truncate (+ (x xy) (x size)) square-size))
-              (j2 (truncate (+ (y xy) (y size)) square-size)))
-          (setf offset xy)
-          (iter (for i from i1 to i2)
-                (iter (for j from j1 to j2)
-                      (push node (gethash (complex i j) grid)))))))))
+        (setf offset xy)
+        (with-collision-grid-iterate (nodes (grid xy (+ xy size)))
+          (push node nodes))))))
 
 (defgeneric collision-grid-search-node (grid node thunk))
 (defmethod collision-grid-search-node (grid node thunk)
   (declare (ignore grid node thunk)))
 (let ((collisions (make-hash-table)))
   (defmethod collision-grid-search-node (grid (node collidable) thunk)
-    (with-slots ((grid collision-grid) (square-size collision-square-size)) grid
-      (with-slots ((s1 size) (xy1 collision-offset)) node
-        (let ((i1 (truncate (x xy1) square-size))
-              (j1 (truncate (y xy1) square-size))
-              (i2 (truncate (+ (x xy1) (x s1)) square-size))
-              (j2 (truncate (+ (y xy1) (y s1)) square-size))
-              (x1 (x xy1)) (y1 (y xy1)) (w1 (x s1)) (h1 (y s1)))
-          (iter
-           (for i from i1 to i2)
-           (iter
-            (for j from j1 to j2)
-            (iter (for other in (gethash (complex i j) grid))
-                  (when (not (eql node other))
-                    (with-slots ((xy2 collision-offset) (s2 size)) other
-                      (let ((x2 (x xy2)) (y2 (y xy2)) (w2 (x s2)) (h2 (y s2)))
-                        (unless (or (<= (+ x1 w1) x2)
-                                    (<= (+ x2 w2) x1)
-                                    (<= (+ y1 h1) y2)
-                                    (<= (+ y2 h2) y1))
-                          (setf (gethash other collisions) t)))))))))
-        (iter (for (other nil) in-hashtable collisions)
-              (funcall thunk node other))
-        (clrhash collisions)
-        nil))))
+    (with-slots ((s1 size) (xy1 collision-offset)) node
+      (let ((x1 (x xy1)) (y1 (y xy1)) (w1 (x s1)) (h1 (y s1)))
+        (with-collision-grid-iterate (nodes (grid xy1 (+ xy1 s1)))
+          (iter (for other in nodes)
+                (when (not (eql node other))
+                  (with-slots ((xy2 collision-offset) (s2 size)) other
+                    (let ((x2 (x xy2)) (y2 (y xy2))
+                          (w2 (x s2)) (h2 (y s2)))
+                      (unless (or (<= (+ x1 w1) x2)
+                                  (<= (+ x2 w2) x1)
+                                  (<= (+ y1 h1) y2)
+                                  (<= (+ y2 h2) y1))
+                        (setf (gethash other collisions) t))))))))
+      (iter (for (other nil) in-hashtable collisions)
+            (funcall thunk node other))
+      (clrhash collisions)
+      nil)))
 
 (defun collision-grid-search-nearest (grid node size &key (test (constantly t)))
-  (with-slots ((grid collision-grid) (square-size collision-square-size)) grid
-    (with-slots ((offset collision-offset)) node
-      (let* ((xy1 (- offset (complex size size)))
-             (xy2 (+ offset (complex size size)))
-             (i1 (truncate (x xy1) square-size))
-             (j1 (truncate (y xy1) square-size))
-             (i2 (truncate (x xy2) square-size))
-             (j2 (truncate (y xy2) square-size)))
-        (iter
-         (for i from i1 to i2)
-         (let ((min
-                (iter
-                 (for j from j1 to j2)
-                 (let ((min
-                        (iter
-                         (for other in (gethash (complex i j) grid))
-                         (when (funcall test other)
-                           (with-slots ((other-offset collision-offset)) other
-                             (finding other minimizing
-                                      (dist offset other-offset)))))))
-                   (when min
-                     (with-slots ((min-offset collision-offset)) min
-                       (finding min minimizing (dist offset min-offset))))))))
-           (when min
-             (with-slots ((min-offset collision-offset)) min
-               (finding min minimizing (dist offset min-offset))))))))))
+  (with-slots ((offset collision-offset)) node
+    (with-collision-grid-iterate (nodes (grid (- offset (complex size size))
+                                              (+ offset (complex size size)))
+                                        :outer-label outer)
+      (iter (for other in nodes)
+            (when (funcall test other)
+              (with-slots ((other-offset collision-offset)) other
+                (in outer (finding other minimizing
+                                   (dist offset other-offset)))))))))
 
 (defvar *collision-grid*)
 

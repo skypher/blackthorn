@@ -147,12 +147,13 @@
    :mobile
    :veloc
    :accel
-   :collidable
-   :collide
-   :event-hit
 
    ;; collision.lisp
+   :collidable
+   :collide
    :find-nearest-object
+   :collision-event
+   :event-hit
 
    ;; game.lisp
    :game
@@ -255,12 +256,13 @@
    :mobile
    :veloc
    :accel
-   :collidable
-   :collide
-   :event-hit
 
    ;; collision.lisp
+   :collidable
+   :collide
    :find-nearest-object
+   :collision-event
+   :event-hit
 
    ;; game.lisp
    :game
