@@ -45,7 +45,7 @@
                     collect
                       #+sbcl `(sb-profile:profile ,symbol))))))
 
-(profile-packages blt-gfx blt-phys blt-user)
+(profile-packages blt blt-user)
 
 (main)
 

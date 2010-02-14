@@ -109,16 +109,30 @@
         (clrhash collisions)
         nil))))
 
-(defun collision-grid-search-nearest (grid node size &key (test (constantly t)))
-  (with-slots ((offset collision-offset)) node
-    (with-collision-grid-iterate (nodes (grid (- offset (complex size size))
-                                              (+ offset (complex size size)))
-                                        :outer-label outer)
-      (iter (for other in nodes)
-            (when (funcall test other)
-              (with-slots ((other-offset collision-offset)) other
-                (in outer (finding other minimizing
-                                   (dist offset other-offset)))))))))
+(defun collision-grid-search-nearest (grid node radius
+                                      &key (test (constantly t)))
+  (with-slots ((offset collision-offset) size) node
+    (let ((circle (complex radius radius)))
+      (with-collision-grid-iterate (nodes (grid (- offset circle)
+                                                (+ offset circle size))
+                                          :outer-label outer)
+        (iter (for other in nodes)
+              (when (and (not (eql node other)) (funcall test other))
+                (with-slots ((other-offset collision-offset)
+                             (other-size size)) other
+                  (in outer (finding other minimizing
+                                     (dist (+ offset (/ size 2))
+                                           (+ other-offset (/ other-size 2)))
+                                     into min))))
+              (in outer
+                  (finally
+                   (when min
+                     (with-slots ((other-offset collision-offset)
+                                  (other-size size)) min
+                       (when (< (dist (+ offset (/ size 2))
+                                      (+ other-offset (/ other-size 2)))
+                                radius)
+                         (return-from outer min)))))))))))
 
 (defvar *collision-grid*)
 
@@ -141,8 +155,8 @@
   (collision-grid-update root)
   (collision-grid-search root thunk))
 
-(defun find-nearest-object (node size &key (test (constantly t)))
-  (collision-grid-search-nearest *collision-grid* node size :test test))
+(defun find-nearest-object (node radius &key (test (constantly t)))
+  (collision-grid-search-nearest *collision-grid* node radius :test test))
 
 ;;;
 ;;; Collision Events

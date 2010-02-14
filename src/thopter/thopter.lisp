@@ -180,9 +180,7 @@
   (decf (veloc thopter) #c(4 0)))
 
 (defun nearest-object (component type radius)
-  (find-nearest-object
-   component radius
-   :test #'(lambda (x) (and (typep x type) (and (not (eql component x)))))))
+  (find-nearest-object component radius :test #'(lambda (x) (typep x type))))
 
 (defmethod shoot ((shooter shooter) event)
   (with-slots (parent offset size veloc firepower
@@ -213,7 +211,7 @@
 
 (defmethod update ((missile missile) event)
   (with-slots (parent offset size veloc accel image) missile
-    (let* ((nearest-enemy (nearest-object missile 'enemy 400))
+    (let* ((nearest-enemy (nearest-object missile 'enemy 600))
            (theta (theta veloc))
            (new-image (make-instance 'image :name
                                      (cond ((or (> theta (* 0.875 pi))
@@ -307,8 +305,8 @@
     (detach (parent bullet) bullet)))
 
 (defmethod update ((enemy enemy) event)
-  (with-slots (parent offset size (xy offset) (v veloc) (s size) accel health difficulty)
-      enemy
+  (with-slots (parent offset size (xy offset) (v veloc) (s size)
+               accel health difficulty) enemy
     (labels
         ((circular (r)
            (+ ;; circular motion
@@ -324,11 +322,12 @@
            (* (unit (- r)) (- (abs r) 250) 0.01d0))
          ;; steer away from nearest enemy
          (enemy-correction (nearest-enemy)
-           (if (and nearest-enemy
-                (< (dist xy (offset nearest-enemy)) 32))
-             (* (away nearest-enemy) 
-                (/ (- 32 (dist xy (offset nearest-enemy))) 10.0d0))
-             0))
+           (if nearest-enemy
+               (* (away nearest-enemy) 
+                  (- (/ (+ (x s) (y s)) 2d0)
+                     (dist xy (offset nearest-enemy)))
+                  0.1d0)
+               0))
          (away (object)
            (with-slots ((xy2 offset) (v2 veloc)) object
              (unit (rot v2 (* pi 0.25d0 (signum (cross v2 (- xy xy2))))))))
@@ -344,29 +343,23 @@
             (r (- xy (/ (size (game-root *game*)) 2))))
         (setf v (* (unit v) (min (abs v) (+ 8d0 (* 2d0 difficulty))))
               accel
-              (+ (cond ((and nearest-thopter
-                             (< (dist xy (offset nearest-thopter)) 180))
+              (+ (cond (nearest-thopter
                         (* (toward nearest-thopter) (max 0.5d0 difficulty)))
-                       ((and nearest-health
-                             (< (dist xy (offset nearest-health)) 180))
+                       (nearest-health
                         (* (toward nearest-health) (max 0.5d0 difficulty)))
-                       ((and nearest-missile
-                             (< (dist xy (offset nearest-missile)) 120))
+                       (nearest-missile
                         (+ (* (away nearest-missile)
                               (+ 0.5d0 (* 0.1d0 difficulty))
                               (if (> health 1) 1d0 1.5d0))
                            (radius-correction r)))
-                       ((and nearest-bullet
-                             (< (dist xy (offset nearest-bullet)) 120))
+                       (nearest-bullet
                         (+ (* (away nearest-bullet)
                               (+ 0.5d0 (* 0.1d0 difficulty))
                               (if (> health 1) 1d0 1.5d0))
                            (radius-correction r)))
-                       ((and nearest-upgrade-b
-                             (< (dist xy (offset nearest-upgrade-b)) 180))
+                       (nearest-upgrade-b
                         (* (toward nearest-upgrade-b) (max 0.5d0 difficulty)))
-                       ((and nearest-upgrade-m
-                             (< (dist xy (offset nearest-upgrade-m)) 180))
+                       (nearest-upgrade-m
                         (* (toward nearest-upgrade-m) (max 0.5d0 difficulty)))
                        (t (circular r)))
                  (enemy-correction (nearest-object enemy 'enemy 30))))))))
