@@ -56,8 +56,8 @@
 (defmacro with-collision-grid-iterate ((var (grid xy1 xy2) &key outer-label)
                                        &body body)
   (with-gensyms (g sq i1 j1 i2 j2 i j)
-    (once-only (xy1 xy2)
-      `(with-slots ((,g collision-grid) (,sq collision-square-size)) grid
+    (once-only (grid xy1 xy2)
+      `(with-slots ((,g collision-grid) (,sq collision-square-size)) ,grid
          (let ((,i1 (truncate (x ,xy1) ,sq))
                (,j1 (truncate (y ,xy1) ,sq))
                (,i2 (truncate (x ,xy2) ,sq))
