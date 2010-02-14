@@ -45,9 +45,10 @@
     :initarg :image
     :initform nil)))
 
-(defmethod initialize-instance :after ((sprite sprite) &key image)
-  (when image
-    (setf (size sprite) (size image))))
+(defmethod initialize-instance :after ((sprite sprite) &key)
+  (with-slots (image) sprite
+    (when image
+      (setf (size sprite) (size image)))))
 
 (defmethod (setf image) :after (image (sprite sprite))
   (when image

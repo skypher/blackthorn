@@ -131,7 +131,7 @@
                                   (other-size size)) min
                        (when (< (dist (+ offset (/ size 2))
                                       (+ other-offset (/ other-size 2)))
-                                radius)
+                                (+ radius (/ (+ (x size) (y size)) 2d0)))
                          (return-from outer min)))))))))))
 
 (defvar *collision-grid*)
