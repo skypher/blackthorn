@@ -82,8 +82,6 @@
     :initarg :bullet-image)
    (bullet-veloc
     :initarg :bullet-veloc)
-   (bullet-direction
-    :initarg :bullet-direction)
    (firepower
     :accessor firepower
     :initarg :firepower
@@ -93,7 +91,6 @@
   ((bullet-class :initform 'bullet)
    (bullet-image :initform (make-instance 'image :name :bullet))
    (bullet-veloc :initform #c(0 -8))
-   (bullet-direction :initform :north)
    (bullet-timer :initform 60)
    (health
     :accessor health
@@ -116,7 +113,6 @@
    (bullet-class :initform 'enemy-bullet)
    (bullet-image :initform (make-instance 'image :name :enemy-bullet))
    (bullet-veloc :initform #c(0 8))
-   (bullet-direction :initform :south)
    (bullet-timer :initform 60)
    (health
     :accessor health
@@ -218,21 +214,19 @@
 
 (defmethod shoot ((shooter shooter) event)
   (with-slots (parent offset size veloc firepower
-               bullet-class bullet-image bullet-veloc bullet-direction
-               bullet-timer) shooter
-    (let ((bullet-offset
-           (ecase bullet-direction
-             ((:north)
-              (+ offset (/ (x size) 2) #c(0 -4)))
-             ((:south)
-              (+ offset (complex (/ (x size) 2) (y size)) #c(0 4))))))
-      (loop for i from (+ (ceiling firepower -2) (if (evenp firepower) 1/2 0))
-         to (floor firepower 2)
-         do (make-instance bullet-class :parent parent 
-                          :offset bullet-offset :depth -1
-                          :veloc (+ veloc (rot bullet-veloc (* i 0.1495d0 pi)))
-                          :image bullet-image
-                          :timer bullet-timer)))))
+               bullet-class bullet-image bullet-veloc bullet-timer) shooter
+    (loop for i from (+ (ceiling firepower -2) (if (evenp firepower) 1/2 0))
+       to (floor firepower 2)
+       do (make-instance bullet-class :parent parent 
+                         :offset (+ offset (/ size 2)
+                                    (* (rot (unit bullet-veloc)
+                                            (* i 0.1495d0 pi))
+                                       (+ (x size) (y size))
+                                       0.25d0))
+                         :depth -1
+                         :veloc (+ veloc (rot bullet-veloc (* i 0.1495d0 pi)))
+                         :image bullet-image
+                         :timer bullet-timer))))
 
 (defmethod missile ((thopter thopter) event)
   (with-slots (parent offset size veloc missiles) thopter

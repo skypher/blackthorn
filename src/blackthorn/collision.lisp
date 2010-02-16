@@ -73,14 +73,11 @@
 (defmethod collision-grid-insert-node (grid node xy)
   (declare (ignore grid node)))
 (defmethod collision-grid-insert-node (grid (node collidable) xy)
-  (labels ((push-node (nodes)
-             (format t "pushing node ~a to ~a~%" node nodes)
-             (push node nodes)))
-    (with-slots (size (offset collision-offset)) node
-      (when (not (zerop size))
-        (setf offset xy)
-        (with-collision-grid-iterate (nodes (grid xy (+ xy size)))
-          (push node nodes))))))
+  (with-slots (size (offset collision-offset)) node
+    (when (not (zerop size))
+      (setf offset xy)
+      (with-collision-grid-iterate (nodes (grid xy (+ xy size)))
+        (push node nodes)))))
 
 (defgeneric collision-grid-search-node (grid node thunk))
 (defmethod collision-grid-search-node (grid node thunk)
