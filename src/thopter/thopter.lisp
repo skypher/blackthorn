@@ -105,7 +105,11 @@
   ((timer :initform 60)
    (reactive-collisions-only-p :initform t)))
 (defclass missile (sprite mobile collidable alarm)
-  ((timer :initform 120)
+  ((health
+    :accessor health
+    :initarg :health
+    :initform 2)
+   (timer :initform 120)
    (reactive-collisions-only-p :initform t)))
 
 (defclass enemy (sprite mobile collidable alarm shooter)
@@ -157,7 +161,11 @@
   ((timer :initform 60)
    (reactive-collisions-only-p :initform t)))
 (defclass enemy-missile (sprite mobile collidable alarm)
-  ((timer :initform 120)
+  ((health
+    :accessor health
+    :initarg :health
+    :initform 2)
+   (timer :initform 120)
    (reactive-collisions-only-p :initform t)))
 (defclass explosion (sprite mobile collidable alarm)
   ((drop-class
@@ -316,10 +324,11 @@
 (defmethod collide ((thopter thopter) event)
   (with-slots (parent offset depth veloc health firepower missiles) thopter
     (typecase (event-hit event)
-      (enemy-bullet (decf health))
-      (enemy        (decf health 8))
-      (explosion    (decf health))
-      (health-pack  (incf health 2))
+      (enemy-bullet  (decf health))
+      (enemy-missile (decf health))
+      (enemy         (decf health 8))
+      (explosion     (decf health))
+      (health-pack   (incf health 2))
       (upgrade-bullet (incf firepower))
       (upgrade-missile (incf missiles)))
     (when (and parent (<= health 0))
@@ -348,10 +357,13 @@
     (detach (parent bullet) bullet)))
 
 (defmethod collide ((missile missile) event)
-  (with-slots (parent offset size depth veloc) missile
-    (when (and parent (or (and (typep missile 'missile)
-                               (typep (event-hit event) 'enemy))
-                          (typep (event-hit event) 'explosion)))
+  (with-slots (parent offset size depth veloc health) missile
+    (typecase (event-hit event)
+      (enemy-bullet  (decf health))
+      (enemy-missile (decf health))
+      (enemy         (decf health 8))
+      (explosion     (decf health)))
+    (when (and parent (<= health 0))
       (let ((explosion (make-instance 'anim :name :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
@@ -361,9 +373,13 @@
       (detach parent missile))))
 
 (defmethod collide ((missile enemy-missile) event)
-  (with-slots (parent offset size depth veloc) missile
-    (when (and parent     (and (typep missile 'enemy-missile)
-                               (typep (event-hit event) 'thopter)))
+  (with-slots (parent offset size depth veloc health) missile
+    (typecase (event-hit event)
+      (bullet    (decf health))
+      (missile   (decf health))
+      (thopter   (decf health 8))
+      (explosion (decf health)))
+    (when (and parent (<= health 0))
       (let ((explosion (make-instance 'anim :name :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
