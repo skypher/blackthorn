@@ -122,6 +122,10 @@
     :accessor missiles
     :initarg :missiles
     :initform 0)
+   (missile-chance
+    :accessor missile-chance
+    :initarg :missile-chance
+    :initform 0)
    (difficulty
     :initarg :difficulty
     :initform 0)
@@ -346,7 +350,7 @@
 (defmethod collide ((missile missile) event)
   (with-slots (parent offset size depth veloc) missile
     (when (and parent (or (and (typep missile 'missile)
-			       (typep (event-hit event) 'enemy))
+                               (typep (event-hit event) 'enemy))
                           (typep (event-hit event) 'explosion)))
       (let ((explosion (make-instance 'anim :name :explosion)))
         (make-instance 'explosion :parent parent
@@ -358,8 +362,8 @@
 
 (defmethod collide ((missile enemy-missile) event)
   (with-slots (parent offset size depth veloc) missile
-    (when (and parent 	  (and (typep missile 'enemy-missile)
-			       (typep (event-hit event) 'thopter)))
+    (when (and parent     (and (typep missile 'enemy-missile)
+                               (typep (event-hit event) 'thopter)))
       (let ((explosion (make-instance 'anim :name :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
@@ -460,20 +464,21 @@
                  (enemy-correction (nearest-object enemy 'enemy 0))))))))
 
 (defmethod alarm ((enemy enemy) event)
-  (with-slots (parent offset size veloc timer missiles fire-rate) enemy
+  (with-slots (parent offset size veloc timer 
+		      missiles missile-chance fire-rate) enemy
     (setf timer
           (ceiling (+ 5 (mt19937:random 30) (mt19937:random 30)) fire-rate))
     (let* ((shoot-decision (mt19937:random 1d0)))
-      (if (and (> missiles 0) (> shoot-decision 0.7))
-	(progn (decf missiles) 
-	       (make-instance
-		'enemy-missile
-		:parent parent 
-		:offset (+ offset (complex (/ (x size) 2) (y size)))
-		:depth -1
-		:veloc veloc
-		:image (make-instance 'image :name :enemy-missile-s)))
-	(shoot enemy event)))))
+      (if (and (> missiles 0) (< shoot-decision missile-chance))
+        (progn (decf missiles) 
+               (make-instance
+                'enemy-missile
+                :parent parent 
+                :offset (+ offset (complex (/ (x size) 2) (y size)))
+                :depth -1
+                :veloc veloc
+                :image (make-instance 'image :name :enemy-missile-s)))
+        (shoot enemy event)))))
 
 (defmethod collide ((enemy enemy) event)
   (with-slots (parent offset size depth veloc health firepower missiles) enemy
@@ -486,24 +491,31 @@
       (upgrade-bullet (incf firepower))
       (upgrade-missile (incf missiles)))
     (when (and parent (<= health 0))
-      (let* ((random-choice (mt19937:random 3))
-             (drop-class (ecase random-choice
+      (let ((i (if (typep enemy 'enemy-boss) 25 1)))
+        (loop repeat i 
+          do (let* ((random-choice (mt19937:random 3))
+               (drop-class (ecase random-choice
                            ((0) 'upgrade-bullet)
                            ((1) 'upgrade-missile)
                            ((2) 'health-pack)))
-             (drop-image
-              (make-instance 'image :name (ecase drop-class
+               (drop-image
+                (make-instance 'image :name (ecase drop-class
                                             ((upgrade-bullet) :upgrade-bullet)
                                             ((upgrade-missile) :upgrade-missile)
                                             ((health-pack) :health))))
-             (image (make-instance 'anim :name :explosion)))
-        (make-instance 'explosion :parent parent
-                       :offset (+ offset (/ size 2) (- (/ (size image) 2)))
-                       :depth depth :veloc (/ veloc 2)
+               (image (make-instance 'anim :name :explosion)))
+          (make-instance 'explosion :parent parent
+                       :offset (+ offset (complex (mt19937:random (x size))
+                                                  (mt19937:random (y size))))
+                       :depth depth 
+                       :veloc (+ (/ veloc 2) 
+                             (complex (mt19937:random (+ 0.01 (abs (x veloc))))
+				     (mt19937:random (+ 0.01 (abs (y veloc))))))
+		                     ; add 0.01 to avoid error when veloc is 0
                        :image image
                        :timer 10
-                       :drop-class drop-class :drop-image drop-image)
-        (detach parent enemy)))))
+                       :drop-class drop-class :drop-image drop-image)))
+          (detach parent enemy)))))
 
 (defmethod alarm ((explosion explosion) event)
   (with-slots (parent offset size depth veloc drop-class drop-image) explosion
@@ -546,7 +558,7 @@
                        :offset (complex (/ (x size) 2) (* (y size) 3/4))
                        :image (make-instance 'anim :name :thopter)
                        :health 4 :firepower 3 :missiles 2)))
-		       ;:health 200 :firepower 10 :missiles 5)))
+		       ;:health 300 :firepower 20 :missiles 25)))
          (subscribe (game-keys game) thopter)))
       ((:server :client)
         (let ((thopter1 (make-instance
@@ -585,7 +597,8 @@
              (not (timer (game-wave game))))
     (setf (timer (game-wave game)) 120)))
 
-(defun spawn-wave (wave count health firepower enemy-type)
+(defun spawn-wave (wave count health firepower missiles missile-chance 
+			enemy-type)
   (let* ((root (game-root *game*))
          (root-size (size root))
          (center (/ root-size 2)))
@@ -594,6 +607,8 @@
               (make-instance enemy-type :parent root :depth 1
                              :health health
                              :firepower firepower
+			     :missiles missiles
+			     :missile-chance missile-chance
                              :difficulty (floor wave 5))
             (setf offset
                   (complex (+ (/ (x root-size) 2) (* i (x size) 2))
@@ -604,9 +619,9 @@
     (incf level)
     (if (zerop (mod level 10))
         (spawn-wave level (truncate level 10) (* level 20) (* level 4)
-                    'enemy-boss)
-        (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3))
-                    'enemy-ship))))
+		    (truncate level 5) (min 1d0 (* level 0.02)) 'enemy-boss)
+        (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3)) 0
+                    (min 1d0 (* level 0.01)) 'enemy-ship))))
 
 ;; For interactive use:
 (defun thopter ()
