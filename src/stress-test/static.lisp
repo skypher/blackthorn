@@ -69,4 +69,4 @@
     (main :exit-when-done nil)))
 
 ;; For non-interactive use:
-(defparameter *game* (make-instance 'static-game :test-size 5000))
+;(defparameter *game* (make-instance 'static-game :test-size 5000))
