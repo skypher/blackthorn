@@ -521,30 +521,31 @@
     (when (and parent (<= health 0))
       (let ((i (if (typep enemy 'enemy-boss) 25 1)))
         (loop repeat i 
-          do (let* ((random-choice (mt19937:random 3))
-               (drop-class (ecase random-choice
-                           ((0) 'upgrade-bullet)
-                           ((1) 'upgrade-missile)
-                           ((2) 'health-pack)))
-               (drop-image
-                (make-instance 'image :name (ecase drop-class
-                                            ((upgrade-bullet) :upgrade-bullet)
-                                            ((upgrade-missile) :upgrade-missile)
-                                            ((health-pack) :health))))
-               (image (make-instance 'anim :name :explosion)))
-          (make-instance 'explosion :parent parent
-                       :offset (+ offset (complex (mt19937:random (x size))
-                                                  (mt19937:random (y size)))
-				  (/ (size image) -2))
-                       :depth depth 
-                       :veloc (+ (/ veloc 2) 
-                             (complex (mt19937:random (+ 0.01 (abs (x veloc))))
-				     (mt19937:random (+ 0.01 (abs (y veloc))))))
-		                     ; add 0.01 to avoid error when veloc is 0
-                       :image image
-                       :timer 10
-                       :drop-class drop-class :drop-image drop-image)))
-          (detach parent enemy)))))
+           do (let* ((random-choice (mt19937:random 3))
+                     (drop-class (ecase random-choice
+                                   ((0) 'upgrade-bullet)
+                                   ((1) 'upgrade-missile)
+                                   ((2) 'health-pack)))
+                     (drop-image
+                      (make-instance
+                       'image :name (ecase drop-class
+                                      ((upgrade-bullet) :upgrade-bullet)
+                                      ((upgrade-missile) :upgrade-missile)
+                                      ((health-pack) :health))))
+                     (image (make-instance 'anim :name :explosion))
+                     (bound (- size (size image))))
+                (make-instance
+                 'explosion :parent parent
+                 :offset (+ offset
+                            (complex (mt19937:random (max 1 (x bound)))
+                                     (mt19937:random (max 1 (y bound)))))
+                 :depth depth
+                 :veloc (complex (mt19937:random (max 0.01d0 (abs (x veloc))))
+                                 (mt19937:random (max 0.01d0 (abs (y veloc)))))
+                 :image image
+                 :timer 10
+                 :drop-class drop-class :drop-image drop-image)))
+        (detach parent enemy)))))
 
 (defmethod alarm ((explosion explosion) event)
   (with-slots (parent offset size depth veloc drop-class drop-image) explosion
