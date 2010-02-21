@@ -87,11 +87,12 @@
     :initarg :firepower
     :initform 1)))
 
-(defclass thopter (sprite mobile collidable shooter)
+(defclass thopter (sprite mobile collidable shooter alarm)
   ((bullet-class :initform 'bullet)
    (bullet-image :initform (make-instance 'image :name :bullet))
    (bullet-veloc :initform #c(0 -8))
    (bullet-timer :initform 60)
+   (timer :initform nil)
    (health
     :accessor health
     :initarg :health
@@ -154,8 +155,7 @@
    (health :initform 100)
    (veloc-scale :initform 0.5d0)
    (ignore-objects :initform t)
-   (fire-rate :initform 2)
-   (missiles :initform 2)))
+   (fire-rate :initform 2)))
 
 (defclass enemy-bullet (sprite mobile collidable alarm)
   ((timer :initform 60)
@@ -191,7 +191,8 @@
   (bind-key-up   thopter :sdl-key-left  #'stop-west)
   (bind-key-down thopter :sdl-key-right #'move-east)
   (bind-key-up   thopter :sdl-key-right #'stop-east)
-  (bind-key-down thopter :sdl-key-space #'shoot)
+  (bind-key-down thopter :sdl-key-space #'start-shoot)
+  (bind-key-up thopter :sdl-key-space #'stop-shoot)
   (bind-key-down thopter :sdl-key-lctrl #'missile)
   (bind-key-down thopter :sdl-key-lalt  #'missile)
   ;; TODO: add reset function
@@ -224,6 +225,17 @@
 
 (defun nearest-object (component type radius)
   (find-nearest-object component radius :test #'(lambda (x) (typep x type))))
+
+(defmethod start-shoot ((thopter thopter) event)
+  (shoot thopter event)
+  (setf (timer thopter) 4))
+
+(defmethod stop-shoot ((thopter thopter) event)
+  (setf (timer thopter) nil))
+
+(defmethod alarm ((thopter thopter) event)
+  (shoot thopter event)
+  (setf (timer thopter) 4))
 
 (defmethod shoot ((shooter shooter) event)
   (with-slots (parent offset size veloc firepower
@@ -574,7 +586,6 @@
                        :offset (complex (/ (x size) 2) (* (y size) 3/4))
                        :image (make-instance 'anim :name :thopter)
                        :health 4 :firepower 3 :missiles 2)))
-		       ;:health 300 :firepower 20 :missiles 25)))
          (subscribe (game-keys game) thopter)))
       ((:server :client)
         (let ((thopter1 (make-instance
