@@ -163,6 +163,10 @@ slime:
 stress:
 	$(MAKE) system="blackthorn-stress-test" new
 
+.PHONY: collision
+collision:
+	$(MAKE) system="blackthorn-collision-test" new
+
 .PHONY: test
 test:
 	$(MAKE) driver="${test}" system="blackthorn-test" new
