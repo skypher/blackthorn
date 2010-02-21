@@ -146,7 +146,8 @@
    (health :initform 100)
    (veloc-scale :initform 0.5d0)
    (ignore-objects :initform t)
-   (fire-rate :initform 2)))
+   (fire-rate :initform 2)
+   (missiles :initform 2)))
 
 (defclass enemy-bullet (sprite mobile collidable alarm)
   ((timer :initform 60)
@@ -346,9 +347,19 @@
   (with-slots (parent offset size depth veloc) missile
     (when (and parent (or (and (typep missile 'missile)
 			       (typep (event-hit event) 'enemy))
-                          (typep (event-hit event) 'explosion)
-			  (and (typep missile 'enemy-missile)
-			       (typep (event-hit event) 'thopter))))
+                          (typep (event-hit event) 'explosion)))
+      (let ((explosion (make-instance 'anim :name :explosion)))
+        (make-instance 'explosion :parent parent
+                       :offset (+ offset (/ size 2) (/ (size explosion) -2))
+                       :depth depth :veloc (/ veloc 2)
+                       :image explosion
+                       :timer 10))
+      (detach parent missile))))
+
+(defmethod collide ((missile enemy-missile) event)
+  (with-slots (parent offset size depth veloc) missile
+    (when (and parent 	  (and (typep missile 'enemy-missile)
+			       (typep (event-hit event) 'thopter)))
       (let ((explosion (make-instance 'anim :name :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
@@ -452,16 +463,17 @@
   (with-slots (parent offset size veloc timer missiles fire-rate) enemy
     (setf timer
           (ceiling (+ 5 (mt19937:random 30) (mt19937:random 30)) fire-rate))
-    (if (> missiles 0) 
+    (let* ((shoot-decision (mt19937:random 1d0)))
+      (if (and (> missiles 0) (> shoot-decision 0.7))
 	(progn (decf missiles) 
 	       (make-instance
 		'enemy-missile
 		:parent parent 
-		:offset (+ offset (/ size 2) )
+		:offset (+ offset (complex (/ (x size) 2) (y size)))
 		:depth -1
 		:veloc veloc
 		:image (make-instance 'image :name :enemy-missile-s)))
-	(shoot enemy event))))
+	(shoot enemy event)))))
 
 (defmethod collide ((enemy enemy) event)
   (with-slots (parent offset size depth veloc health firepower missiles) enemy
@@ -534,6 +546,7 @@
                        :offset (complex (/ (x size) 2) (* (y size) 3/4))
                        :image (make-instance 'anim :name :thopter)
                        :health 4 :firepower 3 :missiles 2)))
+		       ;:health 200 :firepower 10 :missiles 5)))
          (subscribe (game-keys game) thopter)))
       ((:server :client)
         (let ((thopter1 (make-instance
