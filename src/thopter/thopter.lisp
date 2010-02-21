@@ -109,9 +109,8 @@
   ((health
     :accessor health
     :initarg :health
-    :initform 2)
-   (timer :initform 120)
-   (reactive-collisions-only-p :initform t)))
+    :initform 4)
+   (timer :initform 120)))
 
 (defclass enemy (sprite mobile collidable alarm shooter)
   ((timer :initform 20)
@@ -164,9 +163,8 @@
   ((health
     :accessor health
     :initarg :health
-    :initform 2)
-   (timer :initform 120)
-   (reactive-collisions-only-p :initform t)))
+    :initform 4)
+   (timer :initform 120)))
 (defclass explosion (sprite mobile collidable alarm)
   ((drop-class
     :initarg :drop-class
