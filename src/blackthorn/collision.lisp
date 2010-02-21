@@ -148,8 +148,10 @@
              (collision-grid-search-node *collision-grid* node thunk)))
     (walk-tree root #'search-helper)))
 
-(defun find-collisions (root thunk)
-  (collision-grid-update root)
+(defun collision-update (root)
+  (collision-grid-update root))
+
+(defun collision-search (root thunk)
   (collision-grid-search root thunk))
 
 (defun find-nearest-object (node radius &key (test (constantly t)))
