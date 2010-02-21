@@ -534,7 +534,8 @@
                (image (make-instance 'anim :name :explosion)))
           (make-instance 'explosion :parent parent
                        :offset (+ offset (complex (mt19937:random (x size))
-                                                  (mt19937:random (y size))))
+                                                  (mt19937:random (y size)))
+				  (/ (size image) -2))
                        :depth depth 
                        :veloc (+ (/ veloc 2) 
                              (complex (mt19937:random (+ 0.01 (abs (x veloc))))
