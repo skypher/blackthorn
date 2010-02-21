@@ -26,7 +26,7 @@
 (in-package :cl-user)
 
 (defpackage :blackthorn-collision-test
-  (:use :cl :blt-gfx :blt-phys :blt-user)
+  (:use :cl :iter :blt-gfx :blt-phys :blt-user)
   (:export
 
    ;; driver.lisp

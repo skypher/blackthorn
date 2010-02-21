@@ -27,7 +27,8 @@
 
 (defclass blackthorn-collision-test-game (game) ())
 
-(defclass player (sprite mobile) ())
+(defclass player (sprite mobile collidable)
+  ((image :initform (make-instance 'image :name :orange))))
 
 (defmethod initialize-instance :after ((player player) &key)
   (bind-key-down player :sdl-key-up    #'move-north)
@@ -40,28 +41,35 @@
   (bind-key-up   player :sdl-key-right #'stop-east))
 
 (defmethod move-north ((player player) event)
-  (incf (veloc player) #c(0 -2)))
+  (incf (veloc player) #c(0 -1)))
 
 (defmethod stop-north ((player player) event)
-  (decf (veloc player) #c(0 -2)))
+  (decf (veloc player) #c(0 -1)))
 
 (defmethod move-south ((player player) event)
-  (incf (veloc player) #c(0 2)))
+  (incf (veloc player) #c(0 1)))
 
 (defmethod stop-south ((player player) event)
-  (decf (veloc player) #c(0 2)))
+  (decf (veloc player) #c(0 1)))
 
 (defmethod move-west ((player player) event)
-  (incf (veloc player) #c(-2 0)))
+  (incf (veloc player) #c(-1 0)))
 
 (defmethod stop-west ((player player) event)
-  (decf (veloc player) #c(-2 0)))
+  (decf (veloc player) #c(-1 0)))
 
 (defmethod move-east ((player player) event)
-  (incf (veloc player) #c(2 0)))
+  (incf (veloc player) #c(1 0)))
 
 (defmethod stop-east ((player player) event)
-  (decf (veloc player) #c(2 0)))
+  (decf (veloc player) #c(1 0)))
+
+(defclass toggle (sprite mobile collidable)
+  ((image :initform (make-instance 'image :name :green))))
+
+(defmethod collide ((toggle toggle) event)
+  (setf (image toggle) (make-instance 'image :name :blue)))
+
 
 (defmethod game-init ((game blackthorn-collision-test-game))
   (let ((root (make-instance 'component))
@@ -69,11 +77,16 @@
     (setf (game-root game) root
           (game-view game) (make-instance 'component :size size)
           (game-sheet game)
-          (make-instance 'sheet :source (resource "disp/sheet.png")))
+          (make-instance 'sheet :source (resource "disp/collision.png")))
     (let ((player (make-instance
-                 'player :parent root :offset (/ size 2)
-                 :image (make-instance 'image :name :hero))))
-      (subscribe (game-keys game) player))))
+                   'player :parent root :offset (/ size 2)
+                   :image (make-instance 'image :name :orange))))
+      (subscribe (game-keys game) player))
+    (let ((image-size (size (make-instance 'image :name :orange))))
+      (iter (for x from 0 below (x size) by (* 2 (x image-size)))
+            (iter (for y from 0 below (y size) by (* 2 (y image-size)))
+                  (make-instance
+                   'toggle :parent root :offset (complex x y) :depth 1))))))
 
 (defmethod game-update :after ((game blackthorn-collision-test-game))
   ;; report the frame reate
