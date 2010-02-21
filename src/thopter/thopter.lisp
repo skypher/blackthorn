@@ -359,7 +359,9 @@
       (setf offset (complex (x offset) (- (y (size parent)) (y size)))))))
 
 (defmethod collide ((bullet bullet) event)
-  (when (and (parent bullet) (typep (event-hit event) 'enemy))
+  (when (and (parent bullet) (typecase (event-hit event)
+                               (enemy t)
+                               (enemy-missile t)))
     (detach (parent bullet) bullet)))
 
 (defmethod alarm ((bullet bullet) event)
@@ -421,7 +423,9 @@
       (detach parent missile))))
 
 (defmethod collide ((bullet enemy-bullet) event)
-  (when (and (parent bullet) (typep (event-hit event) 'thopter))
+  (when (and (parent bullet) (typecase (event-hit event)
+                               (thopter t)
+                               (missile t)))
     (detach (parent bullet) bullet)))
 
 (defmethod alarm ((bullet enemy-bullet) event)
