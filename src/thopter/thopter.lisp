@@ -542,8 +542,10 @@
                             (complex (mt19937:random (max 1 (x bound)))
                                      (mt19937:random (max 1 (y bound)))))
                  :depth depth
-                 :veloc (complex (mt19937:random (max 0.01d0 (abs (x veloc))))
-                                 (mt19937:random (max 0.01d0 (abs (y veloc)))))
+                 :veloc (if (= i 1)
+			  (/ veloc 2)
+			  (complex (mt19937:random (max 0.01d0 (abs (x veloc))))
+                                 (mt19937:random (max 0.01d0 (abs (y veloc))))))
                  :image image
                  :timer 10
                  :drop-class drop-class :drop-image drop-image)))
