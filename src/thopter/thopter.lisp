@@ -163,7 +163,7 @@
   ((health
     :accessor health
     :initarg :health
-    :initform 4)
+    :initform 8)
    (timer :initform 120)))
 (defclass explosion (sprite mobile collidable alarm)
   ((drop-class
@@ -238,18 +238,20 @@
 (defmethod shoot ((shooter shooter) event)
   (with-slots (parent offset size veloc firepower
                bullet-class bullet-image bullet-veloc bullet-timer) shooter
-    (loop for i from (+ (ceiling firepower -2) (if (evenp firepower) 1/2 0))
-       to (floor firepower 2)
-       do (make-instance bullet-class :parent parent 
+    (let ((increment (if (< (* (floor firepower 2) 0.1495d0) 1) 0.1495d0
+		           (/ pi (/ firepower 2)))))
+      (loop for i from (+ (ceiling firepower -2) (if (evenp firepower) 1/2 0))
+         to (floor firepower 2)
+         do (make-instance bullet-class :parent parent 
                          :offset (+ offset (/ size 2)
                                     (* (rot (unit bullet-veloc)
-                                            (* i 0.1495d0 pi))
+                                            (* i increment))
                                        (+ (x size) (y size))
                                        0.25d0))
                          :depth -1
-                         :veloc (+ veloc (rot bullet-veloc (* i 0.1495d0 pi)))
+                         :veloc (+ veloc (rot bullet-veloc (* i increment)))
                          :image bullet-image
-                         :timer bullet-timer))))
+                         :timer bullet-timer)))))
 
 (defmethod missile ((thopter thopter) event)
   (with-slots (parent offset size veloc missiles) thopter
@@ -372,8 +374,8 @@
   (with-slots (parent offset size depth veloc health) missile
     (typecase (event-hit event)
       (enemy-bullet  (decf health))
-      (enemy-missile (decf health))
-      (enemy         (decf health 8))
+      (enemy-missile (setf health 0))
+      (enemy         (setf health 0))
       (explosion     (decf health)))
     (when (and parent (<= health 0))
       (let ((explosion (make-instance 'anim :name :explosion)))
@@ -388,8 +390,8 @@
   (with-slots (parent offset size depth veloc health) missile
     (typecase (event-hit event)
       (bullet    (decf health))
-      (missile   (decf health))
-      (thopter   (decf health 8))
+      (missile   (setf health 0))
+      (thopter   (setf health 0))
       (explosion (decf health)))
     (when (and parent (<= health 0))
       (let ((explosion (make-instance 'anim :name :explosion)))
@@ -652,7 +654,7 @@
     (incf level)
     (if (zerop (mod level 10))
         (spawn-wave level (truncate level 10) (* level 20) (* level 4)
-		    (truncate level 5) (min 1d0 (* level 0.02)) 'enemy-boss)
+		    (truncate level 2) (min 1d0 (* level 0.024)) 'enemy-boss)
         (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3)) 0
                     (min 1d0 (* level 0.01)) 'enemy-ship))))
 
