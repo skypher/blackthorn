@@ -238,7 +238,7 @@
 (defmethod shoot ((shooter shooter) event)
   (with-slots (parent offset size veloc firepower
                bullet-class bullet-image bullet-veloc bullet-timer) shooter
-    (let ((increment (if (< (* (floor firepower 2) 0.1495d0) 1) (* 0.1495d0 pi)
+    (let ((increment (if (< (* (floor firepower 2) 0.15d0) 1) (* 0.15d0 pi)
 		           (/ pi (/ firepower 2)))))
       (loop for i from (+ (ceiling firepower -2) (if (evenp firepower) 1/2 0))
          to (floor firepower 2)
