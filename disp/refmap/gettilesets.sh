@@ -1,9 +1,11 @@
 function download () {
-    if [ `which -s wget; echo $?` == 0 ]
+    which wget
+    if [ $? == 0 ]
     then
         wget $1
     else
-        if [ `which -s curl; echo $?` == 0 ]
+        which curl
+        if [ $? == 0 ]
         then
             curl $1 -o `basename $1`
         else
