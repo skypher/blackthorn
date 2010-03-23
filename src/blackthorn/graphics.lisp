@@ -40,18 +40,26 @@
               :title-caption title-caption :icon-caption icon-caption)
   (gl:viewport 0 0 (x size) (y size)))
 
-(defun load-and-convert-image (source)
-  (assert (probe-file source))
-  (let* ((image (sdl-image:load-image source))
-         (w (sdl:width image)) (h (sdl:height image))
-         (surface (sdl:create-surface  w h :bpp 32 :pixel-alpha t)))
-    (sdl:blit-surface image surface)))
+(defun ceiling-expt (x y)
+  (if (zerop x) x (expt y (ceiling (log x y)))))
 
-(defun load-image-to-texture (source)
-  (assert (probe-file source))
-  (let* ((texture (car (gl:gen-textures 1)))
-         (surface (load-and-convert-image source))
-         (w (sdl:width surface)) (h (sdl:height surface)))
+(defun load-and-convert-images (sources)
+  (iter (for source in sources) (assert (probe-file source)))
+  (let* ((images (iter (for source in sources) (collect (sdl-image:load-image source))))
+         (total-width
+          (ceiling-expt (or (iter (for image in images) (sum (sdl:width image))) 0) 2))
+         (total-height
+          (ceiling-expt (or (iter (for image in images) (maximize (sdl:height image))) 0) 2))
+         (surface (sdl:create-surface total-width total-height :bpp 32 :pixel-alpha t)))
+    (iter (with x = 0)
+          (for image in images)
+          (sdl:draw-surface-at-* image x 0 :surface surface)
+          (incf x (sdl:width image)))
+    surface))
+
+(defun surface-to-texture (surface)
+  (let ((texture (car (gl:gen-textures 1)))
+        (w (sdl:width surface)) (h (sdl:height surface)))
     (gl:bind-texture :texture-2d texture)
     (gl:tex-parameter :texture-2d :texture-min-filter :nearest)
     (gl:tex-parameter :texture-2d :texture-mag-filter :nearest)
@@ -60,6 +68,9 @@
        (sdl-base::with-pixel (pixels (sdl:fp surface))
          (sdl-base::pixel-data pixels)))
     (values texture surface)))
+
+(defun load-source-to-texture (source)
+  (surface-to-texture (load-and-convert-images (if (listp source) source (list source)))))
 
 ;;;
 ;;; Sprite Sheets
@@ -93,38 +104,65 @@
 (defmethod make-instance ((class (eql 'sheet)) &rest initargs)
   (apply #'make-instance (find-class 'sheet) initargs))
 
-(defmethod initialize-instance :after ((sheet sheet) &key source)
+(defun parse-config-file (source)
   (let ((config (make-pathname :type "config" :defaults source)))
     (assert (probe-file source) (source) "Source file \"~a\" not found." source)
     (assert (probe-file config) (config) "Config file \"~a\" not found." config)
-    (let ((options
-           (with-open-file (s config) (with-standard-io-syntax (read s)))))
-      (setf (slot-value sheet 'name) (cadr (assoc :name options)))
-      (labels ((coord (key alist) (apply #'complex (cdr (assoc key alist))))
-               (div (a b) (complex (/ (x a) (x b)) (/ (y a) (y b)))))
-        (let ((sheet-size (coord :size options)))
-          (iter (for image in (cdr (assoc :images options)))
-                (let ((offset (coord :offset image))
-                      (size (coord :size image)))
-                  (make-instance 'image
-                                 :name (cadr (assoc :name image))
-                                 :sheet sheet
-                                 :size size
-                                 :tex-offset (div offset sheet-size)
-                                 :tex-size (div size sheet-size))))
-          (iter (for anim in (cdr (assoc :anims options)))
-                (make-instance 'anim
-                               :name (cadr (assoc :name anim))
-                               :images
-                               (iter (for i in (cdr (assoc :images anim)))
-                                     (collect (make-instance 'image :name i)
-                                              result-type vector)))))))))
+    (let ((options (with-open-file (s config) (with-standard-io-syntax (read s)))))
+      options)))
+
+(defun process-config-file (sheet options file-offset)
+  (labels ((coord (key alist) (apply #'complex (cdr (assoc key alist))))
+           (div (a b) (complex (/ (x a) (x b)) (/ (y a) (y b)))))
+    (with-slots ((total-size size)) sheet
+      (format t "total-size ~a~%" total-size)
+      (iter (for image in (cdr (assoc :images options)))
+            (let ((offset (coord :offset image))
+                  (size (coord :size image)))
+              (make-instance 'image
+                             :name (cadr (assoc :name image))
+                             :sheet sheet
+                             :size size
+                             :tex-offset (div (+ file-offset offset) total-size)
+                             :tex-size (div size total-size)))))
+    (iter (for anim in (cdr (assoc :anims options)))
+          (make-instance 'anim
+                         :name (cadr (assoc :name anim))
+                         :images
+                         (iter (for i in (cdr (assoc :images anim)))
+                               (collect (make-instance 'image :name i)
+                                        result-type vector))))))
+
+(defmethod initialize-instance :after ((sheet sheet) &key source)
+  (labels ((coord (key alist) (apply #'complex (cdr (assoc key alist))))
+           (forever (x) (let ((l (list x))) (setf (cdr l) l) l)))
+    (with-slots (name size) sheet
+      (if (not (consp source))
+          (let ((options (parse-config-file source)))
+            (setf name (cadr (assoc :name options)) size (coord :size options))
+            (process-config-file sheet options #c(0 0)))
+          (let* ((options (mapcar #'parse-config-file source))
+                 (total-size
+                  (iter (for o in options)
+                        (sum (x (coord :size o)) into x)
+                        (maximize (y (coord :size o)) into y)
+                        (finally (return (complex (ceiling-expt x 2)
+                                                  (ceiling-expt y 2))))))
+                 (file-offsets
+                  (iter (with x = 0)
+                        (for o in options)
+                        (collect x)
+                        (incf x (x (coord :size o))))))
+            (assert (slot-boundp sheet 'name) (name)
+                    "Name must be specified explicitly for composite sheet.")
+            (setf size total-size)
+            (mapcar #'process-config-file (forever sheet) options file-offsets))))))
 
 (defmethod texture ((sheet sheet))
   (if (slot-boundp sheet 'texture)
       (slot-value sheet 'texture)
       (with-slots (source) sheet
-        (multiple-value-bind (texture surface) (load-image-to-texture source)
+        (multiple-value-bind (texture surface) (load-source-to-texture source)
           (setf (slot-value sheet 'texture) texture)
           (values texture surface)))))
 
