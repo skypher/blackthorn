@@ -24,22 +24,22 @@
 ####
 
 # Search PATH for a Lisp compiler.
-ifneq ($(shell which -s sbcl; echo \$?), 0)
+ifneq ($(shell which sbcl),)
 	cl := sbcl
 else
-ifneq ($(shell which -s alisp; echo \$?), 0)
+ifneq ($(shell which alisp),)
 	cl := allegro
 else
-ifneq ($(shell which -s clisp; echo \$?), 0)
+ifneq ($(shell which clisp),)
 	cl := clisp
 else
-ifneq ($(shell which -s ecl; echo \$?), 0)
+ifneq ($(shell which ecl),)
 	cl := ecl
 else
-ifneq ($(shell which -s ecl.exe; echo \$?), 0)
+ifneq ($(shell which ecl.exe),)
 	cl := ecl
 else
-ifneq ($(shell which -s ccl; echo \$?), 0)
+ifneq ($(shell which ccl),)
 	cl := clozure
 else
 	$(error No Lisp compiler found.)
