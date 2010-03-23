@@ -69,7 +69,7 @@
     (setf (game-root game) root
           (game-view game) (make-instance 'component :size size)
           (game-sheet game)
-          (make-instance 'sheet :source (resource "disp/sheet.png")))
+          (make-instance 'sheet :source (resource "disp/refmap/vx_chara02_c.png")))
     (let ((hero (make-instance
                  'hero :parent root :offset (/ size 2)
                  :image (make-instance 'image :name :hero))))
