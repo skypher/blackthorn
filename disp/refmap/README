@@ -1,0 +1,10 @@
+Some games included in Blackthorn (for now, just Bunny Slayer) depend on the
+REFMAP graphics set. Because of the licensing terms provided by REFMAP, the
+graphics must be downloaded separately. A bash script has provided to automate
+this process.
+
+The REFMAP license is available at:
+http://www.tekepon.net/fsm/modules/refmap/
+
+The download script can be invoked with:
+$ ./gettileset.sh

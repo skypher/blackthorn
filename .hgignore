@@ -24,6 +24,7 @@ README.toc
 bin/*
 lib/*
 doc/*
+disp/refmap/*.png
 *.app
 *.exe
 *.dll
