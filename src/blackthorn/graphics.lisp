@@ -67,7 +67,7 @@
        :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte
        (sdl-base::with-pixel (pixels (sdl:fp surface))
          (sdl-base::pixel-data pixels)))
-    (values texture surface)))
+    texture))
 
 (defun load-source-to-texture (source)
   (surface-to-texture (load-and-convert-images (if (listp source) source (list source)))))
@@ -115,7 +115,6 @@
   (labels ((coord (key alist) (apply #'complex (cdr (assoc key alist))))
            (div (a b) (complex (/ (x a) (x b)) (/ (y a) (y b)))))
     (with-slots ((total-size size)) sheet
-      (format t "total-size ~a~%" total-size)
       (iter (for image in (cdr (assoc :images options)))
             (let ((offset (coord :offset image))
                   (size (coord :size image)))
