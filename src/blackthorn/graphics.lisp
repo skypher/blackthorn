@@ -43,19 +43,32 @@
 (defun ceiling-expt (x y)
   (if (zerop x) x (expt y (ceiling (log x y)))))
 
-(defun load-and-convert-images (sources)
-  (iter (for source in sources) (assert (probe-file source)))
-  (let* ((images (iter (for source in sources) (collect (sdl-image:load-image source))))
-         (total-width
-          (ceiling-expt (or (iter (for image in images) (sum (sdl:width image))) 0) 2))
-         (total-height
-          (ceiling-expt (or (iter (for image in images) (maximize (sdl:height image))) 0) 2))
-         (surface (sdl:create-surface total-width total-height :bpp 32 :pixel-alpha t)))
-    (iter (with x = 0)
-          (for image in images)
-          (sdl:draw-surface-at-* image x 0 :surface surface)
-          (incf x (sdl:width image)))
-    surface))
+(defun load-and-convert-images (sources options)
+  (labels ((color (rgba)
+             (when rgba
+               (destructuring-bind (r g b &optional a) rgba
+                 (apply #'sdl:color :r r :g g :b b (if a (list :a a))))))
+           (point (xy)
+             (when xy
+               (destructuring-bind (x y) xy
+                 (funcall #'sdl:point :x x :y y)))))
+    (iter (for source in sources) (assert (probe-file source)))
+    (let* ((images (iter (for source in sources)
+                         (for option in options)
+                         (collect (sdl-image:load-image
+                                   source
+                                   :color-key (color (cdr (assoc :color-key option)))
+                                   :color-key-at (point (cdr (assoc :color-key-at option)))))))
+           (total-width
+            (ceiling-expt (or (iter (for image in images) (sum (sdl:width image))) 0) 2))
+           (total-height
+            (ceiling-expt (or (iter (for image in images) (maximize (sdl:height image))) 0) 2))
+           (surface (sdl:create-surface total-width total-height :bpp 32 :pixel-alpha t)))
+      (iter (with x = 0)
+            (for image in images)
+            (sdl:draw-surface-at-* image x 0 :surface surface)
+            (incf x (sdl:width image)))
+      surface)))
 
 (defun surface-to-texture (surface)
   (let ((texture (car (gl:gen-textures 1)))
@@ -69,8 +82,9 @@
          (sdl-base::pixel-data pixels)))
     texture))
 
-(defun load-source-to-texture (source)
-  (surface-to-texture (load-and-convert-images (if (listp source) source (list source)))))
+(defun load-source-to-texture (source &optional options)
+  (surface-to-texture
+   (load-and-convert-images (if (listp source) source (list source)) options)))
 
 ;;;
 ;;; Sprite Sheets
@@ -82,6 +96,7 @@
     :initarg :name)
    (source
     :initarg :source)
+   options
    texture
    (size
     :reader size)))
@@ -132,36 +147,36 @@
                                (collect (make-instance 'image :name i)
                                         result-type vector))))))
 
+(defun flip (f) #'(lambda (y x) (funcall f x y)))
+
 (defmethod initialize-instance :after ((sheet sheet) &key source)
   (labels ((coord (key alist) (apply #'complex (cdr (assoc key alist))))
            (forever (x) (let ((l (list x))) (setf (cdr l) l) l)))
-    (with-slots (name size) sheet
-      (if (not (consp source))
-          (let ((options (parse-config-file source)))
-            (setf name (cadr (assoc :name options)) size (coord :size options))
-            (process-config-file sheet options #c(0 0)))
-          (let* ((options (mapcar #'parse-config-file source))
-                 (total-size
-                  (iter (for o in options)
-                        (sum (x (coord :size o)) into x)
-                        (maximize (y (coord :size o)) into y)
-                        (finally (return (complex (ceiling-expt x 2)
-                                                  (ceiling-expt y 2))))))
-                 (file-offsets
-                  (iter (with x = 0)
-                        (for o in options)
-                        (collect x)
-                        (incf x (x (coord :size o))))))
-            (assert (slot-boundp sheet 'name) (name)
-                    "Name must be specified explicitly for composite sheet.")
-            (setf size total-size)
-            (mapcar #'process-config-file (forever sheet) options file-offsets))))))
+    (with-slots (name size options) sheet
+      (when (not (listp source)) (setf source (list source)))
+      (let* ((config-options (mapcar #'parse-config-file source))
+             (total-size
+              (iter (for o in config-options)
+                    (sum (x (coord :size o)) into x)
+                    (maximize (y (coord :size o)) into y)
+                    (finally (return (complex (ceiling-expt x 2) (ceiling-expt y 2))))))
+             (file-offsets
+              (iter (with x = 0)
+                    (for o in config-options)
+                    (collect x)
+                    (incf x (x (coord :size o))))))
+        (assert (slot-boundp sheet 'name) (name) "Name must be specified for composite sheet.")
+        (setf size total-size
+              options (mapcar #'(lambda (o) (remove '(:name :size :images :anims) o
+                                                    :test (flip #'member) :key #'car))
+                              config-options))
+        (mapcar #'process-config-file (forever sheet) config-options file-offsets)))))
 
 (defmethod texture ((sheet sheet))
   (if (slot-boundp sheet 'texture)
       (slot-value sheet 'texture)
-      (with-slots (source) sheet
-        (multiple-value-bind (texture surface) (load-source-to-texture source)
+      (with-slots (source options) sheet
+        (multiple-value-bind (texture surface) (load-source-to-texture source options)
           (setf (slot-value sheet 'texture) texture)
           (values texture surface)))))
 
