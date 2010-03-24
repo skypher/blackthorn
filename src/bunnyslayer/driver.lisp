@@ -72,7 +72,7 @@
           (make-instance 'sheet :name :sheet :source (directory (resource "disp/refmap/*.png"))))
     (let ((hero (make-instance
                  'hero :parent root :offset (/ size 2)
-                 :image (make-instance 'image :name :hero))))
+                 :image (make-instance 'anim :name :hero-south-walk))))
       (subscribe (game-keys game) hero))))
 
 (defmethod game-update :after ((game bunnyslayer-game))

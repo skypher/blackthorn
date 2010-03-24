@@ -142,6 +142,9 @@
     (iter (for anim in (cdr (assoc :anims options)))
           (make-instance 'anim
                          :name (cadr (assoc :name anim))
+                         :timescale (or (cadr (assoc :timescale anim))
+                                        (cadr (assoc :timescale options))
+                                        1)
                          :images
                          (iter (for i in (cdr (assoc :images anim)))
                                (collect (make-instance 'image :name i)
@@ -240,6 +243,10 @@
    (images
     :reader images
     :initarg :images)
+   (timescale
+    :reader timescale
+    :initarg :timescale
+    :initform 1)
    (index
     :reader index
     :initform 0)
@@ -253,7 +260,8 @@
   (or (when name
         (let ((basis (gethash name *anims*)))
           (when basis
-            (apply #'call-next-method class :images (images basis) initargs))))
+            (apply #'call-next-method class
+                   :images (images basis) :timescale (timescale basis) initargs))))
       (unless images (error "No such anim named ~a." name))
       (setf (gethash name *anims*) (call-next-method))))
 
@@ -262,13 +270,13 @@
 
 (defmethod initialize-instance :after ((anim anim) &key)
   (with-slots (images index size) anim
-    (setf size (size (aref images index)))))
+    (setf size (size (aref images (truncate index))))))
 
 (defmethod draw ((anim anim) xy z)
   (with-slots (images index) anim
-    (draw (aref images index) xy z)))
+    (draw (aref images (truncate index)) xy z)))
 
 (defmethod next-image ((anim anim))
-  (with-slots (images index size) anim
-    (setf index (mod (1+ index) (array-dimension images 0))
-          size (size (aref images index)))))
+  (with-slots (images timescale index size) anim
+    (setf index (mod (+ index (/ 1 timescale)) (array-dimension images 0))
+          size (size (aref images (truncate index))))))
