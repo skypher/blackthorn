@@ -43,22 +43,35 @@
 (defclass faceable (flagable)
   ((facing
     :reader facing
-    :initarg :facing)))
+    :initarg :facing)
+   (speed
+    :accessor speed
+    :initarg :speed)))
 
-(defvar *cardinals* '(:north :south :west :east))
+(defvar *dir-names* '(:north :south :west :east))
+(defvar *dir-vectors* '(#c(0 -1) #c(0 1) #c(-1 0) #c(1 0)))
 
-(defmethod change-facing ((faceable faceable) event)
-  (with-slots (facing) faceable
+(defmethod change-facing ((face faceable) event)
+  (with-slots (facing) face
     (setf facing
-          (if (not (get-flag faceable facing))
-              (or (iter (for d in *cardinals*)
-                        (when (get-flag faceable d) (return d)))
-                  facing)
-              facing))))
+          (if (get-flag face facing)
+              facing
+              (or (iter (for d in *dir-names*)
+                        (when (get-flag face d) (return d)))
+                  facing)))))
+
+(defmethod change-veloc ((face faceable) event)
+  (with-slots (veloc speed) face
+    (setf veloc
+          (* speed
+             (unit (iter (for d in *dir-names*) (for v in *dir-vectors*)
+                         (when (get-flag face d) (sum v))))))))
 
 (defclass hero (sprite mobile faceable)
   ((facing
-    :initform :south)))
+    :initform :south)
+   (speed
+    :initform 3)))
 
 (defun doall (&rest handlers)
   #'(lambda (object event)
@@ -78,13 +91,11 @@
                                      :keyword)))))
 
 (defmethod initialize-instance :after ((hero hero) &key)
-  (iter (for (d k v) in '((:north :sdl-key-up #c(0 -2))
-                          (:south :sdl-key-down #c(0 2))
-                          (:west :sdl-key-left #c(-2 0))
-                          (:east :sdl-key-right #c(2 0))))
-        (bind-key-down hero k (doall (set-flag d t) (incf-veloc v)
+  (iter (for (d k) in '((:north :sdl-key-up) (:south :sdl-key-down)
+                        (:west :sdl-key-left) (:east :sdl-key-right)))
+        (bind-key-down hero k (doall (set-flag d t) #'change-veloc
                                      #'change-facing #'change-image))
-        (bind-key-up hero k (doall (set-flag d nil) (decf-veloc v)
+        (bind-key-up hero k (doall (set-flag d nil) #'change-veloc
                                    #'change-facing #'change-image)))
   (change-image hero nil))
 

@@ -27,6 +27,7 @@
 
 (defpackage :bunnyslayer
   (:use :cl :iter :blt :blt-user)
+  (:shadow :speed)
   (:export
 
    ;; driver.lisp
