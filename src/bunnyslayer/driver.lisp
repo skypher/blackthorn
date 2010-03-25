@@ -27,41 +27,66 @@
 
 (defclass bunnyslayer-game (game) ())
 
-(defclass hero (sprite mobile) ())
+(defclass flagable (actor)
+  ((flags
+    :reader flags
+    :initform (make-hash-table))))
+
+(defmethod get-flag ((flagable flagable) flag)
+  (with-slots (flags) flagable
+    (gethash flag flags)))
+
+(defun set-flag (flag value)
+  #'(lambda (flagable event)
+      (with-slots (flags) flagable (setf (gethash flag flags) value))))
+
+(defclass faceable (flagable)
+  ((facing
+    :reader facing
+    :initarg :facing)))
+
+(defvar *cardinals* '(:north :south :west :east))
+
+(defmethod change-facing ((faceable faceable) event)
+  (with-slots (facing) faceable
+    (setf facing
+          (if (not (get-flag faceable facing))
+              (or (iter (for d in *cardinals*)
+                        (when (get-flag faceable d) (return d)))
+                  facing)
+              facing))))
+
+(defclass hero (sprite mobile faceable)
+  ((facing
+    :initform :south)))
+
+(defun doall (&rest handlers)
+  #'(lambda (object event)
+      (iter (for handler in handlers) (funcall handler object event))))
+
+(defun incf-veloc (x)
+  #'(lambda (object event) (with-slots (veloc) object (incf veloc x))))
+
+(defun decf-veloc (x)
+  #'(lambda (object event) (with-slots (veloc) object (decf veloc x))))
+
+;; TODO: generalize this to apply to any class with facings and/or actions
+(defmethod change-image ((hero hero) event)
+  (with-slots (image facing) hero
+    (setf image (make-instance
+                 'anim :name (intern (format nil "HERO-~a-WALK" facing)
+                                     :keyword)))))
 
 (defmethod initialize-instance :after ((hero hero) &key)
-  (bind-key-down hero :sdl-key-up    #'move-north)
-  (bind-key-up   hero :sdl-key-up    #'stop-north)
-  (bind-key-down hero :sdl-key-down  #'move-south)
-  (bind-key-up   hero :sdl-key-down  #'stop-south)
-  (bind-key-down hero :sdl-key-left  #'move-west)
-  (bind-key-up   hero :sdl-key-left  #'stop-west)
-  (bind-key-down hero :sdl-key-right #'move-east)
-  (bind-key-up   hero :sdl-key-right #'stop-east))
-
-(defmethod move-north ((hero hero) event)
-  (incf (veloc hero) #c(0 -2)))
-
-(defmethod stop-north ((hero hero) event)
-  (decf (veloc hero) #c(0 -2)))
-
-(defmethod move-south ((hero hero) event)
-  (incf (veloc hero) #c(0 2)))
-
-(defmethod stop-south ((hero hero) event)
-  (decf (veloc hero) #c(0 2)))
-
-(defmethod move-west ((hero hero) event)
-  (incf (veloc hero) #c(-2 0)))
-
-(defmethod stop-west ((hero hero) event)
-  (decf (veloc hero) #c(-2 0)))
-
-(defmethod move-east ((hero hero) event)
-  (incf (veloc hero) #c(2 0)))
-
-(defmethod stop-east ((hero hero) event)
-  (decf (veloc hero) #c(2 0)))
+  (iter (for (d k v) in '((:north :sdl-key-up #c(0 -2))
+                          (:south :sdl-key-down #c(0 2))
+                          (:west :sdl-key-left #c(-2 0))
+                          (:east :sdl-key-right #c(2 0))))
+        (bind-key-down hero k (doall (set-flag d t) (incf-veloc v)
+                                     #'change-facing #'change-image))
+        (bind-key-up hero k (doall (set-flag d nil) (decf-veloc v)
+                                   #'change-facing #'change-image)))
+  (change-image hero nil))
 
 (defmethod game-init ((game bunnyslayer-game))
   (let ((root (make-instance 'component))
@@ -69,10 +94,9 @@
     (setf (game-root game) root
           (game-view game) (make-instance 'component :size size)
           (game-sheet game)
-          (make-instance 'sheet :name :sheet :source (directory (resource "disp/refmap/*.png"))))
-    (let ((hero (make-instance
-                 'hero :parent root :offset (/ size 2)
-                 :image (make-instance 'anim :name :hero-south-walk))))
+          (make-instance 'sheet :name :sheet
+                         :source (directory (resource "disp/refmap/*.png"))))
+    (let ((hero (make-instance 'hero :parent root :offset (/ size 2))))
       (subscribe (game-keys game) hero))))
 
 (defmethod game-update :after ((game bunnyslayer-game))

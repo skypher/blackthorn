@@ -26,7 +26,7 @@
 (in-package :cl-user)
 
 (defpackage :bunnyslayer
-  (:use :cl :blt-gfx :blt-phys :blt-user)
+  (:use :cl :iter :blt :blt-user)
   (:export
 
    ;; driver.lisp

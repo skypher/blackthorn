@@ -156,24 +156,32 @@
   (labels ((coord (key alist) (apply #'complex (cdr (assoc key alist))))
            (forever (x) (let ((l (list x))) (setf (cdr l) l) l)))
     (with-slots (name size options) sheet
-      (when (not (listp source)) (setf source (list source)))
+      (unless (listp source) (setf source (list source)))
       (let* ((config-options (mapcar #'parse-config-file source))
              (total-size
               (iter (for o in config-options)
                     (sum (x (coord :size o)) into x)
                     (maximize (y (coord :size o)) into y)
-                    (finally (return (complex (ceiling-expt x 2) (ceiling-expt y 2))))))
+                    (finally (return (complex (ceiling-expt x 2)
+                                              (ceiling-expt y 2))))))
              (file-offsets
               (iter (with x = 0)
                     (for o in config-options)
                     (collect x)
                     (incf x (x (coord :size o))))))
-        (assert (slot-boundp sheet 'name) (name) "Name must be specified for composite sheet.")
+        (unless (slot-boundp sheet 'name)
+          (let ((config-name
+                 (if (not (cdr source)) (assoc :name (car config-options)))))
+            (if config-name
+                (setf name config-name)
+                (error "Name must be specified for composite sheet."))))
         (setf size total-size
-              options (mapcar #'(lambda (o) (remove '(:name :size :images :anims) o
-                                                    :test (flip #'member) :key #'car))
+              options (mapcar #'(lambda (o)
+                                  (remove '(:name :size :images :anims) o
+                                          :test (flip #'member) :key #'car))
                               config-options))
-        (mapcar #'process-config-file (forever sheet) config-options file-offsets)))))
+        (mapcar #'process-config-file
+                (forever sheet) config-options file-offsets)))))
 
 (defmethod texture ((sheet sheet))
   (if (slot-boundp sheet 'texture)
