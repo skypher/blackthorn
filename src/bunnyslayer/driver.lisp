@@ -27,49 +27,115 @@
 
 (defclass bunnyslayer-game (game) ())
 
-(defclass flagable (actor)
+(defclass flag-mixin (actor)
   ((flags
     :reader flags
     :initform (make-hash-table))))
 
-(defmethod get-flag ((flagable flagable) flag)
-  (with-slots (flags) flagable
+(defmethod get-flag ((object flag-mixin) flag)
+  (with-slots (flags) object
     (gethash flag flags)))
 
 (defun set-flag (flag value)
-  #'(lambda (flagable event)
-      (with-slots (flags) flagable (setf (gethash flag flags) value))))
+  #'(lambda (object event)
+      (with-slots (flags) object (setf (gethash flag flags) value))))
 
-(defclass faceable (flagable)
-  ((facing
-    :reader facing
-    :initarg :facing)
-   (speed
+(defclass direction-mixin (flag-mixin)
+  ((speed
     :accessor speed
     :initarg :speed)))
 
 (defvar *dir-names* '(:north :south :west :east))
 (defvar *dir-vectors* '(#c(0 -1) #c(0 1) #c(-1 0) #c(1 0)))
 
-(defmethod change-facing ((face faceable) event)
-  (with-slots (facing) face
-    (setf facing
-          (if (get-flag face facing)
-              facing
-              (or (iter (for d in *dir-names*)
-                        (when (get-flag face d) (return d)))
-                  facing)))))
-
-(defmethod change-veloc ((face faceable) event)
-  (with-slots (veloc speed) face
+(defmethod change-veloc ((object direction-mixin) event)
+  (with-slots (veloc speed) object
     (setf veloc
           (* speed
              (unit (iter (for d in *dir-names*) (for v in *dir-vectors*)
-                         (when (get-flag face d) (sum v))))))))
+                         (when (get-flag object d) (sum v))))))))
 
-(defclass hero (sprite mobile faceable)
+(defclass facing-mixin (direction-mixin)
+  ((facing
+    :reader facing
+    :initarg :facing)))
+
+(defmethod change-facing ((object facing-mixin) event)
+  (with-slots (facing) object
+    (setf facing
+          (if (get-flag object facing)
+              facing
+              (or (iter (for d in *dir-names*)
+                        (when (get-flag object d) (return d)))
+                  facing)))))
+
+(defclass action-mixin (actor)
+  ((action-state
+    :reader action
+    :initarg :action)
+   action-inputs
+   action-states
+   action-state-table))
+
+(defclass action-event (event)
+  ((old-action
+    :reader old-action
+    :initarg :old-action)
+   (new-action
+    :reader new-action
+    :initarg :new-action)
+   (input
+    :reader input
+    :initarg :input)))
+
+(defmacro with-action-state-table ((object) inputs &body table)
+  (assert (listp inputs))
+  (assert (iter (for row in table) (always (listp row))))
+  (let ((states
+         (iter (for row in table) (collect (car row))))
+        (transitions
+         (iter (with state-set = (make-hash-table))
+               (for (state . result-states) in table)
+               (setf (gethash state state-set)
+                     (iter (with result-set = (make-hash-table))
+                           (for input in inputs)
+                           (for result in result-states)
+                           (setf (gethash input result-set) result)
+                           (finally (return result-set))))
+               (finally (return state-set)))))
+    (with-gensyms (a-i a-s a-s-t)
+      `(with-slots ((,a-i action-inputs)
+                    (,a-s action-states)
+                    (,a-s-t action-state-table)) ,object
+         (setf ,a-i ',inputs
+               ,a-s ',states
+               ,a-s-t ',transitions)))))
+
+(defmethod dispatch-action-input ((object action-mixin) input)
+  (with-slots (action action-inputs action-states action-state-table) object
+    (assert (member action action-states))
+    (assert (member input action-inputs))
+    (let* ((old-action action)
+           (new-action (gethash input (gethash action action-state-table)))
+           (action-event (make-instance 'action-event
+                                        :old-action old-action
+                                        :new-action new-action
+                                        :input input)))
+      (assert (member new-action action-states))
+      (setf action new-action)
+      (action-transition object action-event))))
+
+(defmethod action-transition ((object action-mixin) event)
+  (declare (ignore object event)))
+
+(defun action-input (input)
+  #'(lambda (object event) (dispatch-action-input object input)))
+
+(defclass hero (sprite mobile facing-mixin action-mixin)
   ((facing
     :initform :south)
+   (action
+    :initform :none)
    (speed
     :initform 3)))
 
@@ -77,18 +143,17 @@
   #'(lambda (object event)
       (iter (for handler in handlers) (funcall handler object event))))
 
-(defun incf-veloc (x)
-  #'(lambda (object event) (with-slots (veloc) object (incf veloc x))))
-
-(defun decf-veloc (x)
-  #'(lambda (object event) (with-slots (veloc) object (decf veloc x))))
-
 ;; TODO: generalize this to apply to any class with facings and/or actions
 (defmethod change-image ((hero hero) event)
-  (with-slots (image facing) hero
-    (setf image (make-instance
-                 'anim :name (intern (format nil "HERO-~a-WALK" facing)
-                                     :keyword)))))
+  (with-slots (image facing action) hero
+    (let ((action-name (if (eql action :none)
+                           (if (zerop (iter (for d in *dir-names*)
+                                            (for v in *dir-vectors*)
+                                            (when (get-flag hero d) (sum v))))
+                               :stand
+                               :walk)
+                           action)))
+      (setf image (make-anim-or-image "HERO-~a-~a" facing action-name)))))
 
 (defmethod initialize-instance :after ((hero hero) &key)
   (iter (for (d k) in '((:north :sdl-key-up) (:south :sdl-key-down)
@@ -97,6 +162,10 @@
                                      #'change-facing #'change-image))
         (bind-key-up hero k (doall (set-flag d nil) #'change-veloc
                                    #'change-facing #'change-image)))
+  (with-action-state-table (hero)
+            (:attack :finish)
+    (:none   :attack :none)
+    (:attack :attack :none))
   (change-image hero nil))
 
 (defmethod game-init ((game bunnyslayer-game))

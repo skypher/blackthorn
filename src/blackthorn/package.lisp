@@ -69,6 +69,9 @@
    :draw
    :anim
    :next-image
+   :make-image
+   :make-anim
+   :make-anim-or-image
 
    ))
 
@@ -100,6 +103,8 @@
    :polar
    :rot
    :cross
+   :once-only
+   :with-gensyms
 
    ;; component.lisp
    :component
@@ -191,6 +196,8 @@
    :polar
    :rot
    :cross
+   :once-only
+   :with-gensyms
 
    ;; graphics.lisp
    :set-caption
@@ -204,6 +211,9 @@
    :draw
    :anim
    :next-image
+   :make-image
+   :make-anim
+   :make-anim-or-image
 
    ;; music.lisp
    :init-mixer

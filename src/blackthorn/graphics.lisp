@@ -288,3 +288,26 @@
   (with-slots (images timescale index size) anim
     (setf index (mod (+ index (/ 1 timescale)) (array-dimension images 0))
           size (size (aref images (truncate index))))))
+
+;;;
+;;; Creation Utilities
+;;;
+
+(defun format-name (name-or-format &rest format-args)
+  (if (stringp name-or-format)
+      (intern (apply #'format nil name-or-format format-args) :keyword)
+      symbol-or-format))
+  
+(defun make-image (&rest name-or-format-args)
+  (let ((name (apply #'format-name name-or-format-args)))
+    (make-instance 'image :name name)))
+
+(defun make-anim (&rest name-or-format-args)
+  (let ((name (apply #'format-name name-or-format-args)))
+    (make-instance 'anim :name name)))
+
+(defun make-anim-or-image (&rest name-or-format-args)
+  (let ((name (apply #'format-name name-or-format-args)))
+    (if (gethash name *anims*)
+        (make-instance 'anim :name name)
+        (make-instance 'image :name name))))
