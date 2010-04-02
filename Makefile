@@ -159,6 +159,14 @@ slime:
 	$(MAKE) clean
 	emacs --eval "(progn (slime '${cl}) (while (not (slime-connected-p)) (sleep-for 0 200)) (slime-interactive-eval \"(defparameter *driver-system* \\\"${system}\\\")\") (slime-load-file \"${driver}\"))"
 
+.PHONY: thopter
+thopter:
+	$(MAKE) system="thopter" new
+
+.PHONY: bunny
+bunny:
+	$(MAKE) system="bunnyslayer" new
+
 .PHONY: stress
 stress:
 	$(MAKE) system="blackthorn-stress-test" new
