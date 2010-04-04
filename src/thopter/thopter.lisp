@@ -88,11 +88,15 @@
     :initform 1)))
 
 (defclass thopter (sprite mobile collidable shooter alarm)
-  ((bullet-class :initform 'bullet)
+  (
+   (normal-speed :initform 4 :accessor normal-speed)
+   (boosted-speed :initform 6 :accessor boosted-speed)
+   (bullet-class :initform 'bullet)
    (bullet-image :initform (make-instance 'image :name :bullet))
    (bullet-veloc :initform #c(0 -8))
    (bullet-timer :initform 60)
    (timer :initform nil)
+   (speed-boost :initform 0 :accessor speed-boost :initarg :speed-boost)
    (health
     :accessor health
     :initarg :health
@@ -118,6 +122,7 @@
    (bullet-image :initform (make-instance 'image :name :enemy-bullet))
    (bullet-veloc :initform #c(0 8))
    (bullet-timer :initform 60)
+   (speed-boost :initform 0 :accessor speed-boost :initarg :speed-boost)
    (health
     :accessor health
     :initarg :health
@@ -179,6 +184,8 @@
   ((reactive-collisions-only-p :initform t)))
 (defclass upgrade-missile (sprite mobile collidable transient)
   ((reactive-collisions-only-p :initform t)))
+(defclass upgrade-speed (sprite mobile collidable transient)
+  ((reactive-collisions-only-p :initform t)))
 
 (defmethod initialize-instance :after ((thopter thopter) &key)
   (bind-key-down thopter :sdl-key-up    #'move-north)
@@ -198,28 +205,52 @@
   )
 
 (defmethod move-north ((thopter thopter) event)
-  (incf (veloc thopter) #c(0 -4)))
+  (let ((speed (if (> (speed-boost thopter) 0) 
+		  (- (boosted-speed thopter))
+		  (- (normal-speed thopter)))))
+    (incf (veloc thopter) (complex 0 speed))))
 
 (defmethod stop-north ((thopter thopter) event)
-  (decf (veloc thopter) #c(0 -4)))
+  (let ((speed (if (> (speed-boost thopter) 0) 
+		  (- (boosted-speed thopter))
+		  (- (normal-speed thopter)))))
+    (decf (veloc thopter) (complex 0 speed))))
 
 (defmethod move-south ((thopter thopter) event)
-  (incf (veloc thopter) #c(0 4)))
+  (let ((speed (if (> (speed-boost thopter) 0) 
+		  (+ (boosted-speed thopter))
+		  (+ (normal-speed thopter)))))
+    (incf (veloc thopter) (complex 0 speed))))
 
 (defmethod stop-south ((thopter thopter) event)
-  (decf (veloc thopter) #c(0 4)))
+  (let ((speed (if (> (speed-boost thopter) 0) 
+		  (+ (boosted-speed thopter))
+		  (+ (normal-speed thopter)))))
+    (decf (veloc thopter) (complex 0 speed))))
 
 (defmethod move-west ((thopter thopter) event)
-  (incf (veloc thopter) #c(-4 0)))
+  (let ((speed (if (> (speed-boost thopter) 0) 
+		  (- (boosted-speed thopter))
+		  (- (normal-speed thopter)))))
+    (incf (veloc thopter) (complex speed 0))))
 
 (defmethod stop-west ((thopter thopter) event)
-  (decf (veloc thopter) #c(-4 0)))
+  (let ((speed (if (> (speed-boost thopter) 0) 
+		  (- (boosted-speed thopter))
+		  (- (normal-speed thopter)))))
+    (decf (veloc thopter) (complex speed 0))))
 
 (defmethod move-east ((thopter thopter) event)
-  (incf (veloc thopter) #c(4 0)))
+  (let ((speed (if (> (speed-boost thopter) 0) 
+		  (+ (boosted-speed thopter))
+		  (+ (normal-speed thopter)))))
+    (incf (veloc thopter) (complex speed 0))))
 
 (defmethod stop-east ((thopter thopter) event)
-  (decf (veloc thopter) #c(4 0)))
+  (let ((speed (if (> (speed-boost thopter) 0) 
+		  (+ (boosted-speed thopter))
+		  (+ (normal-speed thopter)))))
+    (decf (veloc thopter) (complex speed 0))))
 
 (defun nearest-object (component type radius)
   (find-nearest-object component radius :test #'(lambda (x) (typep x type))))
@@ -342,7 +373,11 @@
       (explosion     (decf health))
       (health-pack   (incf health 2))
       (upgrade-bullet (incf firepower))
-      (upgrade-missile (incf missiles)))
+      (upgrade-missile (incf missiles))
+      (upgrade-speed (progn
+		      (when (<= (speed-boost thopter) 0)
+			(setf (veloc thopter) (* 1.5d0 (veloc thopter))))
+		      (setf (speed-boost thopter) 240))))
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
                      :offset offset :depth depth :veloc (/ veloc 2)
@@ -358,7 +393,11 @@
     (when (> (x offset) (- (x (size parent)) (x size)))
       (setf offset (complex (- (x (size parent)) (x size)) (y offset))))
     (when (> (y offset) (- (y (size parent)) (y size)))
-      (setf offset (complex (x offset) (- (y (size parent)) (y size)))))))
+      (setf offset (complex (x offset) (- (y (size parent)) (y size)))))
+    (when (> (speed-boost thopter) 0)
+      (decf (speed-boost thopter))
+      (when (<= (speed-boost thopter) 0)
+	(setf (veloc thopter) (/ (veloc thopter) 1.5d0))))))
 
 (defmethod collide ((bullet bullet) event)
   (when (and (parent bullet) (typecase (event-hit event)
@@ -470,10 +509,13 @@
             (nearest-missile (nearest-object enemy 'missile 120))
             (nearest-upgrade-b (nearest-object enemy 'upgrade-bullet 180))
             (nearest-upgrade-m (nearest-object enemy 'upgrade-missile 180))
+	    (nearest-upgrade-s (nearest-object enemy 'upgrade-speed 180))
             (r (+ xy (/ s 2) (/ (size (game-root *game*)) -2))))
-        (setf v (* (unit v) (min (abs v) (+ 8d0 (* veloc-scale difficulty))))
+        (setf v (* (unit v) (min 
+		     (abs (* v (if (> (speed-boost enemy) 0) 1.2d0 1d0)))
+		     (+ 8d0 (* veloc-scale difficulty))))
               accel
-              (+ (cond (ignore-objects (circular r))
+		 (+ (cond (ignore-objects (circular r))
                        (nearest-thopter
                         (* (toward nearest-thopter) (max 0.5d0 difficulty)))
                        (nearest-health
@@ -492,8 +534,12 @@
                         (* (toward nearest-upgrade-b) (max 0.5d0 difficulty)))
                        (nearest-upgrade-m
                         (* (toward nearest-upgrade-m) (max 0.5d0 difficulty)))
+                       (nearest-upgrade-s
+                        (* (toward nearest-upgrade-s) (max 0.5d0 difficulty)))
                        (t (circular r)))
-                 (enemy-correction (nearest-object enemy 'enemy 0))))))))
+                 (enemy-correction (nearest-object enemy 'enemy 0))))
+	(when (> (speed-boost enemy) 0)
+	  (decf (speed-boost enemy)))))))
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer 
@@ -521,21 +567,32 @@
       (explosion   (decf health))
       (health-pack (incf health 2))
       (upgrade-bullet (incf firepower))
-      (upgrade-missile (incf missiles)))
+      (upgrade-missile (incf missiles))
+      (upgrade-speed (setf (speed-boost enemy) 240)))
     (when (and parent (<= health 0))
       (let ((i (if (typep enemy 'enemy-boss) 25 1)))
         (loop repeat i 
-           do (let* ((random-choice (mt19937:random 3))
-                     (drop-class (ecase random-choice
-                                   ((0) 'upgrade-bullet)
-                                   ((1) 'upgrade-missile)
-                                   ((2) 'health-pack)))
+           do (let* (
+		     (random-choice (mt19937:random 1d0))
+		     ; not happy with way chances are, prefer individual
+		     (upgrade-bullet-chance 0.30)
+		     (upgrade-missile-chance 0.6d0)
+		     (health-pack-chance 0.90)
+		     (upgrade-speed-chance 1.00d0)
+		     (drop-class (if (< random-choice upgrade-bullet-chance)
+				     'upgrade-bullet
+				   (if (< random-choice upgrade-missile-chance)
+				       'upgrade-missile
+				     (if (< random-choice health-pack-chance)
+					 'health-pack
+				       'upgrade-speed))))
                      (drop-image
                       (make-instance
                        'image :name (ecase drop-class
                                       ((upgrade-bullet) :upgrade-bullet)
                                       ((upgrade-missile) :upgrade-missile)
-                                      ((health-pack) :health))))
+                                      ((health-pack) :health)
+				      ((upgrade-speed) :upgrade-speed))))
                      (image (make-instance 'anim :name :explosion))
                      (bound (- size (size image))))
                 (make-instance
@@ -574,6 +631,12 @@
     (detach (parent upgrade) upgrade)))
 
 (defmethod collide ((upgrade upgrade-missile) event)
+  (when (and (parent upgrade)
+             (or (typep (event-hit event) 'enemy)
+                 (typep (event-hit event) 'thopter)))
+    (detach (parent upgrade) upgrade)))
+
+(defmethod collide ((upgrade upgrade-speed) event)
   (when (and (parent upgrade)
              (or (typep (event-hit event) 'enemy)
                  (typep (event-hit event) 'thopter)))
