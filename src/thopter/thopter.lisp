@@ -62,6 +62,24 @@
                 (<= (+ y2 h2) y1))
         (detach parent transient)))))
 
+(defclass flag-mixin (actor)
+  ((flags
+    :reader flags
+    :initform (make-hash-table))))
+
+(defmethod get-flag ((object flag-mixin) flag)
+  (with-slots (flags) object
+    (gethash flag flags)))
+
+(defun set-flag (flag value)
+  #'(lambda (object event)
+      (with-slots (flags) object (setf (gethash flag flags) value))))
+
+(defclass direction-mixin (flag-mixin)
+  ((speed
+    :accessor speed
+    :initarg :speed)))
+
 ;;;
 ;;; Thopter-specific implementation
 ;;;
@@ -87,9 +105,9 @@
     :initarg :firepower
     :initform 1)))
 
-(defclass thopter (sprite mobile collidable shooter alarm)
+(defclass thopter (sprite mobile collidable shooter alarm direction-mixin)
   (
-   (normal-speed :initform 4 :accessor normal-speed)
+   (speed :initform 4)
    (boosted-speed :initform 6 :accessor boosted-speed)
    (bullet-class :initform 'bullet)
    (bullet-image :initform (make-instance 'image :name :bullet))
@@ -187,15 +205,25 @@
 (defclass upgrade-speed (sprite mobile collidable transient)
   ((reactive-collisions-only-p :initform t)))
 
+(defvar *dir-names* '(:north :south :west :east))
+(defvar *dir-vectors* '(#c(0 -1) #c(0 1) #c(-1 0) #c(1 0)))
+
+(defmethod change-veloc ((object direction-mixin) event)
+  (with-slots (veloc speed boosted-speed) object
+    (setf veloc
+          (* (if (> (speed-boost object) 0) boosted-speed speed)
+             (unit (iter (for d in *dir-names*) (for v in *dir-vectors*)
+                         (when (get-flag object d) (sum v))))))))
+
+(defun doall (&rest handlers)
+  #'(lambda (object event)
+      (iter (for handler in handlers) (funcall handler object event))))
+
 (defmethod initialize-instance :after ((thopter thopter) &key)
-  (bind-key-down thopter :sdl-key-up    #'move-north)
-  (bind-key-up   thopter :sdl-key-up    #'stop-north)
-  (bind-key-down thopter :sdl-key-down  #'move-south)
-  (bind-key-up   thopter :sdl-key-down  #'stop-south)
-  (bind-key-down thopter :sdl-key-left  #'move-west)
-  (bind-key-up   thopter :sdl-key-left  #'stop-west)
-  (bind-key-down thopter :sdl-key-right #'move-east)
-  (bind-key-up   thopter :sdl-key-right #'stop-east)
+  (iter (for (d k) in '((:north :sdl-key-up) (:south :sdl-key-down)
+                        (:west :sdl-key-left) (:east :sdl-key-right)))
+        (bind-key-down thopter k (doall (set-flag d t) #'change-veloc))
+        (bind-key-up thopter k (doall (set-flag d nil) #'change-veloc)))
   (bind-key-down thopter :sdl-key-space #'start-shoot)
   (bind-key-up thopter :sdl-key-space #'stop-shoot)
   (bind-key-down thopter :sdl-key-lctrl #'missile)
@@ -203,54 +231,6 @@
   ;; TODO: add reset function
   ;(bind-key-down thopter :sdl-key-r     #'reset)
   )
-
-(defmethod move-north ((thopter thopter) event)
-  (let ((speed (if (> (speed-boost thopter) 0) 
-		  (- (boosted-speed thopter))
-		  (- (normal-speed thopter)))))
-    (incf (veloc thopter) (complex 0 speed))))
-
-(defmethod stop-north ((thopter thopter) event)
-  (let ((speed (if (> (speed-boost thopter) 0) 
-		  (- (boosted-speed thopter))
-		  (- (normal-speed thopter)))))
-    (decf (veloc thopter) (complex 0 speed))))
-
-(defmethod move-south ((thopter thopter) event)
-  (let ((speed (if (> (speed-boost thopter) 0) 
-		  (+ (boosted-speed thopter))
-		  (+ (normal-speed thopter)))))
-    (incf (veloc thopter) (complex 0 speed))))
-
-(defmethod stop-south ((thopter thopter) event)
-  (let ((speed (if (> (speed-boost thopter) 0) 
-		  (+ (boosted-speed thopter))
-		  (+ (normal-speed thopter)))))
-    (decf (veloc thopter) (complex 0 speed))))
-
-(defmethod move-west ((thopter thopter) event)
-  (let ((speed (if (> (speed-boost thopter) 0) 
-		  (- (boosted-speed thopter))
-		  (- (normal-speed thopter)))))
-    (incf (veloc thopter) (complex speed 0))))
-
-(defmethod stop-west ((thopter thopter) event)
-  (let ((speed (if (> (speed-boost thopter) 0) 
-		  (- (boosted-speed thopter))
-		  (- (normal-speed thopter)))))
-    (decf (veloc thopter) (complex speed 0))))
-
-(defmethod move-east ((thopter thopter) event)
-  (let ((speed (if (> (speed-boost thopter) 0) 
-		  (+ (boosted-speed thopter))
-		  (+ (normal-speed thopter)))))
-    (incf (veloc thopter) (complex speed 0))))
-
-(defmethod stop-east ((thopter thopter) event)
-  (let ((speed (if (> (speed-boost thopter) 0) 
-		  (+ (boosted-speed thopter))
-		  (+ (normal-speed thopter)))))
-    (decf (veloc thopter) (complex speed 0))))
 
 (defun nearest-object (component type radius)
   (find-nearest-object component radius :test #'(lambda (x) (typep x type))))
