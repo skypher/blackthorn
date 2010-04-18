@@ -168,7 +168,7 @@
     (:attack :attack :none))
   (change-image hero nil))
 
-(defmethod game-init ((game bunnyslayer-game))
+(defmethod game-init ((game bunnyslayer-game) &key &allow-other-keys)
   (let ((root (make-instance 'component))
         (size #c(800 600)))
     (setf (game-root game) root

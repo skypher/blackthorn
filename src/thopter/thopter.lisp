@@ -642,7 +642,10 @@
                  (typep (event-hit event) 'thopter)))
     (detach (parent upgrade) upgrade)))
 
-(defmethod game-init ((game thopter-game) players)
+(defvar *player*)
+
+(defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
+  (setf *player* player)
   (let* ((size #c(800 600))
          (root (make-instance 'component :size size)))
     (setf (game-root game) root
@@ -668,7 +671,7 @@
 (defmethod game-update :after ((game thopter-game))
   (let* ((thopter (iter (for i in-vector (children (game-root game)))
                         (when (and (typep i 'thopter)
-                                   (eql (event-host i) (blt-net:hostname)))
+                                   (eql (event-host i) *player*))
                           (return i))))
          (s (format
              nil "wave: ~a, health: ~a, firepower: ~a, missiles: ~a, fps: ~,2f"

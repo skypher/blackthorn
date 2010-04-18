@@ -167,7 +167,7 @@
 
     (sdl:with-init ()
       (init-mixer)
-      (game-init *game* (hostnames))
+      (game-init *game* :player (hostname) :players (hostnames))
 
       (gl:enable :texture-2d)
       (gl:enable :blend)

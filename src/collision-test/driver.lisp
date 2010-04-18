@@ -71,7 +71,8 @@
   (setf (image toggle) (make-instance 'image :name :blue)))
 
 
-(defmethod game-init ((game blackthorn-collision-test-game))
+(defmethod game-init ((game blackthorn-collision-test-game)
+                      &key &allow-other-keys)
   (let ((root (make-instance 'component))
         (size #c(800 600)))
     (setf (game-root game) root
