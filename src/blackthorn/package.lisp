@@ -40,6 +40,8 @@
   (:export
 
    ;; network.lisp
+   :hostname
+   :hostnames
    :net-init
    :net-exit
    :net-game-connect
@@ -306,7 +308,6 @@
    ;; main.lisp
    :*resource-pathname-defaults*
    :resource
-   :*host*
    :main
 
    ))

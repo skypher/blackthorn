@@ -622,7 +622,10 @@
                  (typep (event-hit event) 'thopter)))
     (detach (parent upgrade) upgrade)))
 
-(defmethod game-init ((game thopter-game))
+(defvar *player*)
+
+(defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
+  (setf *player* player)
   (let* ((size #c(800 600))
          (root (make-instance 'component :size size)))
     (setf (game-root game) root
@@ -630,27 +633,16 @@
           (game-sheet game)
           (make-instance 'sheet :source (resource "disp/thopter.png"))
           (game-wave game) (make-instance 'wave-controller :parent root))
-    (ecase *host*
-      ((:normal)
-       (let ((thopter (make-instance
-                       'thopter :host :normal :parent root
-                       :offset (complex (/ (x size) 2) (* (y size) 3/4))
-                       :image (make-instance 'anim :name :thopter)
-                       :health 4 :firepower 3 :missiles 2)))
-         (subscribe (game-keys game) thopter)))
-      ((:server :client)
-        (let ((thopter1 (make-instance
-                         'thopter :host :server :parent root
-                         :offset (complex (* (x size) 1/4) (* (y size) 3/4))
-                         :image (make-instance 'anim :name :thopter)
-                         :health 4 :firepower 3 :missiles 1))
-              (thopter2 (make-instance
-                         'thopter :host :client :parent root
-                         :offset (complex (* (x size) 3/4) (* (y size) 3/4))
-                         :image (make-instance 'anim :name :thopter2)
-                         :health 4 :firepower 3 :missiles 1)))
-          (subscribe (game-keys game) thopter1)
-          (subscribe (game-keys game) thopter2))))
+    (iter (for player in players) (for i from 0)
+          (let ((thopter (make-instance
+                          'thopter :host player :parent root
+                          :offset (complex (/ (x size) 2) (* (y size) 3/4))
+                          :image
+                          (if (evenp i)
+                              (make-instance 'anim :name :thopter)
+                              (make-instance 'anim :name :thopter2))
+                          :health 4 :firepower 3 :missiles 2)))
+            (subscribe (game-keys game) thopter)))
     (play
      (make-instance
       'sample :name :music :source (resource "sound/music.mp3") :type :music)
@@ -659,7 +651,7 @@
 (defmethod game-update :after ((game thopter-game))
   (let* ((thopter (iter (for i in-vector (children (game-root game)))
                         (when (and (typep i 'thopter)
-                                   (eql (event-host i) *host*))
+                                   (eql (event-host i) *player*))
                           (return i))))
          (s (format
              nil "wave: ~a, health: ~a, firepower: ~a, missiles: ~a, fps: ~,2f"

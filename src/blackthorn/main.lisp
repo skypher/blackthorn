@@ -80,6 +80,10 @@
                        :full "server"
                        :requires-arguments :optional)
         (make-instance 'cli-parser:cli-option
+                       :abbr nil
+                       :full "players"
+                       :requires-arguments :optional)
+        (make-instance 'cli-parser:cli-option
                        :abbr "c"
                        :full "connect"
                        :requires-arguments t)
@@ -89,15 +93,18 @@
                        :requires-arguments t)))
 
 (defun cli-get-mode (options)
-  (let ((port (car (gethash "port" options))))
+  (let ((port (car (gethash "port" options)))
+        (players (car (gethash "players" options))))
     (or
      (multiple-value-bind (value exists) (gethash "server" options)
        (when exists
-         (list :server (car value) (when port (parse-integer port)))))
+         (list :server (car value)
+               (when port (parse-integer port))
+               (when players (parse-integer players)))))
      (multiple-value-bind (value exists) (gethash "connect" options)
        (when exists
-         (list :client (car value) (when port (parse-integer port)))))
-     (list :normal nil nil))))
+         (list :client (car value) (when port (parse-integer port)) nil)))
+     (list :normal nil nil nil))))
 
 ;;;
 ;;; Video modes
@@ -133,8 +140,6 @@
 ;;; Main Game Driver
 ;;;
 
-(defvar *host*)
-
 (defun main-init-abort-handler ()
   (throw 'main-init nil))
 
@@ -153,8 +158,7 @@
   (unless *game* (error "No game specified.~%"))
 
   (let ((options (cli-parser:cli-parse (command-line-arguments) (cli-options))))
-    (apply #'net-init (cli-get-mode options))
-    (setf *host* blt-net::*mode*))
+    (apply #'net-init (cli-get-mode options)))
 
   (setf mt19937:*random-state* (mt19937:make-random-state t))
 
@@ -163,7 +167,7 @@
 
     (sdl:with-init ()
       (init-mixer)
-      (game-init *game*)
+      (game-init *game* :player (hostname) :players (hostnames))
 
       (gl:enable :texture-2d)
       (gl:enable :blend)
@@ -184,12 +188,12 @@
             (:key-down-event (:key k :mod m :mod-key m-k :unicode u)
               (containers:enqueue
                input-queue
-               (make-instance 'key-event :host *host* :type :key-down :key k
+               (make-instance 'key-event :host (hostname) :type :key-down :key k
                               :mod m :mod-key m-k :unicode u)))
             (:key-up-event (:key k :mod m :mod-key m-k :unicode u)
               (containers:enqueue
                input-queue
-               (make-instance 'key-event :host *host* :type :key-up :key k
+               (make-instance 'key-event :host (hostname) :type :key-up :key k
                               :mod m :mod-key m-k :unicode u)))
             (:idle ()
               (gl:clear :color-buffer-bit :depth-buffer-bit)

@@ -76,9 +76,11 @@
     @short{Returns a subcription which can be used to subscribe to
       global key events.}"))
 
-(defgeneric game-init (game)
+(defgeneric game-init (game &key player players)
   (:documentation
    "@arg[game]{A @class{game}.}
+    @arg[player]{The player id of the running instance.}
+    @arg[players]{A list of player ids.}
     @short{Used to initialize a new @class{game} prior to starting the main
       loop. Users are expected to define a primary method for this generic
       function.}"))

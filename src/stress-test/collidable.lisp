@@ -37,7 +37,7 @@
   (declare (ignore object))
   (format t "~a: ~a~%" (event-type event) (event-key event)))
 
-(defmethod game-init ((game collidable-game))
+(defmethod game-init ((game collidable-game) &key &allow-other-keys)
   (let ((root (make-instance 'component))
         (size #c(800 600)))
     (setf (game-root game) root
@@ -55,7 +55,7 @@
       (bind keys :key-up #'report-event)
       (subscribe (game-keys game) keys))))
 
-(defmethod game-init :after ((game collidable-game))
+(defmethod game-init :after ((game collidable-game) &key &allow-other-keys)
   ;; uncork the frame rate and see how fast we go
   (setf (sdl:frame-rate) 100))
 

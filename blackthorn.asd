@@ -61,7 +61,6 @@
 
                ;; Networking and Serialization
                :usocket
-               :flexi-streams
                :cl-store
 
                ;; Graphics and Sound:
