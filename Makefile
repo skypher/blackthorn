@@ -154,6 +154,10 @@ server:
 client:
 	$(MAKE) args="--connect=127.0.0.1 --port=12345" new
 
+.PHONY: server3
+server3:
+	$(MAKE) args="--server --port=12345 --players=3" new
+
 .PHONY: slime
 slime:
 	$(MAKE) clean

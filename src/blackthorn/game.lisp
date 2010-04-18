@@ -47,7 +47,7 @@
 
 (defvar *game*)
 
-(defmethod game-init :after ((game game))
+(defmethod game-init :after ((game game) players)
   (if (game-view game)
       (window (size (game-view game)))
       (warn "No view object for game ~a: Unable to initialize window.~%" game)))
