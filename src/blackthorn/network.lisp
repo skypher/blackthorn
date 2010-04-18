@@ -32,10 +32,10 @@
 (defconstant +max-buffer-size+ 65536)
 
 (defvar *mode*)
-(defvar *local-host*)
 (defvar *local-port*)
 (defvar *remote-host*)
 (defvar *remote-port*)
+(defvar *server-socket*)
 (defvar *socket*)
 (defvar *buffer*
   (make-array +max-buffer-size+ :element-type '(unsigned-byte 8)))
@@ -46,27 +46,30 @@
 (defun net-init (mode host port)
   (assert (not (boundp '*mode*)))
   (ecase mode
-    ((:server :client)
+    ((:server)
+     (let ((socket (usocket:socket-listen usocket:*wildcard-host* port
+                                          :element-type '(unsigned-byte 8))))
+       (setf *server-socket* socket
+             *local-port* (usocket:get-local-port socket))))
+    ((:client)
      (when (eql mode :client)
-       (setf *remote-host* host *remote-port* port port usocket:*auto-port*))
-     (let* ((socket (usocket:socket-connect
-                     nil nil :protocol :datagram :local-port port))
-            (host (usocket:get-local-address socket))
-            (port (usocket:get-local-port socket)))
-       (setf *local-host* host *local-port* port *socket* socket)))
+       (setf *remote-host* host *remote-port* port)))
     ((:normal)))
   (setf *mode* mode))
 
 (defun net-connect (&optional (abort-handler #'default-abort-handler))
   (ecase *mode*
     ((:server)
-     (multiple-value-bind (request host port) (net-receive)
+     (usocket:wait-for-input *server-socket* :timeout nil :ready-only t)
+     (setf *socket* (usocket:socket-accept *server-socket*))
+     (let ((request (net-receive)))
        (unless (equal (assoc :request request) '(:request :init))
          (funcall abort-handler))
-       (setf *remote-host* host *remote-port* (second (assoc :port request)))
        (net-send '((:response :init)))))
     ((:client)
-     (net-send `((:request :init) (:port ,*local-port*)))
+     (setf *socket* (usocket:socket-connect *remote-host* *remote-port*
+                                            :element-type '(unsigned-byte 8)))
+     (net-send `((:request :init)))
      (unless (equal (net-receive :timeout 10) '((:response :init)))
        (funcall abort-handler)))
     ((:normal))))
@@ -75,33 +78,21 @@
   (assert (boundp '*mode*))
   (ecase *mode*
     ((:server :client)
-     (usocket:socket-close *socket*))
+     (usocket:socket-close *socket*)
+     (when (eql *mode* :server)
+       (usocket:socket-close *server-socket*)))
     ((:normal)))
   (makunbound '*socket*)
   (makunbound '*mode*))
 
-(defun store-to-buffer (object)
-  (flexi-streams:with-output-to-sequence (stream)
-    (cl-store:store object stream)))
-
-(defun restore-from-buffer (buffer start end)
-  (flexi-streams:with-input-from-sequence (stream buffer :start start :end end)
-    (cl-store:restore stream)))
-
 (defun net-receive (&key timeout)
   (assert (or (eql *mode* :server) (eql *mode* :client)))
-  #+(not (and sbcl windows))
-  (usocket:wait-for-input *socket* :timeout timeout :ready-only t)
-  #+(and sbcl windows) t
-  (multiple-value-bind (buffer size host port)
-      (usocket:socket-receive *socket* *buffer* nil)
-    (values (restore-from-buffer buffer 0 size) host port)))
+  (cl-store:restore (usocket:socket-stream *socket*)))
 
 (defun net-send (message)
   (assert (or (eql *mode* :server) (eql *mode* :client)))
-  (let ((buffer (store-to-buffer message)))
-    (usocket:socket-send *socket* buffer nil
-                         :host *remote-host* :port *remote-port*)))
+  (cl-store:store message (usocket:socket-stream *socket*))
+  (force-output (usocket:socket-stream *socket*)))
 
 (defmacro with-serve-request ((request &key timeout) &body body)
   `(let ((,request (net-receive :timeout ,timeout)))
