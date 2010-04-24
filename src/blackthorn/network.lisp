@@ -57,7 +57,10 @@
      (let ((socket (usocket:socket-listen usocket:*wildcard-host* port
                                           :element-type '(unsigned-byte 8))))
        (setf *server-socket* socket
-             *local-port* (usocket:get-local-port socket))))
+             *local-port*
+             ;; FIXME: This seems to blow up in CLISP.
+             #-clisp (usocket:get-local-port socket)
+             #+clisp port)))
     ((:client)
      (when (eql mode :client)
        (setf *remote-host* host *remote-port* port)))
@@ -140,7 +143,8 @@
                (if (equal (assoc :request request) '(:request :connect))
                    `((:response :connect)
                      (:host ,i) (:hosts ,hosts)
-                     (:random-state ,mt19937:*random-state*))
+                     (:random-state
+                      ,(mt19937::random-state-state mt19937:*random-state*)))
                    (funcall abort-handler)))))
      (format t "Connected.~%"))
     ((:client)
@@ -150,7 +154,9 @@
              (error "Client didn't understand response.~%"))
            (setf *host* (cadr (assoc :host response))
                  *hosts* (cadr (assoc :hosts response))
-                 mt19937:*random-state* (cadr (assoc :random-state response))))
+                 mt19937:*random-state*
+                 (mt19937::make-random-object
+                  :state (cadr (assoc :random-state response)))))
        (usocket:connection-refused-error ()
          (funcall abort-handler)))
      (format t "Connected.~%"))
