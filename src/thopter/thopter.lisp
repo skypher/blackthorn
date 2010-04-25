@@ -110,7 +110,7 @@
    (speed :initform 4)
    (boosted-speed :initform 6 :accessor boosted-speed)
    (bullet-class :initform 'bullet)
-   (bullet-image :initform (make-instance 'image :name :bullet))
+   (bullet-image :initform (make-image :bullet))
    (bullet-veloc :initform #c(0 -8))
    (bullet-timer :initform 60)
    (timer :initform nil)
@@ -137,7 +137,7 @@
 (defclass enemy (sprite mobile collidable alarm shooter)
   ((timer :initform 20)
    (bullet-class :initform 'enemy-bullet)
-   (bullet-image :initform (make-instance 'image :name :enemy-bullet))
+   (bullet-image :initform (make-image :enemy-bullet))
    (bullet-veloc :initform #c(0 8))
    (bullet-timer :initform 60)
    (speed-boost :initform 0 :accessor speed-boost :initarg :speed-boost)
@@ -167,12 +167,12 @@
     :initform 1)))
 
 (defclass enemy-ship (enemy)
-  ((image :initform (make-instance 'image :name :enemy))
+  ((image :initform (make-image :enemy))
    (health :initform 4)
    (veloc-scale :initform 2d0)))
 
 (defclass enemy-boss (enemy)
-  ((image :initform (make-instance 'image :name :boss))
+  ((image :initform (make-image :boss))
    (bullet-timer :initform 120)
    (health :initform 100)
    (veloc-scale :initform 0.5d0)
@@ -272,7 +272,7 @@
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
                      :veloc veloc
-                     :image (make-instance 'image :name :missile-n)))))
+                     :image (make-image :missile-n)))))
 
 (defmethod missile ((enemy enemy) event)
   (with-slots (parent offset size veloc missiles) enemy
@@ -282,29 +282,29 @@
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 4)) :depth -1
                      :veloc veloc
-                     :image (make-instance 'image :name :enemy-missile-s)))))
+                     :image (make-image :enemy-missile-s)))))
 
 (defmethod update ((missile missile) event)
   (with-slots (parent offset size veloc accel image) missile
     (let* ((nearest-enemy (nearest-object missile 'enemy 600))
            (theta (theta veloc))
-           (new-image (make-instance 'image :name
-                                     (cond ((or (> theta (* 0.875 pi))
-                                                (< theta (* -0.875 pi)))
-                                            :missile-w)
-                                           ((> theta (* 0.625 pi))
-                                            :missile-sw)
-                                           ((> theta (* 0.375 pi))
-                                            :missile-s)
-                                           ((> theta (* 0.125 pi))
-                                            :missile-se)
-                                           ((< theta (* -0.625 pi))
-                                            :missile-nw)
-                                           ((< theta (* -0.375 pi))
-                                            :missile-n)
-                                           ((< theta (* -0.125 pi))
-                                            :missile-ne)
-                                           (t :missile-e)))))
+           (new-image (make-image
+                       (cond ((or (> theta (* 0.875 pi))
+                                  (< theta (* -0.875 pi)))
+                              :missile-w)
+                             ((> theta (* 0.625 pi))
+                              :missile-sw)
+                             ((> theta (* 0.375 pi))
+                              :missile-s)
+                             ((> theta (* 0.125 pi))
+                              :missile-se)
+                             ((< theta (* -0.625 pi))
+                              :missile-nw)
+                             ((< theta (* -0.375 pi))
+                              :missile-n)
+                             ((< theta (* -0.125 pi))
+                              :missile-ne)
+                             (t :missile-e)))))
       (if nearest-enemy
           (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
                 accel (* 2d0 (unit (- (+ (offset nearest-enemy)
@@ -318,23 +318,23 @@
   (with-slots (parent offset size veloc accel image) missile
     (let* ((nearest-enemy (nearest-object missile 'thopter 400))
            (theta (theta veloc))
-           (new-image (make-instance 'image :name
-                                     (cond ((or (> theta (* 0.875 pi))
-                                                (< theta (* -0.875 pi)))
-                                            :enemy-missile-w)
-                                           ((> theta (* 0.625 pi))
-                                            :enemy-missile-sw)
-                                           ((> theta (* 0.375 pi))
-                                            :enemy-missile-s)
-                                           ((> theta (* 0.125 pi))
-                                            :enemy-missile-se)
-                                           ((< theta (* -0.625 pi))
-                                            :enemy-missile-nw)
-                                           ((< theta (* -0.375 pi))
-                                            :enemy-missile-n)
-                                           ((< theta (* -0.125 pi))
-                                            :enemy-missile-ne)
-                                           (t :enemy-missile-e)))))
+           (new-image (make-image
+                       (cond ((or (> theta (* 0.875 pi))
+                                  (< theta (* -0.875 pi)))
+                              :enemy-missile-w)
+                             ((> theta (* 0.625 pi))
+                              :enemy-missile-sw)
+                             ((> theta (* 0.375 pi))
+                              :enemy-missile-s)
+                             ((> theta (* 0.125 pi))
+                              :enemy-missile-se)
+                             ((< theta (* -0.625 pi))
+                              :enemy-missile-nw)
+                             ((< theta (* -0.375 pi))
+                              :enemy-missile-n)
+                             ((< theta (* -0.125 pi))
+                              :enemy-missile-ne)
+                             (t :enemy-missile-e)))))
       (if nearest-enemy
           (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
                 accel (* 2d0 (unit (- (+ (offset nearest-enemy)
@@ -361,7 +361,7 @@
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
                      :offset offset :depth depth :veloc (/ veloc 2)
-                     :image (make-instance 'anim :name :explosion)
+                     :image (make-anim :explosion)
                      :timer 10)
       (detach parent thopter))))
 
@@ -397,7 +397,7 @@
       (enemy         (setf health 0))
       (explosion     (decf health)))
     (when (and parent (<= health 0))
-      (let ((explosion (make-instance 'anim :name :explosion)))
+      (let ((explosion (make-anim :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
                        :depth depth :veloc (/ veloc 2)
@@ -413,7 +413,7 @@
       (thopter   (setf health 0))
       (explosion (decf health)))
     (when (and parent (<= health 0))
-      (let ((explosion (make-instance 'anim :name :explosion)))
+      (let ((explosion (make-anim :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
                        :depth depth :veloc (/ veloc 2)
@@ -424,7 +424,7 @@
 (defmethod alarm ((missile missile) event)
   (with-slots (parent offset size depth veloc) missile
     (when parent
-      (let ((explosion (make-instance 'anim :name :explosion)))
+      (let ((explosion (make-anim :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
                        :depth depth :veloc (/ veloc 2)
@@ -435,7 +435,7 @@
 (defmethod alarm ((missile enemy-missile) event)
   (with-slots (parent offset size depth veloc) missile
     (when parent
-      (let ((explosion (make-instance 'anim :name :explosion)))
+      (let ((explosion (make-anim :explosion)))
         (make-instance 'explosion :parent parent
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
                        :depth depth :veloc (/ veloc 2)
@@ -535,7 +535,7 @@
                 :offset (+ offset (complex (/ (x size) 2) (y size)))
                 :depth -1
                 :veloc veloc
-                :image (make-instance 'image :name :enemy-missile-s)))
+                :image (make-image :enemy-missile-s)))
         (shoot enemy event)))))
 
 (defmethod collide ((enemy enemy) event)
@@ -567,13 +567,12 @@
 					 'health-pack
 				       'upgrade-speed))))
                      (drop-image
-                      (make-instance
-                       'image :name (ecase drop-class
-                                      ((upgrade-bullet) :upgrade-bullet)
-                                      ((upgrade-missile) :upgrade-missile)
-                                      ((health-pack) :health)
-				      ((upgrade-speed) :upgrade-speed))))
-                     (image (make-instance 'anim :name :explosion))
+                      (make-image (ecase drop-class
+                                    ((upgrade-bullet) :upgrade-bullet)
+                                    ((upgrade-missile) :upgrade-missile)
+                                    ((health-pack) :health)
+                                    ((upgrade-speed) :upgrade-speed))))
+                     (image (make-anim :explosion))
                      (bound (- size (size image))))
                 (make-instance
                  'explosion :parent parent
@@ -631,7 +630,7 @@
     (setf (game-root game) root
           (game-view game) (make-instance 'component :size size)
           (game-sheet game)
-          (make-instance 'sheet :source (resource "disp/thopter.png"))
+          (load-sheet (resource "disp/thopter.png"))
           (game-wave game) (make-instance 'wave-controller :parent root))
     (iter (for player in players) (for i from 0)
           (with n = (length players))

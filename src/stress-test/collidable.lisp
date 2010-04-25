@@ -43,13 +43,13 @@
     (setf (game-root game) root
           (game-view game) (make-instance 'component :size size)
           (game-sheet game)
-          (make-instance 'sheet :source (resource "disp/sheet.png")))
+          (load-sheet (resource "disp/sheet.png")))
     (loop for i from 0 to (test-size game)
        do (make-instance
            'collidable-object :parent root
            :offset (complex (random (x size)) (random (y size)))
            :veloc (complex (- (random 1.0) 0.5) (- (random 1.0) 0.5))
-           :image (make-instance 'image :name :explosion)))
+           :image (make-image :explosion)))
     (let ((keys (make-instance 'actor)))
       (bind keys :key-down #'report-event)
       (bind keys :key-up #'report-event)
