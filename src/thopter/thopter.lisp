@@ -86,7 +86,9 @@
 
 (defclass thopter-game (game)
   ((wave
-    :accessor game-wave)))
+    :accessor game-wave)
+   (sound :accessor game-sound)
+   (number-players :accessor number-players :initform 0)))
 
 (defclass wave-controller (alarm)
   ((level
@@ -363,7 +365,8 @@
                      :offset offset :depth depth :veloc (/ veloc 2)
                      :image (make-instance 'anim :name :explosion)
                      :timer 10)
-      (detach parent thopter))))
+      (detach parent thopter)
+      (decf (number-players *game*)))))
 
 (defmethod update :after ((thopter thopter) event)
   (with-slots (parent offset size veloc) thopter
@@ -642,7 +645,8 @@
 				      (/ (size anim) 2))
 			   :image anim
 			   :health 4 :firepower 3 :missiles 2)))
-            (subscribe (game-keys game) thopter)))
+            (subscribe (game-keys game) thopter)
+            (incf (number-players game))))
     (play
      (make-instance
       'sample :name :music :source (resource "sound/music.mp3") :type :music)

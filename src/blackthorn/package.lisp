@@ -87,7 +87,8 @@
    :unload-mixer
    :sample
    :play
-
+   :stop
+   
    ))
 
 (defpackage :blackthorn-physics
@@ -222,6 +223,7 @@
    :unload-mixer
    :sample
    :play
+   :stop
 
    ;; component.lisp
    :component

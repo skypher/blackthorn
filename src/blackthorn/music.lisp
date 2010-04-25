@@ -76,3 +76,8 @@
        (sdl-mixer:play-music raw-sample :loop loop :fade fade))
       ((:sample)
        (sdl-mixer:play-sample raw-sample :loop loop :fade fade)))))
+
+(defmethod stop (&key channel)
+  (if channel
+      (sdl-mixer:halt-sample channel)
+      (sdl-mixer:halt-music)))
