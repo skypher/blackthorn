@@ -634,14 +634,14 @@
           (make-instance 'sheet :source (resource "disp/thopter.png"))
           (game-wave game) (make-instance 'wave-controller :parent root))
     (iter (for player in players) (for i from 0)
-          (let ((thopter (make-instance
-                          'thopter :host player :parent root
-                          :offset (complex (/ (x size) 2) (* (y size) 3/4))
-                          :image
-                          (if (evenp i)
-                              (make-instance 'anim :name :thopter)
-                              (make-instance 'anim :name :thopter2))
-                          :health 4 :firepower 3 :missiles 2)))
+          (with n = (length players))
+          (let* ((anim (make-anim "THOPTER~a" (mod i 4)))
+		 (thopter (make-instance
+			   'thopter :host player :parent root
+			   :offset (- (complex (* (x size) (/ (+ i 1/2) n)) (* (y size) 3/4))
+				      (/ (size anim) 2))
+			   :image anim
+			   :health 4 :firepower 3 :missiles 2)))
             (subscribe (game-keys game) thopter)))
     (play
      (make-instance

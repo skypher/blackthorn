@@ -158,6 +158,14 @@ client:
 server3:
 	$(MAKE) args="--server --port=12345 --players=3" new
 
+.PHONY: server4
+server4:
+	$(MAKE) args="--server --port=12345 --players=4" new
+
+.PHONY: server5
+server5:
+	$(MAKE) args="--server --port=12345 --players=5" new
+
 .PHONY: slime
 slime:
 	$(MAKE) clean
