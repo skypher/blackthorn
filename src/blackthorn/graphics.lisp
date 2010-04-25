@@ -110,14 +110,9 @@
       do (slot-makunbound sheet 'texture)))
   (clrhash *sheets*))
 
-(defmethod make-instance ((class (eql (find-class 'sheet))) &key name source)
-  (or (when name (gethash name *sheets*))
-      (when (not source) (error "No such sprite-sheet named ~a." name))
-      (let ((sheet (call-next-method)))
-        (setf (gethash (name sheet) *sheets*) sheet))))
-
-(defmethod make-instance ((class (eql 'sheet)) &rest initargs)
-  (apply #'make-instance (find-class 'sheet) initargs))
+(defun load-sheet (source)
+  (let ((sheet (make-instance 'sheet :source source)))
+    (setf (gethash (name sheet) *sheets*) sheet)))
 
 (defun parse-config-file (source)
   (let ((config (make-pathname :type "config" :defaults source)))
@@ -133,22 +128,19 @@
       (iter (for image in (cdr (assoc :images options)))
             (let ((offset (coord :offset image))
                   (size (coord :size image)))
-              (make-instance 'image
-                             :name (cadr (assoc :name image))
-                             :sheet sheet
-                             :size size
-                             :tex-offset (div (+ file-offset offset) total-size)
-                             :tex-size (div size total-size)))))
+              (init-image :name (cadr (assoc :name image))
+                          :sheet sheet
+                          :size size
+                          :tex-offset (div (+ file-offset offset) total-size)
+                          :tex-size (div size total-size)))))
     (iter (for anim in (cdr (assoc :anims options)))
-          (make-instance 'anim
-                         :name (cadr (assoc :name anim))
-                         :timescale (or (cadr (assoc :timescale anim))
-                                        (cadr (assoc :timescale options))
-                                        1)
-                         :images
-                         (iter (for i in (cdr (assoc :images anim)))
-                               (collect (make-instance 'image :name i)
-                                        result-type vector))))))
+          (init-anim
+           :name (cadr (assoc :name anim))
+           :timescale (or (cadr (assoc :timescale anim))
+                          (cadr (assoc :timescale options))
+                          1)
+           :images (iter (for i in (cdr (assoc :images anim)))
+                         (collect (find-image i) result-type vector))))))
 
 (defun flip (f) #'(lambda (y x) (funcall f x y)))
 
@@ -217,13 +209,12 @@
 
 (defvar *images* (make-hash-table))
 
-(defmethod make-instance ((class (eql (find-class 'image))) &key name sheet)
-  (or (when name (gethash name *images*))
-      (unless sheet (error "No such image named ~a." name))
-      (setf (gethash name *images*) (call-next-method))))
+(defun init-image (&rest initargs &key name &allow-other-keys)
+  (setf (gethash name *images*) (apply #'make-instance 'image initargs)))
 
-(defmethod make-instance ((class (eql 'image)) &rest initargs)
-  (apply #'make-instance (find-class 'image) initargs))
+(defun find-image (name)
+  (or (gethash name *images*)
+      (error "No such image named ~a." name)))
 
 (defmethod draw ((image image) xy z)
   (with-slots (size tex-offset tex-size) image
@@ -263,18 +254,15 @@
 
 (defvar *anims* (make-hash-table))
 
-(defmethod make-instance ((class (eql (find-class 'anim)))
-                          &rest initargs &key name images)
-  (or (when name
-        (let ((basis (gethash name *anims*)))
-          (when basis
-            (apply #'call-next-method class
-                   :images (images basis) :timescale (timescale basis) initargs))))
-      (unless images (error "No such anim named ~a." name))
-      (setf (gethash name *anims*) (call-next-method))))
+(defun init-anim (&rest initargs &key name &allow-other-keys)
+  (setf (gethash name *anims*) (apply #'make-instance 'anim initargs)))
 
-(defmethod make-instance ((class (eql 'anim)) &rest initargs)
-  (apply #'make-instance (find-class 'anim) initargs))
+(defun find-anim (name)
+  (let ((basis (gethash name *anims*)))
+    (if basis
+        (make-instance 'anim :name name
+                       :images (images basis) :timescale (timescale basis))
+        (error "No such anim named ~a." name))))
 
 (defmethod initialize-instance :after ((anim anim) &key)
   (with-slots (images index size) anim
@@ -296,18 +284,18 @@
 (defun format-name (name-or-format &rest format-args)
   (if (stringp name-or-format)
       (intern (apply #'format nil name-or-format format-args) :keyword)
-      symbol-or-format))
+      name-or-format))
   
 (defun make-image (&rest name-or-format-args)
   (let ((name (apply #'format-name name-or-format-args)))
-    (make-instance 'image :name name)))
+    (find-image name)))
 
 (defun make-anim (&rest name-or-format-args)
   (let ((name (apply #'format-name name-or-format-args)))
-    (make-instance 'anim :name name)))
+    (find-anim name)))
 
 (defun make-anim-or-image (&rest name-or-format-args)
   (let ((name (apply #'format-name name-or-format-args)))
     (if (gethash name *anims*)
-        (make-instance 'anim :name name)
-        (make-instance 'image :name name))))
+        (find-anim name)
+        (find-image name))))

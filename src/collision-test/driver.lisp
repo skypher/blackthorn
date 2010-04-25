@@ -28,7 +28,7 @@
 (defclass blackthorn-collision-test-game (game) ())
 
 (defclass player (sprite mobile collidable)
-  ((image :initform (make-instance 'image :name :orange))))
+  ((image :initform (make-image :orange))))
 
 (defmethod initialize-instance :after ((player player) &key)
   (bind-key-down player :sdl-key-up    #'move-north)
@@ -65,10 +65,10 @@
   (decf (veloc player) #c(1 0)))
 
 (defclass toggle (sprite mobile collidable)
-  ((image :initform (make-instance 'image :name :green))))
+  ((image :initform (make-image :green))))
 
 (defmethod collide ((toggle toggle) event)
-  (setf (image toggle) (make-instance 'image :name :blue)))
+  (setf (image toggle) (make-image :blue)))
 
 
 (defmethod game-init ((game blackthorn-collision-test-game)
@@ -78,12 +78,11 @@
     (setf (game-root game) root
           (game-view game) (make-instance 'component :size size)
           (game-sheet game)
-          (make-instance 'sheet :source (resource "disp/collision.png")))
-    (let ((player (make-instance
-                   'player :parent root :offset (/ size 2)
-                   :image (make-instance 'image :name :orange))))
+          (load-sheet (resource "disp/collision.png")))
+    (let ((player (make-instance 'player :parent root :offset (/ size 2)
+                                 :image (make-image :orange))))
       (subscribe (game-keys game) player))
-    (let ((image-size (size (make-instance 'image :name :orange))))
+    (let ((image-size (size (make-image :orange))))
       (iter (for x from 0 below (x size) by (* 2 (x image-size)))
             (iter (for y from 0 below (y size) by (* 2 (y image-size)))
                   (make-instance
