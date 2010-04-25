@@ -68,10 +68,11 @@
    name of the executable itself."
   #+allegro (cdr (sys:command-line-arguments))
   #+clisp ext:*args*
-  #+ecl (cdr (ext:command-args))
   #+clozure (cdr ccl:*command-line-argument-list*)
+  #+ecl (cdr (ext:command-args))
+  #+lispworks system:*line-arguments-list*
   #+sbcl (cdr sb-ext:*posix-argv*)
-  #-(or allegro clisp clozure ecl sbcl)
+  #-(or allegro clisp clozure ecl lispworks sbcl)
   (error "Don't know how to get command line args."))
 
 (defun cli-options ()
