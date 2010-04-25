@@ -59,8 +59,9 @@
   #+clisp (aref (ext:argv) 0)
   #+clozure (car ccl:*command-line-argument-list*)
   #+ecl (car (ext:command-args))
+  #+lispworks (car system:*line-arguments-list*)
   #+sbcl (car sb-ext:*posix-argv*)
-  #-(or allegro clisp clozure ecl sbcl)
+  #-(or allegro clisp clozure ecl lispworks sbcl)
   (error "Don't know how to get command line args."))
 
 (defun command-line-arguments ()
@@ -68,10 +69,11 @@
    name of the executable itself."
   #+allegro (cdr (sys:command-line-arguments))
   #+clisp ext:*args*
-  #+ecl (cdr (ext:command-args))
   #+clozure (cdr ccl:*command-line-argument-list*)
+  #+ecl (cdr (ext:command-args))
+  #+lispworks (cdr system:*line-arguments-list*)
   #+sbcl (cdr sb-ext:*posix-argv*)
-  #-(or allegro clisp clozure ecl sbcl)
+  #-(or allegro clisp clozure ecl lispworks sbcl)
   (error "Don't know how to get command line args."))
 
 (defun cli-options ()

@@ -71,6 +71,7 @@
    :draw
    :anim
    :next-image
+   :load-sheet
    :make-image
    :make-anim
    :make-anim-or-image
@@ -214,6 +215,7 @@
    :draw
    :anim
    :next-image
+   :load-sheet
    :make-image
    :make-anim
    :make-anim-or-image
