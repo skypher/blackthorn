@@ -216,7 +216,7 @@ SectionGroup /e "!${LONGNAME} Core"
         ;; add start menu shortcuts
         !insertmacro MUI_STARTMENU_WRITE_BEGIN StartMenu
             CreateDirectory $SMPROGRAMS\$STARTMENU_FOLDER
-            CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\${LONGNAME} ${VERSION}.lnk" @COMMAND@ "$INSTDIR\bt.ico"
+            CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\${LONGNAME} ${VERSION}.lnk" @COMMAND@ "$INSTDIR\app.ico"
             CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall ${LONGNAME} ${VERSION}.lnk" "$INSTDIR\uninstall.exe"
         !insertmacro MUI_STARTMENU_WRITE_END
     SectionEnd
@@ -225,7 +225,7 @@ SectionGroup /e "!${LONGNAME} Core"
     SectionIn 1
 
         ;; create shortcut
-        createShortCut "$DESKTOP\${LONGNAME} ${VERSION}.lnk" @COMMAND@ "$INSTDIR\bt.ico"
+        createShortCut "$DESKTOP\${LONGNAME} ${VERSION}.lnk" @COMMAND@ "$INSTDIR\app.ico"
 
         ;; record installation of desktop shortcut in registry
         WriteRegStr HKCU "Software\${LONGNAME} ${VERSION}" "Desktop Shortcut" "true"
@@ -239,7 +239,7 @@ SectionGroup /e "!${LONGNAME} Core"
 
         WriteRegStr HKCR "btgfile" "" "Blackthorn Saved Game"
         WriteRegDWord HKCR "btgfile" "EditFlags" 0
-        WriteRegStr HKCR "btgfile\DefaultIcon" "" "$INSTDIR\bt.ico"
+        WriteRegStr HKCR "btgfile\DefaultIcon" "" "$INSTDIR\app.ico"
         WriteRegStr HKCR "btgfile\Shell\Open" "" "Open with Blackthorn RPG"
         WriteRegStr HKCR "btgfile\Shell\Open\command" "" '@COMMAND@ -- -load "%1"'
 

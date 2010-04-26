@@ -225,7 +225,8 @@ atdoc:
 install-w32:
 	-$(call get-properties)
 	$(MAKE) dist
-	cp -r windows/bt.ico windows/chp windows/is_user_admin.nsh COPYRIGHT bin
+	cp -r windows/chp windows/is_user_admin.nsh COPYRIGHT bin
+	if test -e windows/${name}.ico; then cp windows/${name}.ico bin/app.ico; else cp windows/bt.ico bin/app.ico; fi
 	awk "{gsub(/@NAME@/, \"${name}\");print}" windows/install.nsi | awk "{gsub(/@LONGNAME@/, \"${longname}\");print}" | awk "{gsub(/@VERSION@/, \"${version}\");print}" | awk "{gsub(/@DESCRIPTION@/, \"${description}\");print}" | awk "{gsub(/@URL@/, \"${url}\");print}" | awk "{gsub(/@COMMAND@/, \"${command}\");print}" > bin/install.nsi
 	makensis bin/install.nsi
 	mv bin/*-install.exe .
@@ -250,6 +251,7 @@ install-mac:
 	cp -r disp sound "${longname}.app/Contents/Resources"
 	cp bin/main "${longname}.app/Contents/MacOS"
 	cp macosx/PkgInfo COPYRIGHT "${longname}.app/Contents"
+	if test -e "macosx/${name}.icns"; then cp "macosx/${name}.icns" "${longname}.app/Contents/Resources/app.icns"; else cp macosx/bt.icns "${longname}.app/Contents/Resources/app.icns"; fi
 	tar cfz "${name}-${version}-macos.tar.gz" "${longname}.app"
 
 .PHONY: clean
