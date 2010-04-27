@@ -223,7 +223,9 @@
 
 (defmethod initialize-instance :after ((thopter thopter) &key)
   (iter (for (d k) in '((:north :sdl-key-up) (:south :sdl-key-down)
-                        (:west :sdl-key-left) (:east :sdl-key-right)))
+                        (:west :sdl-key-left) (:east :sdl-key-right)
+                        (:north :sdl-key-w) (:south :sdl-key-s)
+                        (:west :sdl-key-a) (:east :sdl-key-d)))
         (bind-key-down thopter k (doall (set-flag d t) #'change-veloc))
         (bind-key-up thopter k (doall (set-flag d nil) #'change-veloc)))
   (bind-key-down thopter :sdl-key-space #'start-shoot)
