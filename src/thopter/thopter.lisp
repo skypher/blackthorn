@@ -232,6 +232,8 @@
   (bind-key-up thopter :sdl-key-space #'stop-shoot)
   (bind-key-down thopter :sdl-key-lctrl #'missile)
   (bind-key-down thopter :sdl-key-lalt  #'missile)
+  (bind-key-down thopter :sdl-key-rctrl #'missile)
+  (bind-key-down thopter :sdl-key-ralt  #'missile)
   ;; TODO: add reset function
   ;(bind-key-down thopter :sdl-key-r     #'reset)
   )
