@@ -29,3 +29,5 @@ disp/refmap/*.png
 *.exe
 *.dll
 *.tar.gz
+build.in
+build.out

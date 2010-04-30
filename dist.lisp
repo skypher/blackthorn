@@ -105,11 +105,12 @@
 (generate-application
  +build-name+
  +build-dir+
- (apply #'list *driver-fasl* (when *debug* '(:inspect :trace)))
+ (apply #'list :foreign :osi :sock "allegro-fixes.cl" *driver-fasl*
+        (when *debug* '(:inspect :trace)))
  :allow-existing-directory t
  #+windows :icon-file
  #+windows
- (make-pathname :directory '(:relative "windows") :name "bt" :type "ico")
+ (make-pathname :directory '(:relative "windows") :name "thopter" :type "ico")
  :restart-init-function 'blt-user:main
  #-windows
  :application-administration
