@@ -35,7 +35,8 @@
 
 (defmethod report-event ((object actor) (event key-event))
   (declare (ignore object))
-  (format t "~a: ~a~%" (event-type event) (event-key event)))
+  (format t "~a: ~a ~a ~a~%" (event-type event) (event-key event)
+          (event-mod event) (event-mod-key event)))
 
 (defmethod game-init ((game collidable-game) &key &allow-other-keys)
   (let ((root (make-instance 'component))

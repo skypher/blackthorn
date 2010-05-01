@@ -87,13 +87,24 @@
 (defclass thopter-game (game)
   ((wave
     :accessor game-wave)
-   (sound :accessor game-sound)
-   (number-players :accessor number-players :initform 0)))
+   (quit
+    :accessor game-quit)
+   (sound
+    :accessor game-sound)
+   (player
+    :accessor game-player)
+   (players
+    :accessor game-players)
+   (players-left
+    :accessor game-players-left
+    :initform 0)))
 
 (defclass wave-controller (alarm)
   ((level
     :accessor level
     :initform 0)))
+
+(defclass quit-controller (actor) ())
 
 (defclass shooter (actor)
   ((bullet-class
@@ -108,8 +119,7 @@
     :initform 1)))
 
 (defclass thopter (sprite mobile collidable shooter alarm direction-mixin)
-  (
-   (speed :initform 4)
+  ((speed :initform 4)
    (boosted-speed :initform 6 :accessor boosted-speed)
    (bullet-class :initform 'bullet)
    (bullet-image :initform (make-image :bullet))
@@ -372,7 +382,7 @@
                      :image (make-anim :explosion)
                      :timer 10)
       (detach parent thopter)
-      (decf (number-players *game*)))))
+      (decf (game-players-left *game*)))))
 
 (defmethod update :after ((thopter thopter) event)
   (with-slots (parent offset size veloc) thopter
@@ -561,8 +571,7 @@
     (when (and parent (<= health 0))
       (let ((i (if (typep enemy 'enemy-boss) 25 1)))
         (loop repeat i 
-           do (let* (
-		     (random-choice (mt19937:random 1d0))
+           do (let* ((random-choice (mt19937:random 1d0))
 		     ; not happy with way chances are, prefer individual
 		     (upgrade-bullet-chance 0.30)
 		     (upgrade-missile-chance 0.6d0)
@@ -630,17 +639,17 @@
                  (typep (event-hit event) 'thopter)))
     (detach (parent upgrade) upgrade)))
 
-(defvar *player*)
-
 (defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
-  (setf *player* player)
+  (setf (game-player game) player (game-players game) players)
   (let* ((size #c(800 600))
          (root (make-instance 'component :size size)))
     (setf (game-root game) root
           (game-view game) (make-instance 'component :size size)
           (game-sheet game)
           (load-sheet (resource "disp/thopter.png"))
-          (game-wave game) (make-instance 'wave-controller :parent root))
+          (game-wave game) (make-instance 'wave-controller :parent root)
+          (game-quit game) (make-instance 'quit-controller :parent root))
+    (subscribe (game-keys game) (game-quit game))
     (iter (for player in players) (for i from 0)
           (with n = (length players))
           (let* ((anim (make-anim "THOPTER~a" (mod i 4)))
@@ -651,7 +660,7 @@
 			   :image anim
 			   :health 4 :firepower 3 :missiles 2)))
             (subscribe (game-keys game) thopter)
-            (incf (number-players game))))
+            (incf (game-players-left game))))
     (play
      (make-instance
       'sample :name :music :source (resource "sound/music.mp3") :type :music)
@@ -660,7 +669,7 @@
 (defmethod game-update :after ((game thopter-game))
   (let* ((thopter (iter (for i in-vector (children (game-root game)))
                         (when (and (typep i 'thopter)
-                                   (eql (event-host i) *player*))
+                                   (eql (event-host i) (game-player game)))
                           (return i))))
          (s (format
              nil "wave: ~a, health: ~a, firepower: ~a, missiles: ~a, fps: ~,2f"
@@ -675,6 +684,17 @@
                           (when (typep i 'enemy) (count i))))
              (not (timer (game-wave game))))
     (setf (timer (game-wave game)) 120)))
+
+(defmethod initialize-instance :after ((quit quit-controller) &key)
+  #+darwin
+  (progn
+    (bind-key-down quit :sdl-key-q
+              #'(lambda (q e)
+                  (when (intersection '(:sdl-key-mod-lmeta :sdl-key-mod-rmeta)
+                                      (event-mod-key e))
+                    (quit)))))
+  (bind-key-down quit :sdl-key-escape
+                 #'(lambda (q e) (quit))))
 
 (defun spawn-wave (wave count health firepower missiles missile-chance 
 			enemy-type)

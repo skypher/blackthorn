@@ -94,3 +94,20 @@
     (collision-search (game-root game) #'event-collide)
     (containers:iterate-elements (event-queue game) #'apply-dispatch-event)
     (containers:empty! (event-queue game))))
+
+;;;
+;;; Game Quit Event
+;;;
+
+(defclass quit-event (event)
+  ((type :initform :quit)
+   (quit
+    :accessor event-quit
+    :initform t)))
+
+(defmethod dispatch-event :after ((game game) (event quit-event))
+  (when (event-quit event)
+    (sdl:push-quit-event)))
+
+(defun quit ()
+  (send *game* (make-instance 'quit-event)))

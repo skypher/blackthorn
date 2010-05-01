@@ -177,6 +177,9 @@
    :game-save
    :game-update
    :send
+   :quit-event
+   :event-quit
+   :quit
 
    ))
 
@@ -294,6 +297,9 @@
    :game-save
    :game-update
    :send
+   :quit-event
+   :event-quit
+   :quit
 
    ))
 
