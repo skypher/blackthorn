@@ -91,6 +91,11 @@
     :accessor game-quit)
    (sound
     :accessor game-sound)
+   (enemy-missiles
+    :accessor enemy-missiles
+    :initform 0)
+   (missile-lock
+    :accessor missile-lock)
    (player
     :accessor game-player)
    (players
@@ -194,6 +199,7 @@
 (defclass enemy-bullet (sprite mobile collidable alarm)
   ((timer :initform 60)
    (reactive-collisions-only-p :initform t)))
+
 (defclass enemy-missile (sprite mobile collidable alarm)
   ((health
     :accessor health
@@ -280,7 +286,10 @@
                          :depth -1
                          :veloc (+ veloc (rot bullet-veloc (* i increment)))
                          :image bullet-image
-                         :timer bullet-timer)))))
+                         :timer bullet-timer)))
+    (play (make-instance 'sample :name :thopter-gun
+                         :source (resource "sound/thoptergun.ogg")
+                         :type :sample))))
 
 (defmethod missile ((thopter thopter) event)
   (with-slots (parent offset size veloc missiles) thopter
@@ -290,7 +299,11 @@
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
                      :veloc veloc
-                     :image (make-image :missile-n)))))
+                     :image (make-image :missile-n))
+      (play (make-instance 'sample
+                             :name :missile
+                             :source (resource "sound/missile.ogg")
+                             :type :sample)))))
 
 (defmethod missile ((enemy enemy) event)
   (with-slots (parent offset size veloc missiles) enemy
@@ -300,7 +313,17 @@
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 4)) :depth -1
                      :veloc veloc
-                     :image (make-image :enemy-missile-s)))))
+                     :image (make-image :enemy-missile-s))
+      (play (make-instance 'sample
+                             :name :missile
+                             :source (resource "sound/missile.ogg")
+                             :type :sample))
+      (when (<= (enemy-missiles *game*) 0)
+        (setf (missile-lock *game*) (play (make-instance 'sample
+                                         :name :beep
+                                         :source (resource "sound/beep.ogg")
+                                         :type :sample) :loop t)))
+      (incf (enemy-missiles *game*)))))
 
 (defmethod update ((missile missile) event)
   (with-slots (parent offset size veloc accel image) missile
@@ -382,7 +405,9 @@
                      :image (make-anim :explosion)
                      :timer 10)
       (detach parent thopter)
-      (decf (game-players-left *game*)))))
+      (decf (game-players-left *game*))
+      (when (<= (game-players-left *game*) 0)
+        (stop :channel (game-sound *game*))))))
 
 (defmethod update :after ((thopter thopter) event)
   (with-slots (parent offset size veloc) thopter
@@ -438,7 +463,10 @@
                        :depth depth :veloc (/ veloc 2)
                        :image explosion
                        :timer 10))
-      (detach parent missile))))
+      (detach parent missile)
+      (decf (enemy-missiles *game*))
+      (when (<= (enemy-missiles *game*) 0)
+        (stop :channel (missile-lock *game*))))))
 
 (defmethod alarm ((missile missile) event)
   (with-slots (parent offset size depth veloc) missile
@@ -460,7 +488,10 @@
                        :depth depth :veloc (/ veloc 2)
                        :image explosion
                        :timer 10))
-      (detach parent missile))))
+      (detach parent missile)
+      (decf (enemy-missiles *game*))
+      (when (<= (enemy-missiles *game*) 0)
+        (stop :channel (missile-lock *game*))))))
 
 (defmethod collide ((bullet enemy-bullet) event)
   (when (and (parent bullet) (typecase (event-hit event)
@@ -547,14 +578,7 @@
           (ceiling (+ 5 (mt19937:random 30) (mt19937:random 30)) fire-rate))
     (let* ((shoot-decision (mt19937:random 1d0)))
       (if (and (> missiles 0) (< shoot-decision missile-chance))
-        (progn (decf missiles) 
-               (make-instance
-                'enemy-missile
-                :parent parent 
-                :offset (+ offset (complex (/ (x size) 2) (y size)))
-                :depth -1
-                :veloc veloc
-                :image (make-image :enemy-missile-s)))
+        (missile enemy event)
         (shoot enemy event)))))
 
 (defmethod collide ((enemy enemy) event)
@@ -648,7 +672,11 @@
           (game-sheet game)
           (load-sheet (resource "disp/thopter.png"))
           (game-wave game) (make-instance 'wave-controller :parent root)
-          (game-quit game) (make-instance 'quit-controller :parent root))
+          (game-quit game) (make-instance 'quit-controller :parent root)
+          (game-sound game) (play (make-instance 'sample
+                             :name :thopter-blades
+                             :source (resource "sound/thopterblades.ogg")
+                             :type :sample) :loop t))
     (subscribe (game-keys game) (game-quit game))
     (iter (for player in players) (for i from 0)
           (with n = (length players))
@@ -720,7 +748,7 @@
         (spawn-wave level (truncate level 10) (* level 20) (* level 4)
 		    (truncate level 2) (min 1d0 (* level 0.024)) 'enemy-boss)
         (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3)) 0
-                    (min 1d0 (* level 0.01)) 'enemy-ship))))
+                    (min 1d0 (* level 0.11)) 'enemy-ship))))
 
 ;; For interactive use:
 (defun thopter ()

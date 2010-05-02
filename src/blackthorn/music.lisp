@@ -79,5 +79,5 @@
 
 (defmethod stop (&key channel)
   (if channel
-      (sdl-mixer:halt-sample channel)
+      (sdl-mixer:halt-sample :channel channel)
       (sdl-mixer:halt-music)))
