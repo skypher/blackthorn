@@ -195,12 +195,15 @@ test:
 prof:
 	$(MAKE) driver="${prof}" new
 
-.PHONY: dist
-dist:
-	rm -rf bin
-	mkdir bin
+.PHONY: distnoclean
+distnoclean:
+	mkdir -p bin
 	cp -r $(wildcard lib/*) disp sound bin
 	$(MAKE) driver="${dist}" new
+
+.PHONY: dist
+dist:
+	$(MAKE) distclean distnoclean
 
 .PHONY: README
 README:
@@ -224,9 +227,11 @@ atdoc:
 .PHONY: install-w32
 install-w32:
 	-$(call get-properties)
-	$(MAKE) dist
-	cp -r windows/chp windows/is_user_admin.nsh COPYRIGHT bin
+	$(MAKE) distclean
+	mkdir -p bin
 	if test -e windows/${name}.ico; then cp windows/${name}.ico bin/app.ico; else cp windows/bt.ico bin/app.ico; fi
+	$(MAKE) distnoclean
+	cp -r windows/chp windows/is_user_admin.nsh COPYRIGHT bin
 	awk "{gsub(/@NAME@/, \"${name}\");print}" windows/install.nsi | awk "{gsub(/@LONGNAME@/, \"${longname}\");print}" | awk "{gsub(/@VERSION@/, \"${version}\");print}" | awk "{gsub(/@DESCRIPTION@/, \"${description}\");print}" | awk "{gsub(/@URL@/, \"${url}\");print}" | awk "{gsub(/@COMMAND@/, \"${command}\");print}" > bin/install.nsi
 	makensis bin/install.nsi
 	mv bin/*-install.exe .
@@ -265,4 +270,4 @@ docclean:
 .PHONY: distclean
 distclean:
 	$(MAKE) clean docclean
-	rm -rf $(wildcard build.in build.out bin *-install.exe)
+	rm -rf $(wildcard build.in build.out bin)

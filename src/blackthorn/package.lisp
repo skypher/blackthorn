@@ -23,9 +23,6 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-#+allegro (require :foreign)
-#+allegro (require :osi)
-
 (in-package :cl-user)
 
 ;;;
