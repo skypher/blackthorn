@@ -70,15 +70,16 @@
 (defmethod collide ((toggle toggle) event)
   (setf (image toggle) (make-image :blue)))
 
+(defmethod initialize-instance :after ((game blackthorn-collision-test-game)
+                                       &key)
+  (setf (game-root game) (make-instance 'component :size #c(800 600))
+        (game-view game) (make-instance 'component :size #c(800 600))))
 
 (defmethod game-init ((game blackthorn-collision-test-game)
                       &key &allow-other-keys)
-  (let ((root (make-instance 'component))
-        (size #c(800 600)))
-    (setf (game-root game) root
-          (game-view game) (make-instance 'component :size size)
-          (game-sheet game)
-          (load-sheet (resource "disp/collision.png")))
+  (let* ((root (game-root game))
+         (size (size (game-root game))))
+    (setf (game-sheet game) (load-sheet (resource "disp/collision.png")))
     (let ((player (make-instance 'player :parent root :offset (/ size 2)
                                  :image (make-image :orange))))
       (subscribe (game-keys game) player))

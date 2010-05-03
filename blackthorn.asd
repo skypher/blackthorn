@@ -40,6 +40,7 @@
                                    (:file "public")
                                    (:file "utils")
                                    (:file "graphics")
+                                   (:file "fonts")
                                    (:file "music")
                                    (:file "component")
                                    (:file "event")

@@ -38,13 +38,14 @@
   (format t "~a: ~a ~a ~a~%" (event-type event) (event-key event)
           (event-mod event) (event-mod-key event)))
 
+(defmethod initialize-instance :after ((game static-game) &key)
+  (setf (game-root game) (make-instance 'component :size #c(800 600))
+        (game-view game) (make-instance 'component :size #c(800 600))))
+
 (defmethod game-init ((game static-game) &key &allow-other-keys)
-  (let ((root (make-instance 'component))
-        (size #c(800 600)))
-    (setf (game-root game) root
-          (game-view game) (make-instance 'component :size size)
-          (game-sheet game)
-          (load-sheet (resource "disp/sheet.png")))
+  (let* ((root (game-root game))
+         (size (size (game-root game))))
+    (setf (game-sheet game) (load-sheet (resource "disp/sheet.png")))
     (loop for i from 0 to (test-size game)
        do (make-instance
            'static-object :parent root

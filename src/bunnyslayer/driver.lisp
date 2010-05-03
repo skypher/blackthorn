@@ -168,13 +168,15 @@
     (:attack :attack :none))
   (change-image hero nil))
 
+(defmethod initialize-instance :after ((game bunnyslayer-game) &key)
+  (setf (game-root game) (make-instance 'component :size #c(800 600))
+        (game-view game) (make-instance 'component :size #c(800 600))))
+
 (defmethod game-init ((game bunnyslayer-game) &key &allow-other-keys)
-  (let ((root (make-instance 'component))
-        (size #c(800 600)))
-    (setf (game-root game) root
-          (game-view game) (make-instance 'component :size size)
-          (game-sheet game)
-          (load-sheet (directory (resource "disp/refmap/*.png"))))
+  (let* ((root (game-root game))
+         (size (size (game-root game))))
+    (setf (game-sheet game)
+          (load-sheet (directory (resource "disp/refmap/*.png")) :name :sheet))
     (let ((hero (make-instance 'hero :parent root :offset (/ size 2))))
       (subscribe (game-keys game) hero))))
 

@@ -40,6 +40,7 @@
 (defvar *server-socket*)
 (defvar *socket*)
 (defvar *sockets*)
+(defvar *players*)
 
 (defun hostname ()
   *host*)

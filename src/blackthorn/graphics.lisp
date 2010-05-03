@@ -53,17 +53,26 @@
                (destructuring-bind (x y) xy
                  (funcall #'sdl:point :x x :y y)))))
     (iter (for source in sources) (assert (probe-file source)))
-    (let* ((images (iter (for source in sources)
-                         (for option in options)
-                         (collect (sdl-image:load-image
-                                   source
-                                   :color-key (color (cdr (assoc :color-key option)))
-                                   :color-key-at (point (cdr (assoc :color-key-at option)))))))
+    (let* ((images
+            (iter (for source in sources)
+                  (for option in options)
+                  (collect
+                   (sdl-image:load-image
+                    source
+                    :color-key (color (cdr (assoc :color-key option)))
+                    :color-key-at (point (cdr (assoc :color-key-at option)))))))
            (total-width
-            (ceiling-expt (or (iter (for image in images) (sum (sdl:width image))) 0) 2))
+            (ceiling-expt (or (iter (for image in images)
+                                    (sum (sdl:width image)))
+                              0)
+                          2))
            (total-height
-            (ceiling-expt (or (iter (for image in images) (maximize (sdl:height image))) 0) 2))
-           (surface (sdl:create-surface total-width total-height :bpp 32 :pixel-alpha t)))
+            (ceiling-expt (or (iter (for image in images)
+                                    (maximize (sdl:height image)))
+                              0)
+                          2))
+           (surface (sdl:create-surface
+                     total-width total-height :bpp 32 :pixel-alpha t)))
       (iter (with x = 0)
             (for image in images)
             (sdl:draw-surface-at-* image x 0 :surface surface)
@@ -110,8 +119,8 @@
       do (slot-makunbound sheet 'texture)))
   (clrhash *sheets*))
 
-(defun load-sheet (source)
-  (let ((sheet (make-instance 'sheet :source source)))
+(defun load-sheet (source &key name)
+  (let ((sheet (make-instance 'sheet :name name :source source)))
     (setf (gethash (name sheet) *sheets*) sheet)))
 
 (defun parse-config-file (source)
@@ -183,8 +192,11 @@
           (setf (slot-value sheet 'texture) texture)
           (values texture surface)))))
 
+(defvar *active-texture*)
+
 (defmethod activate ((sheet sheet))
-  (gl:bind-texture :texture-2d (texture sheet)))
+  (gl:bind-texture :texture-2d (texture sheet))
+  (setf *active-texture* (texture sheet)))
 
 ;;;
 ;;; Images

@@ -73,6 +73,12 @@
    :make-anim
    :make-anim-or-image
 
+   ;; fonts.lisp
+   :font
+   :make-font
+   :text
+   :make-text
+
    ))
 
 (defpackage :blackthorn-mixer
@@ -219,6 +225,12 @@
    :make-image
    :make-anim
    :make-anim-or-image
+
+   ;; fonts.lisp
+   :font
+   :make-font
+   :text
+   :make-text
 
    ;; music.lisp
    :init-mixer

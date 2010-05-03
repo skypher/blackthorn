@@ -47,10 +47,10 @@
 
 (defvar *game*)
 
-(defmethod game-init :after ((game game) &key &allow-other-keys)
+(defmethod game-init :before ((game game) &key &allow-other-keys)
   (if (game-view game)
       (window (size (game-view game)))
-      (warn "No view object for game ~a: Unable to initialize window.~%" game)))
+      (warn "No view for game ~a: Unable to initialize window.~%" game)))
 
 (defmethod render ((game game) xy zmin zmax)
   (activate (game-sheet game))

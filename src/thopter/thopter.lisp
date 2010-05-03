@@ -85,7 +85,9 @@
 ;;;
 
 (defclass thopter-game (game)
-  ((wave
+  ((font
+    :accessor game-font)
+   (wave
     :accessor game-wave)
    (quit
     :accessor game-quit)
@@ -663,14 +665,16 @@
                  (typep (event-hit event) 'thopter)))
     (detach (parent upgrade) upgrade)))
 
+(defmethod initialize-instance :after ((game thopter-game) &key)
+  (setf (game-root game) (make-instance 'component :size #c(800 600))
+        (game-view game) (make-instance 'component :size #c(800 600))))
+
 (defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
   (setf (game-player game) player (game-players game) players)
-  (let* ((size #c(800 600))
-         (root (make-instance 'component :size size)))
-    (setf (game-root game) root
-          (game-view game) (make-instance 'component :size size)
-          (game-sheet game)
-          (load-sheet (resource "disp/thopter.png"))
+  (let* ((root (game-root game))
+         (size (size (game-root game))))
+    (setf (game-sheet game) (load-sheet (resource "disp/thopter.png"))
+          (game-font game) (make-font :font-10x20)
           (game-wave game) (make-instance 'wave-controller :parent root)
           (game-quit game) (make-instance 'quit-controller :parent root)
           (game-sound game) (play (make-instance 'sample
@@ -680,15 +684,19 @@
     (subscribe (game-keys game) (game-quit game))
     (iter (for player in players) (for i from 0)
           (with n = (length players))
-          (let* ((anim (make-anim "THOPTER~a" (mod i 4)))
+          (let* ((anim (make-anim "~a~a" :thopter (mod i 4)))
 		 (thopter (make-instance
 			   'thopter :host player :parent root
-			   :offset (- (complex (* (x size) (/ (+ i 1/2) n)) (* (y size) 3/4))
+			   :offset (- (complex (* (x size) (/ (+ i 1/2) n))
+                                               (* (y size) 3/4))
 				      (/ (size anim) 2))
 			   :image anim
 			   :health 4 :firepower 3 :missiles 2)))
             (subscribe (game-keys game) thopter)
             (incf (game-players-left game))))
+    (make-instance 'sprite
+                   :image (make-text "Welcome to Thopter!!!" (game-font game))
+                   :depth -2 :parent root)
     (play
      (make-instance
       'sample :name :music :source (resource "sound/music.mp3") :type :music)
@@ -718,17 +726,17 @@
   (progn
     (bind-key-down quit :sdl-key-q
               #'(lambda (q e)
+                  (declare (ignore q e))
                   (when (intersection '(:sdl-key-mod-lmeta :sdl-key-mod-rmeta)
                                       (event-mod-key e))
                     (quit)))))
   (bind-key-down quit :sdl-key-escape
-                 #'(lambda (q e) (quit))))
+                 #'(lambda (q e) (declare (ignore q e)) (quit))))
 
-(defun spawn-wave (wave count health firepower missiles missile-chance 
-			enemy-type)
+(defun spawn-wave (wave count health firepower missiles missile-chance
+                   enemy-type)
   (let* ((root (game-root *game*))
-         (root-size (size root))
-         (center (/ root-size 2)))
+         (root-size (size root)))
     (loop for i from (1+ (floor count -2)) to (floor count 2)
        do (with-slots (offset size veloc)
               (make-instance enemy-type :parent root :depth 1
