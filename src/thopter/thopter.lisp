@@ -405,7 +405,7 @@
       (make-instance 'explosion :parent parent
                      :offset offset :depth depth :veloc (/ veloc 2)
                      :image (make-anim :explosion)
-                     :timer 10)
+                     :timer 28)
       (detach parent thopter)
       (decf (game-players-left *game*))
       (when (<= (game-players-left *game*) 0)
@@ -448,7 +448,7 @@
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
                        :depth depth :veloc (/ veloc 2)
                        :image explosion
-                       :timer 10))
+                       :timer 28))
       (detach parent missile))))
 
 (defmethod collide ((missile enemy-missile) event)
@@ -464,7 +464,7 @@
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
                        :depth depth :veloc (/ veloc 2)
                        :image explosion
-                       :timer 10))
+                       :timer 28))
       (detach parent missile)
       (decf (enemy-missiles *game*))
       (when (<= (enemy-missiles *game*) 0)
@@ -478,7 +478,7 @@
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
                        :depth depth :veloc (/ veloc 2)
                        :image explosion
-                       :timer 10))
+                       :timer 28))
       (detach parent missile))))
 
 (defmethod alarm ((missile enemy-missile) event)
@@ -489,7 +489,7 @@
                        :offset (+ offset (/ size 2) (/ (size explosion) -2))
                        :depth depth :veloc (/ veloc 2)
                        :image explosion
-                       :timer 10))
+                       :timer 28))
       (detach parent missile)
       (decf (enemy-missiles *game*))
       (when (<= (enemy-missiles *game*) 0)
@@ -629,7 +629,7 @@
 			  (complex (mt19937:random (max 0.01d0 (abs (x veloc))))
                                  (mt19937:random (max 0.01d0 (abs (y veloc))))))
                  :image image
-                 :timer 10
+                 :timer 28
                  :drop-class drop-class :drop-image drop-image)))
         (detach parent enemy)))))
 
