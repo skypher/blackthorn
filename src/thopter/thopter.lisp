@@ -300,7 +300,7 @@
       (make-instance 'missile
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
-                     :veloc veloc
+                     :veloc (+ veloc #c(0 -4))
                      :image (make-image :missile-n))
       (play (make-instance 'sample
                              :name :missile
@@ -314,7 +314,7 @@
       (make-instance 'enemy-missile
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 4)) :depth -1
-                     :veloc veloc
+                     :veloc (+ veloc #c(0 4))
                      :image (make-image :enemy-missile-s))
       (play (make-instance 'sample
                              :name :missile
@@ -680,7 +680,7 @@
           (game-sound game) (play (make-instance 'sample
                              :name :thopter-blades
                              :source (resource "sound/thopterblades.ogg")
-                             :type :sample) :loop t))
+                             :type :sample) :loop t :volume 108))
     (subscribe (game-keys game) (game-quit game))
     (iter (for player in players) (for i from 0)
           (with n = (length players))
@@ -700,7 +700,7 @@
     (play
      (make-instance
       'sample :name :music :source (resource "sound/music.mp3") :type :music)
-     :loop t)))
+     :loop t :volume 80)))
 
 (defmethod game-update :after ((game thopter-game))
   (let* ((thopter (iter (for i in-vector (children (game-root game)))

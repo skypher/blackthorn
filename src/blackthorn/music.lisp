@@ -67,15 +67,18 @@
       ((:sample)
        (sdl-mixer:load-sample source)))))
 
-(defmethod play ((sample sample) &key loop fade)
+(defmethod play ((sample sample) &key loop fade volume)
   (with-slots (type raw-sample) sample
     (unless (slot-boundp sample 'raw-sample)
       (setf raw-sample (load-sample sample)))
     (ecase type
       ((:music)
-       (sdl-mixer:play-music raw-sample :loop loop :fade fade))
+       (sdl-mixer:play-music raw-sample :loop loop :fade fade)
+       (if volume (setf (sdl-mixer:music-volume) volume)))
       ((:sample)
-       (sdl-mixer:play-sample raw-sample :loop loop :fade fade)))))
+       (let ((channel (sdl-mixer:play-sample raw-sample :loop loop :fade fade)))
+         (if volume (setf (sdl-mixer:channel-volume channel) volume))
+         channel)))))
 
 (defmethod stop (&key channel)
   (if channel
