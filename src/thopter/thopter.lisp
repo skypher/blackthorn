@@ -694,6 +694,19 @@
 			   :health 4 :firepower 3 :missiles 2)))
             (subscribe (game-keys game) thopter)
             (incf (game-players-left game))))
+    (let* ((tile-names '(:forest-0 :forest-1 :forest-2 :forest-3
+                         :forest-4 :forest-5 :forest-6))
+           (tiles (iter (for name in tile-names) (collect (make-image name))))
+           (num-tiles (length tiles))
+           (tile-size (size (first tiles))))
+      (iter (for x from 0 below (x size) by (x tile-size))
+            (iter (for y from 0 below (y size) by (y tile-size))
+                  (make-instance 'sprite
+                                 :parent root
+                                 :offset (complex x y)
+                                 :image (nth (mt19937:random num-tiles)
+                                             tiles)
+                                 :depth 100))))
     (make-instance 'sprite
                    :image (make-text "Welcome to Thopter!!!" (game-font game))
                    :depth -2 :parent root)
