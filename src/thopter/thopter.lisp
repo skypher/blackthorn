@@ -666,8 +666,8 @@
     (detach (parent upgrade) upgrade)))
 
 (defmethod initialize-instance :after ((game thopter-game) &key)
-  (setf (game-root game) (make-instance 'component :size #c(800 600))
-        (game-view game) (make-instance 'component :size #c(800 600))))
+  (setf (game-root game) (make-instance 'component :size #c(960 720))
+        (game-view game) (make-instance 'component :size #c(960 720))))
 
 (defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
   (setf (game-player game) player (game-players game) players)
