@@ -131,15 +131,23 @@
       options)))
 
 (defun process-config-file (sheet options file-offset)
-  (labels ((coord (key alist) (apply #'complex (cdr (assoc key alist))))
+  (labels ((coord (key alist &optional (default nil default-p)) 
+		  (if default-p 
+		      (let ((result-key (cdr (assoc key alist))))
+			(if result-key (apply #'complex result-key) default))
+		    (apply #'complex (cdr (assoc key alist)))))
            (div (a b) (complex (/ (x a) (x b)) (/ (y a) (y b)))))
     (with-slots ((total-size size)) sheet
       (iter (for image in (cdr (assoc :images options)))
-            (let ((offset (coord :offset image))
-                  (size (coord :size image)))
+            (let* ((offset (coord :offset image))
+                   (size (coord :size image))
+		   (bbox-offset (coord :bbox-offset image #c(0 0)))
+		   (bbox-size (coord :bbox-size image size)))
               (init-image :name (cadr (assoc :name image))
                           :sheet sheet
                           :size size
+			  :bbox-offset bbox-offset
+			  :bbox-size bbox-size
                           :tex-offset (div (+ file-offset offset) total-size)
                           :tex-size (div size total-size)))))
     (iter (for anim in (cdr (assoc :anims options)))
@@ -212,6 +220,12 @@
    (size
     :reader size
     :initarg :size)
+   (bbox-offset
+    :reader bbox-offset
+    :initarg :bbox-offset)
+   (bbox-size
+    :reader bbox-size
+    :initarg :bbox-size)
    (tex-offset
     :reader tex-offset
     :initarg :tex-offset)
@@ -262,7 +276,11 @@
     :reader index
     :initform 0)
    (size
-    :reader size)))
+    :reader size)
+   (bbox-offset
+    :reader bbox-offset)
+   (bbox-size
+    :reader bbox-size)))
 
 (defvar *anims* (make-hash-table))
 
@@ -277,17 +295,21 @@
         (error "No such anim named ~a." name))))
 
 (defmethod initialize-instance :after ((anim anim) &key)
-  (with-slots (images index size) anim
-    (setf size (size (aref images (truncate index))))))
+  (with-slots (images index size bbox-offset bbox-size) anim
+    (setf size (size (aref images (truncate index)))
+	  bbox-offset (bbox-offset (aref images (truncate index)))
+	  bbox-size (bbox-size (aref images (truncate index))))))
 
 (defmethod draw ((anim anim) xy z)
   (with-slots (images index) anim
     (draw (aref images (truncate index)) xy z)))
 
 (defmethod next-image ((anim anim))
-  (with-slots (images timescale index size) anim
+  (with-slots (images timescale index size bbox-offset bbox-size) anim
     (setf index (mod (+ index (/ 1 timescale)) (array-dimension images 0))
-          size (size (aref images (truncate index))))))
+          size (size (aref images (truncate index)))
+	  bbox-offset (bbox-offset (aref images (truncate index)))
+	  bbox-size (bbox-size (aref images (truncate index))))))
 
 ;;;
 ;;; Creation Utilities

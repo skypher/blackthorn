@@ -143,7 +143,14 @@
    (color
     :initarg :color)
    (size
-    :reader size)))
+    :reader size)
+   (bbox-offset
+    :reader bbox-offset
+    :initform #c(0 0))
+   (bbox-size
+    :reader bbox-size
+    :initform #c (0 0))
+   ))
 
 (defmethod initialize-instance :after ((text text) &key)
   (with-slots (source font size) text

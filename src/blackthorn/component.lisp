@@ -47,7 +47,13 @@
     :initform nil)
    (children
     :reader children
-    :initform (vector))))
+    :initform (vector))
+   (bbox-offset
+    :accessor bbox-offset
+    :initform #c(0 0))
+   (bbox-size
+    :accessor bbox-size
+    :initform #c(0 0))))
 
 (defmethod initialize-instance :after ((component component) &key parent)
   (when parent

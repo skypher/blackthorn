@@ -72,12 +72,16 @@
    :make-image
    :make-anim
    :make-anim-or-image
+   :bbox-offset
+   :bbox-size
 
    ;; fonts.lisp
    :font
    :make-font
    :text
    :make-text
+   :bbox-offset
+   :bbox-size
 
    ))
 
@@ -127,6 +131,8 @@
    :update
    :sprite
    :image
+   :bbox-size
+   :bbox-image
 
    ;; event.lisp
    :event
@@ -225,12 +231,16 @@
    :make-image
    :make-anim
    :make-anim-or-image
+   :bbox-offset
+   :bbox-size
 
    ;; fonts.lisp
    :font
    :make-font
    :text
    :make-text
+   :bbox-offset
+   :bbox-size
 
    ;; music.lisp
    :init-mixer
@@ -253,6 +263,8 @@
    :update
    :sprite
    :image
+   :bbox-offset
+   :bbox-size
 
    ;; event.lisp
    :event

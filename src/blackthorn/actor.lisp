@@ -48,11 +48,16 @@
 (defmethod initialize-instance :after ((sprite sprite) &key)
   (with-slots (image) sprite
     (when image
-      (setf (size sprite) (size image)))))
+      (setf (size sprite) (size image)
+	    (bbox-offset sprite) (bbox-offset image)
+	    (bbox-size sprite) (bbox-size image)
+	    ))))
 
 (defmethod (setf image) :after (image (sprite sprite))
   (when image
-    (setf (size sprite) (size image))))
+    (setf (size sprite) (size image)
+	  (bbox-offset sprite) (bbox-offset image)
+	  (bbox-size sprite) (bbox-size image))))
 
 (defmethod draw ((sprite sprite) xy z)
   (with-slots (image) sprite

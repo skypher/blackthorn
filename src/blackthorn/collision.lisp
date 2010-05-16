@@ -73,10 +73,10 @@
 (defmethod collision-grid-insert-node (grid node xy)
   (declare (ignore grid node)))
 (defmethod collision-grid-insert-node (grid (node collidable) xy)
-  (with-slots (size (offset collision-offset)) node
-    (when (not (zerop size))
-      (setf offset xy)
-      (with-collision-grid-iterate (nodes (grid xy (+ xy size)))
+  (with-slots (size (offset collision-offset) bbox-size bbox-offset) node
+    (when (not (zerop bbox-size))
+      (setf offset (+ xy bbox-offset))
+      (with-collision-grid-iterate (nodes (grid xy (+ xy bbox-size)))
         (push node nodes)))))
 
 (defgeneric collision-grid-search-node (grid node thunk))
@@ -84,14 +84,14 @@
   (declare (ignore grid node thunk)))
 (let ((collisions (make-hash-table)))
   (defmethod collision-grid-search-node (grid (node collidable) thunk)
-    (with-slots ((s1 size) (xy1 collision-offset)
+    (with-slots ((s1 bbox-size) (xy1 collision-offset)
                  (r1-p reactive-collisions-only-p)) node
       (unless r1-p
         (let ((x1 (x xy1)) (y1 (y xy1)) (w1 (x s1)) (h1 (y s1)))
           (with-collision-grid-iterate (nodes (grid xy1 (+ xy1 s1)))
             (iter (for other in nodes)
                   (when (not (eql node other))
-                    (with-slots ((xy2 collision-offset) (s2 size)) other
+                    (with-slots ((xy2 collision-offset) (s2 bbox-size)) other
                       (let ((x2 (x xy2)) (y2 (y xy2))
                             (w2 (x s2)) (h2 (y s2)))
                         (unless (or (<= (+ x1 w1) x2)
