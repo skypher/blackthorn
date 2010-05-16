@@ -758,20 +758,32 @@
                                  :image (nth (mt19937:random num-tiles)
                                              tiles)
                                  :depth 100))))
-    (make-instance 'sprite
-                   :image (make-text "Welcome to Thopter!!!" (game-font game))
-                   :depth -2 :parent root)
     (play
      (make-instance
       'sample :name :music :source (resource "sound/music.mp3") :type :music)
-     :loop t :volume 80)
-    (setf (game-screen game) (game-menu-screen game))
-    (let ((root (game-root game))
-          (size (size (game-root game))))
-      (setf (game-sheet game) (load-sheet (resource "disp/thopter-screen.png")))
-      (make-instance 'sprite :image (make-image :title) :depth 1 :parent root)
-      (subscribe (game-keys game) (game-quit game))
-      (subscribe (game-keys game) (game-start game)))))
+     :loop t :volume 80))
+  (setf (game-screen game) (game-menu-screen game))
+  (let* ((root (game-root game))
+         (size (size (game-root game))))
+    (setf (game-sheet game) (load-sheet (resource "disp/thopter-screen.png")))
+    (make-instance 'sprite :image (make-image :title) :depth 1 :parent root)
+    (let* ((paragraph '("Controls:"
+                        ""
+                        "Move    => Arrow keys/IJKL/WASD"
+                        "Shoot   => Space bar"
+                        "Missile => Ctrl/Alt"
+                        ""
+                        "Press space bar to start."))
+           (images (iter (for text in paragraph)
+                         (collect (make-text text (game-font game)))))
+          (offset #c(20 480))
+          (height (y (size (first images)))))
+      (iter (for image in images)
+            (for y from (y offset) by height)
+            (make-instance 'sprite :offset (+ (x offset) (complex 0 y))
+                           :parent root :image image)))
+    (subscribe (game-keys game) (game-quit game))
+    (subscribe (game-keys game) (game-start game))))
 
 (defmethod game-update :after ((screen thopter-play-screen))
   (let* ((thopter (iter (for i in-vector (children (game-root screen)))
