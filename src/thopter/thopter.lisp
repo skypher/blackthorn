@@ -767,11 +767,12 @@
          (size (size (game-root game))))
     (setf (game-sheet game) (load-sheet (resource "disp/thopter-screen.png")))
     (make-instance 'sprite :image (make-image :title) :depth 1 :parent root)
-    (let* ((paragraph '("Game engine by Elliott Slaughter et al"
+    (let* ((paragraph '("Concept by Elliott Slaughter and Douglas Martin"
+                        "Engine by Elliott Slaughter and Michael Matthew"
                         "Art by Peter Balazs"))
            (images (iter (for text in paragraph)
                          (collect (make-text text (game-font game)))))
-          (offset #c(20 670))
+          (offset #c(20 610))
           (height (y (size (first images)))))
       (iter (for image in images)
             (for y from (y offset) by height)
@@ -787,7 +788,7 @@
                         "Press space bar to start."))
            (images (iter (for text in paragraph)
                          (collect (make-text text (game-font game)))))
-          (offset #c(620 540))
+          (offset #c(620 510))
           (height (y (size (first images)))))
       (iter (for image in images)
             (for y from (y offset) by height)
