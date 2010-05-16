@@ -43,7 +43,7 @@
          (surface (sdl:create-surface
                    *font-width* *font-height* :bpp 32 :pixel-alpha t)))
     (assert (< (* row-count char-height) *font-height*))
-    (sdl:fill-surface sdl:*green* :surface surface)
+    (sdl:fill-surface sdl:*black* :surface surface)
     (iter (for r from 0 below row-count)
           (for c0 from *font-char-code-min*
                below *font-char-code-max* by row-length)
