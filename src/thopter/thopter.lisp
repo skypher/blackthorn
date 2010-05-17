@@ -749,7 +749,7 @@
                         "Move    => Arrow keys/IJKL/WASD"
                         "Shoot   => Space bar"
                         "Missile => Ctrl/Alt"
-                        "Escape  => Quit"
+                        "Quit    => Escape"
                         ""
                         "Press space bar to start."))
            (images (iter (for text in paragraph)
