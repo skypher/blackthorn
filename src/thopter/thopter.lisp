@@ -336,13 +336,13 @@
                                "~a-~2,'0d" bullet-image
                                (quadrant v bullet-n-directions))
                               (make-image bullet-image)))
-         do (make-instance bullet-class :parent parent 
-                         :offset (+ offset (/ size 2) (- (/ (size image) 2))
-                                    (* (rot (unit bullet-veloc)
-                                            (* i increment))
-                                       (+ (x size) (y size))
-                                       0.25d0))
-                         :depth -1 :veloc v :image image :timer bullet-timer)))
+         (make-instance bullet-class :parent parent 
+                        :offset (+ offset (/ size 2) (- (/ (size image) 2))
+                                   (* (rot (unit bullet-veloc)
+                                           (* i increment))
+                                      (+ (x size) (y size))
+                                      0.25d0))
+                        :depth -1 :veloc v :image image :timer bullet-timer)))
     (play (make-instance 'sample :name :thopter-gun
                          :source (resource "sound/thoptergun.ogg")
                          :type :sample))))
@@ -634,11 +634,11 @@
 					 'health-pack
 				       'upgrade-speed))))
                      (drop-image
-                      (make-image (ecase drop-class
-                                    ((upgrade-bullet) :upgrade-bullet)
-                                    ((upgrade-missile) :upgrade-missile)
-                                    ((health-pack) :health)
-                                    ((upgrade-speed) :upgrade-speed))))
+                      (make-anim-or-image (ecase drop-class
+                                            ((upgrade-bullet) :upgrade-bullet)
+                                            ((upgrade-missile) :upgrade-missile)
+                                            ((health-pack) :health)
+                                            ((upgrade-speed) :upgrade-speed))))
                      (image (make-anim :explosion))
                      (bound (- size (size image))))
                 (make-instance
