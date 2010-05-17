@@ -162,6 +162,9 @@
     :initarg :bullet-class)
    (bullet-image
     :initarg :bullet-image)
+   (bullet-n-directions
+    :initarg :bullet-n-directions
+    :initform nil)
    (bullet-veloc
     :initarg :bullet-veloc)
    (firepower
@@ -173,7 +176,8 @@
   ((speed :initform 4)
    (boosted-speed :initform 6 :accessor boosted-speed)
    (bullet-class :initform 'bullet)
-   (bullet-image :initform (make-image :bullet))
+   (bullet-image :initform :bullet)
+   (bullet-n-directions :initform 16)
    (bullet-veloc :initform #c(0 -8))
    (bullet-timer :initform 60)
    (timer :initform nil)
@@ -200,7 +204,7 @@
 (defclass enemy (sprite mobile collidable alarm shooter)
   ((timer :initform 20)
    (bullet-class :initform 'enemy-bullet)
-   (bullet-image :initform (make-image :enemy-bullet))
+   (bullet-image :initform :enemy-bullet)
    (bullet-veloc :initform #c(0 8))
    (bullet-timer :initform 60)
    (speed-boost :initform 0 :accessor speed-boost :initarg :speed-boost)
@@ -305,6 +309,9 @@
 (defun nearest-object (component type radius)
   (find-nearest-object component radius :test #'(lambda (x) (typep x type))))
 
+(defun quadrant (x n)
+  (mod (floor (+ (/ (* (theta x) n) (* 2 pi)) 0.5d0)) n))
+
 (defmethod start-shoot ((thopter thopter) event)
   (shoot thopter event)
   (setf (timer thopter) 4))
@@ -317,22 +324,25 @@
   (setf (timer thopter) 4))
 
 (defmethod shoot ((shooter shooter) event)
-  (with-slots (parent offset size veloc firepower
-               bullet-class bullet-image bullet-veloc bullet-timer) shooter
+  (with-slots (parent offset size veloc firepower bullet-class bullet-image
+               bullet-n-directions bullet-veloc bullet-timer) shooter
     (let ((increment (if (< (* (floor firepower 2) 0.15d0) 1) (* 0.15d0 pi)
 		           (/ pi (/ firepower 2)))))
-      (loop for i from (+ (ceiling firepower -2) (if (evenp firepower) 1/2 0))
-         to (floor firepower 2)
+      (iter (for i from (+ (ceiling firepower -2) (if (evenp firepower) 1/2 0))
+                 to (floor firepower 2))
+            (for v = (+ veloc (rot bullet-veloc (* i increment))))
+            (for image = (if bullet-n-directions
+                              (make-image
+                               "~a-~2,'0d" bullet-image
+                               (quadrant v bullet-n-directions))
+                              (make-image bullet-image)))
          do (make-instance bullet-class :parent parent 
-                         :offset (+ offset (/ size 2)
+                         :offset (+ offset (/ size 2) (- (/ (size image) 2))
                                     (* (rot (unit bullet-veloc)
                                             (* i increment))
                                        (+ (x size) (y size))
                                        0.25d0))
-                         :depth -1
-                         :veloc (+ veloc (rot bullet-veloc (* i increment)))
-                         :image bullet-image
-                         :timer bullet-timer)))
+                         :depth -1 :veloc v :image image :timer bullet-timer)))
     (play (make-instance 'sample :name :thopter-gun
                          :source (resource "sound/thoptergun.ogg")
                          :type :sample))))
@@ -345,7 +355,8 @@
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 -4)) :depth -1
                      :veloc (+ veloc #c(0 -4))
-                     :image (make-image :missile-n))
+                     :image (make-image "~a-~2,'0d" :missile
+                                        (quadrant (+ veloc #c(0 -4)) 16)))
       (play (make-instance 'sample
                              :name :missile
                              :source (resource "sound/missile.ogg")
@@ -359,7 +370,8 @@
                      :parent parent 
                      :offset (+ offset (/ (x size) 2) #c(0 4)) :depth -1
                      :veloc (+ veloc #c(0 4))
-                     :image (make-image :enemy-missile-s))
+                     :image (make-image "~a-~2,'0d" :enemy-missile
+                                        (quadrant (+ veloc #c(0 4)) 16)))
       (play (make-instance 'sample
                              :name :missile
                              :source (resource "sound/missile.ogg")
@@ -374,24 +386,7 @@
 (defmethod update ((missile missile) event)
   (with-slots (parent offset size veloc accel image) missile
     (let* ((nearest-enemy (nearest-object missile 'enemy 600))
-           (theta (theta veloc))
-           (new-image (make-image
-                       (cond ((or (> theta (* 0.875 pi))
-                                  (< theta (* -0.875 pi)))
-                              :missile-w)
-                             ((> theta (* 0.625 pi))
-                              :missile-sw)
-                             ((> theta (* 0.375 pi))
-                              :missile-s)
-                             ((> theta (* 0.125 pi))
-                              :missile-se)
-                             ((< theta (* -0.625 pi))
-                              :missile-nw)
-                             ((< theta (* -0.375 pi))
-                              :missile-n)
-                             ((< theta (* -0.125 pi))
-                              :missile-ne)
-                             (t :missile-e)))))
+           (new-image (make-image "~a-~2,'0d" :missile (quadrant veloc 16))))
       (if nearest-enemy
           (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
                 accel (* 2d0 (unit (- (+ (offset nearest-enemy)
@@ -404,24 +399,8 @@
 (defmethod update ((missile enemy-missile) event)
   (with-slots (parent offset size veloc accel image) missile
     (let* ((nearest-enemy (nearest-object missile 'thopter 400))
-           (theta (theta veloc))
-           (new-image (make-image
-                       (cond ((or (> theta (* 0.875 pi))
-                                  (< theta (* -0.875 pi)))
-                              :enemy-missile-w)
-                             ((> theta (* 0.625 pi))
-                              :enemy-missile-sw)
-                             ((> theta (* 0.375 pi))
-                              :enemy-missile-s)
-                             ((> theta (* 0.125 pi))
-                              :enemy-missile-se)
-                             ((< theta (* -0.625 pi))
-                              :enemy-missile-nw)
-                             ((< theta (* -0.375 pi))
-                              :enemy-missile-n)
-                             ((< theta (* -0.125 pi))
-                              :enemy-missile-ne)
-                             (t :enemy-missile-e)))))
+           (new-image (make-image "~a-~2,'0d" :enemy-missile
+                                  (quadrant veloc 16))))
       (if nearest-enemy
           (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
                 accel (* 2d0 (unit (- (+ (offset nearest-enemy)
