@@ -177,6 +177,8 @@
    ;; game.lisp
    :game
    :*game*
+   :screen
+   :game-screen
    :game-root
    :game-view
    :game-sheet
@@ -309,6 +311,8 @@
    ;; game.lisp
    :game
    :*game*
+   :screen
+   :game-screen
    :game-root
    :game-view
    :game-sheet

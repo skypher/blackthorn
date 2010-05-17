@@ -80,56 +80,32 @@
     :accessor speed
     :initarg :speed)))
 
-(defclass screen (actor)
-  ((root
-    :accessor game-root)
-   (view
-    :accessor game-view)
-   (sheet
-    :accessor game-sheet)))
-
-(defmacro delegate (class &rest accessors)
-  (with-gensyms (object value)
-    `(progn
-       ,@(iter (for accessor in accessors)
-               (collect `(defmethod ,accessor ((,object ,class))
-                           (,accessor (game-screen ,object))))
-               (collect `(defmethod (setf ,accessor) (,value (,object ,class))
-                           (setf (,accessor (game-screen,object)) ,value)))))))
-
-(defmethod game-update ((screen screen)))
-
-(defmethod game-update :after ((game game))
-  (game-update (game-screen game)))
-
 ;;;
 ;;; Thopter-specific implementation
 ;;;
 
+(defvar *game-size* #c(960 720))
+
 (defclass thopter-game (game)
-  ((font
+  ((game-view
+    :initform (make-instance 'component :size *game-size*))
+   (font
     :accessor game-font)
-   (quit
-    :accessor game-quit)
    (sound
     :accessor game-sound)
    (player
     :accessor game-player)
    (players
     :accessor game-players)
-   (screen
-    :accessor game-screen)
    (play-screen
     :accessor game-play-screen)
    (menu-screen
     :accessor game-menu-screen)))
 
-(delegate thopter-game
-  game-root game-view game-sheet
-  game-start game-wave game-sound enemy-missiles missile-lock game-players-left)
-
 (defclass thopter-play-screen (screen)
-  ((wave
+  ((quit
+    :accessor game-quit)
+   (wave
     :accessor game-wave)
    (sound
     :accessor game-sound)
@@ -137,15 +113,20 @@
     :accessor enemy-missiles
     :initform 0)
    (missile-lock
-    :accessor missile-lock)
+    :accessor missile-lock
+    :initform nil)
    (players-left
-    :accessor game-players-left
-    :initform 0)))
+    :accessor players-left)))
 
 (defclass thopter-menu-screen (screen)
-  ((start
-    :accessor game-start
-    :initform (make-instance 'start-controller))))
+  ((game-root
+    :initform (make-instance 'component :size *game-size*))
+   (game-view
+    :initform (make-instance 'component :size *game-size*))
+   (start
+    :accessor game-start)
+   (quit
+    :accessor game-quit)))
 
 (defclass start-controller (actor)
   ())
@@ -153,6 +134,11 @@
 (defclass wave-controller (alarm)
   ((level
     :accessor level
+    :initform 0)))
+
+(defclass players-left-controller (alarm)
+  ((players-left
+    :accessor players-left
     :initform 0)))
 
 (defclass quit-controller (actor) ())
@@ -376,12 +362,13 @@
                              :name :missile
                              :source (resource "sound/missile.ogg")
                              :type :sample))
-      (when (<= (enemy-missiles *game*) 0)
-        (setf (missile-lock *game*) (play (make-instance 'sample
-                                         :name :beep
-                                         :source (resource "sound/beep.ogg")
-                                         :type :sample) :loop t)))
-      (incf (enemy-missiles *game*)))))
+      (when (<= (enemy-missiles (game-screen *game*)) 0)
+        (setf (missile-lock (game-screen *game*))
+              (play (make-instance 'sample
+                                   :name :beep
+                                   :source (resource "sound/beep.ogg")
+                                   :type :sample) :loop t)))
+      (incf (enemy-missiles (game-screen *game*))))))
 
 (defmethod update ((missile missile) event)
   (with-slots (parent offset size veloc accel image) missile
@@ -430,9 +417,7 @@
                      :image (make-anim :explosion)
                      :timer 28)
       (detach parent thopter)
-      (decf (game-players-left *game*))
-      (when (<= (game-players-left *game*) 0)
-        (stop :channel (game-sound *game*))))))
+      (decf (players-left (players-left (game-screen *game*)))))))
 
 (defmethod update :after ((thopter thopter) event)
   (with-slots (parent offset size veloc) thopter
@@ -489,9 +474,11 @@
                        :image explosion
                        :timer 28))
       (detach parent missile)
-      (decf (enemy-missiles *game*))
-      (when (<= (enemy-missiles *game*) 0)
-        (stop :channel (missile-lock *game*))))))
+      (decf (enemy-missiles (game-screen *game*)))
+      (when (and (<= (enemy-missiles (game-screen *game*)) 0)
+                 (missile-lock (game-screen *game*)))
+        (stop :channel (missile-lock (game-screen *game*)))
+        (setf (missile-lock (game-screen *game*)) nil)))))
 
 (defmethod alarm ((missile missile) event)
   (with-slots (parent offset size depth veloc) missile
@@ -514,9 +501,11 @@
                        :image explosion
                        :timer 28))
       (detach parent missile)
-      (decf (enemy-missiles *game*))
-      (when (<= (enemy-missiles *game*) 0)
-        (stop :channel (missile-lock *game*))))))
+      (decf (enemy-missiles (game-screen *game*)))
+      (when (and (<= (enemy-missiles (game-screen *game*)) 0)
+                 (missile-lock (game-screen *game*)))
+        (stop :channel (missile-lock (game-screen *game*)
+        (setf (missile-lock (game-screen *game*)) nil)))))))
 
 (defmethod collide ((bullet enemy-bullet) event)
   (when (and (parent bullet) (typecase (event-hit event)
@@ -688,32 +677,29 @@
                  (typep (event-hit event) 'thopter)))
     (detach (parent upgrade) upgrade)))
 
-(defmethod initialize-instance :after ((game thopter-game) &key)
-  (setf (game-play-screen game) (make-instance 'thopter-play-screen)
-        (game-menu-screen game) (make-instance 'thopter-menu-screen)
-        (game-screen game) (game-menu-screen game)
-        (game-root game) (make-instance 'component :size #c(960 720))
-        (game-view game) (make-instance 'component :size #c(960 720))
-        (game-screen game) (game-play-screen game)
-        (game-root game) (make-instance 'component :size #c(960 720))
-        (game-view game) (make-instance 'component :size #c(960 720))))
+(defmethod initialize-instance :after ((screen thopter-play-screen) &key)
+  (setf (game-sheet screen) (load-sheet (resource "disp/thopter.png"))))
 
-(defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
-  (setf (game-player game) player (game-players game) players)
-  (setf (game-screen game) (game-play-screen game))
-  (let* ((root (game-root game))
-         (size (size (game-root game))))
-    (setf (game-sheet game) (load-sheet (resource "disp/thopter.png"))
-          (game-font game) (make-font :font-10x20)
-          (game-wave game) (make-instance 'wave-controller :parent root)
-          (game-quit game) (make-instance 'quit-controller :parent root)
-          (game-sound game) (play (make-instance 'sample
-                             :name :thopter-blades
-                             :source (resource "sound/thopterblades.ogg")
-                             :type :sample) :loop t :volume 108))
-    (subscribe (game-keys game) (game-quit game))
-    (iter (for player in players) (for i from 0)
-          (with n = (length players))
+(defun setup-game (screen)
+  (setf (game-root screen) (make-instance 'component :size *game-size*)
+        (game-view screen) (make-instance 'component :size *game-size*))
+  (let* ((root (game-root screen))
+         (size (size root)))
+    (setf (game-wave screen)
+          (make-instance 'wave-controller :parent root)
+          (game-quit screen) (make-instance 'quit-controller :parent root)
+          (game-wave screen) (make-instance 'wave-controller :parent root)
+          (players-left screen)
+          (make-instance 'players-left-controller :parent root)
+          (game-sound screen)
+          (play (make-instance 'sample
+                               :name :thopter-blades
+                               :source (resource "sound/thopterblades.ogg")
+                               :type :sample)
+                :loop t :volume 80))
+    (subscribe (game-keys screen) (game-quit screen))
+    (iter (for player in (game-players (game screen))) (for i from 0)
+          (with n = (length (game-players (game screen))))
           (let* ((anim (make-anim "~a~a" :thopter (mod i 4)))
 		 (thopter (make-instance
 			   'thopter :host player :parent root
@@ -722,8 +708,8 @@
 				      (/ (size anim) 2))
 			   :image anim
 			   :health 4 :firepower 3 :missiles 2)))
-            (subscribe (game-keys game) thopter)
-            (incf (game-players-left game))))
+            (subscribe (game-keys screen) thopter)
+            (incf (players-left (players-left screen)))))
     (let* ((tile-names '(:forest-0 :forest-1 :forest-2 :forest-3
                          :forest-4 :forest-5 :forest-6))
            (tiles (iter (for name in tile-names) (collect (make-image name))))
@@ -736,21 +722,20 @@
                                  :offset (complex x y)
                                  :image (nth (mt19937:random num-tiles)
                                              tiles)
-                                 :depth 100))))
-    (play
-     (make-instance
-      'sample :name :music :source (resource "sound/music.mp3") :type :music)
-     :loop t :volume 80))
-  (setf (game-screen game) (game-menu-screen game))
-  (let* ((root (game-root game))
-         (size (size (game-root game))))
-    (setf (game-sheet game) (load-sheet (resource "disp/thopter-screen.png")))
+                                 :depth 100))))))
+
+(defmethod initialize-instance :after ((screen thopter-menu-screen) &key)
+  (let* ((root (game-root screen))
+         (size (size root)))
+    (setf (game-sheet screen) (load-sheet (resource "disp/thopter-screen.png"))
+          (game-start screen) (make-instance 'start-controller :parent root)
+          (game-quit screen) (make-instance 'quit-controller :parent root))
     (make-instance 'sprite :image (make-image :title) :depth 1 :parent root)
     (let* ((paragraph '("Concept by Elliott Slaughter and Douglas Martin"
                         "Engine by Elliott Slaughter and Michael Matthew"
                         "Art by Peter Balazs"))
            (images (iter (for text in paragraph)
-                         (collect (make-text text (game-font game)))))
+                         (collect (make-text text (game-font (game screen))))))
           (offset #c(20 610))
           (height (y (size (first images)))))
       (iter (for image in images)
@@ -766,15 +751,27 @@
                         ""
                         "Press space bar to start."))
            (images (iter (for text in paragraph)
-                         (collect (make-text text (game-font game)))))
+                         (collect (make-text text (game-font (game screen))))))
           (offset #c(620 510))
           (height (y (size (first images)))))
       (iter (for image in images)
             (for y from (y offset) by height)
             (make-instance 'sprite :offset (+ (x offset) (complex 0 y))
                            :parent root :image image)))
-    (subscribe (game-keys game) (game-quit game))
-    (subscribe (game-keys game) (game-start game))))
+    (subscribe (game-keys screen) (game-quit screen))
+    (subscribe (game-keys screen) (game-start screen))))
+
+(defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
+  (setf (game-player game) player
+        (game-players game) players
+        (game-font game) (make-font :font-10x20)
+        (game-menu-screen game) (make-instance 'thopter-menu-screen :game game)
+        (game-play-screen game) (make-instance 'thopter-play-screen :game game))
+  (activate (game-menu-screen game))
+  (play
+   (make-instance
+    'sample :name :music :source (resource "sound/music.mp3") :type :music)
+   :loop t :volume 80))
 
 (defmethod game-update :after ((screen thopter-play-screen))
   (let* ((thopter (iter (for i in-vector (children (game-root screen)))
@@ -797,8 +794,9 @@
 
 (defmethod initialize-instance :after ((start start-controller) &key)
   (bind-key-down start :sdl-key-space #'(lambda (s e)
-                                          (setf (game-screen *game*)
-                                                (game-play-screen *game*)))))
+                                          (setup-game (game-play-screen *game*))
+                                          (activate
+                                           (game-play-screen *game*)))))
 
 (defmethod initialize-instance :after ((quit quit-controller) &key)
   #+darwin
@@ -836,6 +834,17 @@
 		    (truncate level 2) (min 1d0 (* level 0.024)) 'enemy-boss)
         (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3)) 0
                     (min 1d0 (* level 0.11)) 'enemy-ship))))
+
+(defmethod (setf players-left) :after (value (left players-left-controller))
+  (when (<= value 0)
+    (stop :channel (game-sound (game-screen *game*)))
+    (when (missile-lock (game-screen *game*))
+      (stop :channel (missile-lock (game-screen *game*))))
+    (setf (timer left) 150)))
+
+(defmethod alarm ((left players-left-controller) event)
+  (declare (ignore event))
+  (activate (game-menu-screen *game*)))
 
 ;; For interactive use:
 (defun thopter ()
