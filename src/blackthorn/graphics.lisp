@@ -114,9 +114,10 @@
 
 (defun unload-graphics ()
   (gl:delete-textures
-   (loop for sheet being the hash-values in *sheets*
-      collect (slot-value sheet 'texture)
-      do (slot-makunbound sheet 'texture)))
+   (iter (for (nil sheet) in-hashtable *sheets*)
+         (when (slot-boundp sheet 'texture)
+           (collect (slot-value sheet 'texture))
+           (slot-makunbound sheet 'texture))))
   (clrhash *sheets*))
 
 (defun load-sheet (source &key name)
