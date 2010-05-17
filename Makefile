@@ -258,7 +258,7 @@ install-mac:
 	cp macosx/PkgInfo COPYRIGHT "${longname}.app/Contents"
 	if test -e "macosx/${name}.icns"; then cp "macosx/${name}.icns" "${longname}.app/Contents/Resources/app.icns"; else cp macosx/bt.icns "${longname}.app/Contents/Resources/app.icns"; fi
 	tar cfz "${name}-${version}-macos.tar.gz" "${longname}.app"
-	$(MAKE) -f dmg_utils.make NAME="${longname}" VERSION="${version}" SOURCE_DIR=. SOURCE_FILES="${longname}.app COPYRIGHT README.pdf"
+	$(MAKE) -f dmg_utils.make NAME="${longname}" VERSION="${version}" SOURCE_DIR=. SOURCE_FILES="${longname}.app COPYRIGHT"
 
 .PHONY: clean
 clean:
