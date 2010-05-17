@@ -733,7 +733,9 @@
     (make-instance 'sprite :image (make-image :title) :depth 1 :parent root)
     (let* ((paragraph '("Concept by Elliott Slaughter and Douglas Martin"
                         "Engine by Elliott Slaughter and Michael Matthew"
-                        "Art by Peter Balazs"))
+                        "Art by Peter Balazs"
+                        ""
+                        "Website: http://code.google.com/p/blackthorn-engine/"))
            (images (iter (for text in paragraph)
                          (collect (make-text text (game-font (game screen))))))
           (offset #c(20 610))
