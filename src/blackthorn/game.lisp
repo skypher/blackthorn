@@ -63,7 +63,7 @@
                    (let ((,screen (game-screen ,game)))
                      (if ,screen
                          (setf (,accessor ,screen) ,value)
-                         (setf (slot-value ,game ,accessor) ,value)))))))))
+                         (setf (slot-value ,game ',accessor) ,value)))))))))
 
 (delegate game game-root game-view game-sheet)
 
