@@ -504,8 +504,8 @@
       (decf (enemy-missiles (game-screen *game*)))
       (when (and (<= (enemy-missiles (game-screen *game*)) 0)
                  (missile-lock (game-screen *game*)))
-        (stop :channel (missile-lock (game-screen *game*)
-        (setf (missile-lock (game-screen *game*)) nil)))))))
+        (stop :channel (missile-lock (game-screen *game*)))
+        (setf (missile-lock (game-screen *game*)) nil)))))
 
 (defmethod collide ((bullet enemy-bullet) event)
   (when (and (parent bullet) (typecase (event-hit event)
