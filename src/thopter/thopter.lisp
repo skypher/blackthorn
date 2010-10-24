@@ -153,9 +153,9 @@
     :initform nil)
    (bullet-veloc
     :initarg :bullet-veloc)
-   (firepower
-    :accessor firepower
-    :initarg :firepower
+   (ammo
+    :accessor ammo
+    :initarg :ammo
     :initform 1)))
 
 (defclass thopter (sprite mobile collidable shooter alarm direction-mixin)
@@ -177,7 +177,7 @@
     :initarg :missiles
     :initform 0)))
 
-(defclass bullet (sprite mobile collidable alarm)
+(defclass bullet (sprite mobile collidable transient alarm)
   ((timer :initform 60)
    (reactive-collisions-only-p :initform t)))
 (defclass missile (sprite mobile collidable alarm)
@@ -232,7 +232,7 @@
    (ignore-objects :initform t)
    (fire-rate :initform 2)))
 
-(defclass enemy-bullet (sprite mobile collidable alarm)
+(defclass enemy-bullet (sprite mobile collidable transient alarm)
   ((timer :initform 60)
    (reactive-collisions-only-p :initform t)))
 
@@ -310,28 +310,31 @@
   (setf (timer thopter) 4))
 
 (defmethod shoot ((shooter shooter) event)
-  (with-slots (parent offset size veloc firepower bullet-class bullet-image
+  (with-slots (parent offset size veloc ammo bullet-class bullet-image
                bullet-n-directions bullet-veloc bullet-timer) shooter
-    (let ((increment (if (< (* (floor firepower 2) 0.15d0) 1) (* 0.15d0 pi)
-		           (/ pi (/ firepower 2)))))
-      (iter (for i from (+ (ceiling firepower -2) (if (evenp firepower) 1/2 0))
-                 to (floor firepower 2))
-            (for v = (+ veloc (rot bullet-veloc (* i increment))))
-            (for image = (if bullet-n-directions
-                              (make-image
-                               "~a-~2,'0d" bullet-image
-                               (quadrant v bullet-n-directions))
-                              (make-image bullet-image)))
-         (make-instance bullet-class :parent parent 
-                        :offset (+ offset (/ size 2) (- (/ (size image) 2))
-                                   (* (rot (unit bullet-veloc)
-                                           (* i increment))
-                                      (+ (x size) (y size))
-                                      0.25d0))
-                        :depth -1 :veloc v :image image :timer bullet-timer)))
-    (play (make-instance 'sample :name :thopter-gun
-                         :source (resource "sound/thoptergun.ogg")
-                         :type :sample))))
+    (when (> ammo 0)
+      (let* ((firepower (max 1 (floor ammo 100)))
+           (increment (if (< (* (floor firepower 2) 0.15d0) 1) (* 0.15d0 pi)
+                           (/ pi (/ firepower 2)))))
+        (iter (for i from (+ (ceiling firepower -2) 
+                 (if (evenp firepower) 1/2 0)) to (floor firepower 2))
+              (for v = (+ veloc (rot bullet-veloc (* i increment))))
+              (for image = (if bullet-n-directions
+                                (make-image
+                                 "~a-~2,'0d" bullet-image
+                                 (quadrant v bullet-n-directions))
+                                (make-image bullet-image)))
+           (make-instance bullet-class :parent parent 
+                          :offset (+ offset (/ size 2) (- (/ (size image) 2))
+                                     (* (rot (unit bullet-veloc)
+                                             (* i increment))
+                                        (+ (x size) (y size))
+                                        0.25d0))
+                          :depth -1 :veloc v :image image :timer bullet-timer))
+        (decf ammo firepower))
+      (play (make-instance 'sample :name :thopter-gun
+                             :source (resource "sound/thoptergun.ogg")
+                             :type :sample)))))
 
 (defmethod missile ((thopter thopter) event)
   (with-slots (parent offset size veloc missiles) thopter
@@ -398,19 +401,19 @@
           (setf accel 0)))))
 
 (defmethod collide ((thopter thopter) event)
-  (with-slots (parent offset depth veloc health firepower missiles) thopter
+  (with-slots (parent offset depth veloc health ammo missiles) thopter
     (typecase (event-hit event)
       (enemy-bullet  (decf health))
       (enemy-missile (decf health))
       (enemy         (decf health 8))
       (explosion     (decf health))
       (health-pack   (incf health 2))
-      (upgrade-bullet (incf firepower))
+      (upgrade-bullet (incf ammo 100))
       (upgrade-missile (incf missiles))
       (upgrade-speed (progn
-		      (when (<= (speed-boost thopter) 0)
-			(setf (veloc thopter) (* 1.5d0 (veloc thopter))))
-		      (setf (speed-boost thopter) 240))))
+                      (when (<= (speed-boost thopter) 0)
+                        (setf (veloc thopter) (* 1.5d0 (veloc thopter))))
+                      (setf (speed-boost thopter) 240))))
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
                      :offset offset :depth depth :veloc (/ veloc 2)
@@ -431,7 +434,7 @@
     (when (> (speed-boost thopter) 0)
       (decf (speed-boost thopter))
       (when (<= (speed-boost thopter) 0)
-	(setf (veloc thopter) (/ (veloc thopter) 1.5d0))))))
+        (setf (veloc thopter) (/ (veloc thopter) 1.5d0))))))
 
 (defmethod collide ((bullet bullet) event)
   (when (and (parent bullet) (typecase (event-hit event)
@@ -553,13 +556,13 @@
             (nearest-missile (nearest-object enemy 'missile 120))
             (nearest-upgrade-b (nearest-object enemy 'upgrade-bullet 180))
             (nearest-upgrade-m (nearest-object enemy 'upgrade-missile 180))
-	    (nearest-upgrade-s (nearest-object enemy 'upgrade-speed 180))
+            (nearest-upgrade-s (nearest-object enemy 'upgrade-speed 180))
             (r (+ xy (/ s 2) (/ (size (game-root *game*)) -2))))
         (setf v (* (unit v) (min 
-		     (abs (* v (if (> (speed-boost enemy) 0) 1.2d0 1d0)))
-		     (+ 8d0 (* veloc-scale difficulty))))
+                     (abs (* v (if (> (speed-boost enemy) 0) 1.2d0 1d0)))
+                     (+ 8d0 (* veloc-scale difficulty))))
               accel
-		 (+ (cond (ignore-objects (circular r))
+                 (+ (cond (ignore-objects (circular r))
                        (nearest-thopter
                         (* (toward nearest-thopter) (max 0.5d0 difficulty)))
                        (nearest-health
@@ -582,12 +585,12 @@
                         (* (toward nearest-upgrade-s) (max 0.5d0 difficulty)))
                        (t (circular r)))
                  (enemy-correction (nearest-object enemy 'enemy 0))))
-	(when (> (speed-boost enemy) 0)
-	  (decf (speed-boost enemy)))))))
+        (when (> (speed-boost enemy) 0)
+          (decf (speed-boost enemy)))))))
 
 (defmethod alarm ((enemy enemy) event)
   (with-slots (parent offset size veloc timer 
-		      missiles missile-chance fire-rate) enemy
+                      missiles missile-chance fire-rate) enemy
     (setf timer
           (ceiling (+ 5 (mt19937:random 30) (mt19937:random 30)) fire-rate))
     (let* ((shoot-decision (mt19937:random 1d0)))
@@ -596,32 +599,32 @@
         (shoot enemy event)))))
 
 (defmethod collide ((enemy enemy) event)
-  (with-slots (parent offset size depth veloc health firepower missiles) enemy
+  (with-slots (parent offset size depth veloc health ammo missiles) enemy
     (typecase (event-hit event)
       (bullet      (decf health))
       (missile     (decf health))
       (thopter     (decf health 8))
       (explosion   (decf health))
       (health-pack (incf health 2))
-      (upgrade-bullet (incf firepower))
+      (upgrade-bullet (incf ammo 100))
       (upgrade-missile (incf missiles))
       (upgrade-speed (setf (speed-boost enemy) 240)))
     (when (and parent (<= health 0))
       (let ((i (if (typep enemy 'enemy-boss) 25 1)))
         (loop repeat i 
            do (let* ((random-choice (mt19937:random 1d0))
-		     ; not happy with way chances are, prefer individual
-		     (upgrade-bullet-chance 0.30)
-		     (upgrade-missile-chance 0.6d0)
-		     (health-pack-chance 0.90)
-		     (upgrade-speed-chance 1.00d0)
-		     (drop-class (if (< random-choice upgrade-bullet-chance)
-				     'upgrade-bullet
-				   (if (< random-choice upgrade-missile-chance)
-				       'upgrade-missile
-				     (if (< random-choice health-pack-chance)
-					 'health-pack
-				       'upgrade-speed))))
+                     ; not happy with way chances are, prefer individual
+                     (upgrade-bullet-chance 0.30)
+                     (upgrade-missile-chance 0.6d0)
+                     (health-pack-chance 0.90)
+                     (upgrade-speed-chance 1.00d0)
+                     (drop-class (if (< random-choice upgrade-bullet-chance)
+                                     'upgrade-bullet
+                                   (if (< random-choice upgrade-missile-chance)
+                                       'upgrade-missile
+                                     (if (< random-choice health-pack-chance)
+                                         'health-pack
+                                       'upgrade-speed))))
                      (drop-image
                       (make-anim-or-image (ecase drop-class
                                             ((upgrade-bullet) :upgrade-bullet)
@@ -637,8 +640,8 @@
                                      (mt19937:random (max 1 (y bound)))))
                  :depth depth
                  :veloc (if (= i 1)
-			  (/ veloc 2)
-			  (complex (mt19937:random (max 0.01d0 (abs (x veloc))))
+                          (/ veloc 2)
+                          (complex (mt19937:random (max 0.01d0 (abs (x veloc))))
                                  (mt19937:random (max 0.01d0 (abs (y veloc))))))
                  :image image
                  :timer 28
@@ -701,13 +704,13 @@
     (iter (for player in (game-players (game screen))) (for i from 0)
           (with n = (length (game-players (game screen))))
           (let* ((anim (make-anim "~a~a" :thopter (mod i 4)))
-		 (thopter (make-instance
-			   'thopter :host player :parent root
-			   :offset (- (complex (* (x size) (/ (+ i 1/2) n))
+                 (thopter (make-instance
+                           'thopter :host player :parent root
+                           :offset (- (complex (* (x size) (/ (+ i 1/2) n))
                                                (* (y size) 3/4))
-				      (/ (size anim) 2))
-			   :image anim
-			   :health 4 :firepower 3 :missiles 2)))
+                                      (/ (size anim) 2))
+                           :image anim
+                           :health 4 :ammo 400 :missiles 2)))
             (subscribe (game-keys screen) thopter)
             (incf (players-left (players-left screen)))))
     (let* ((tile-names '(:forest-0 :forest-1 :forest-2 :forest-3
@@ -732,7 +735,7 @@
           (game-quit screen) (make-instance 'quit-controller :parent root))
     (make-instance 'sprite :image (make-image :title) :depth 1 :parent root)
     (let* ((paragraph '("Concept by Elliott Slaughter and Douglas Martin"
-                        "Engine by Elliott Slaughter and Michael Matthew"
+                        "Engine by Elliott Slaughter and Michael Matthews"
                         "Art by Peter Balazs"
                         ""
                         "Website: http://code.google.com/p/blackthorn-engine/"))
@@ -781,10 +784,10 @@
                                    (eql (event-host i) (game-player *game*)))
                           (return i))))
          (s (format
-             nil "wave: ~a, health: ~a, firepower: ~a, missiles: ~a, fps: ~,2f"
+             nil "wave: ~a, health: ~a, ammo: ~a, missiles: ~a, fps: ~,2f"
              (level (game-wave screen))
              (when thopter (health thopter))
-             (when thopter (firepower thopter))
+             (when thopter (ammo thopter))
              (when thopter (missiles thopter))
              (sdl:average-fps))))
     (set-caption s s))
@@ -812,7 +815,7 @@
   (bind-key-down quit :sdl-key-escape
                  #'(lambda (q e) (declare (ignore q e)) (quit))))
 
-(defun spawn-wave (wave count health firepower missiles missile-chance
+(defun spawn-wave (wave count health ammo missiles missile-chance
                    enemy-type)
   (let* ((root (game-root *game*))
          (root-size (size root)))
@@ -820,9 +823,9 @@
        do (with-slots (offset size veloc)
               (make-instance enemy-type :parent root :depth 1
                              :health health
-                             :firepower firepower
-			     :missiles missiles
-			     :missile-chance missile-chance
+                             :ammo ammo
+                             :missiles missiles
+                             :missile-chance missile-chance
                              :difficulty (floor wave 5))
             (setf offset
                   (complex (+ (/ (x root-size) 2) (* i (x size) 2))
@@ -832,9 +835,9 @@
   (with-slots (level) wave
     (incf level)
     (if (zerop (mod level 10))
-        (spawn-wave level (truncate level 10) (* level 20) (* level 4)
-		    (truncate level 2) (min 1d0 (* level 0.024)) 'enemy-boss)
-        (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3)) 0
+        (spawn-wave level (truncate level 10) (* level 20) (* level 4 100)
+                    (truncate level 2) (min 1d0 (* level 0.024)) 'enemy-boss)
+        (spawn-wave level (+ 2 level) 4 (* (max 1 (ceiling level 3)) 100) 0
                     (min 1d0 (* level 0.11)) 'enemy-ship))))
 
 (defmethod (setf players-left) :after (value (left players-left-controller))
