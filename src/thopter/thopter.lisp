@@ -177,7 +177,7 @@
     :initarg :missiles
     :initform 0)))
 
-(defclass bullet (sprite mobile collidable alarm)
+(defclass bullet (sprite mobile collidable transient alarm)
   ((timer :initform 60)
    (reactive-collisions-only-p :initform t)))
 (defclass missile (sprite mobile collidable alarm)
@@ -232,7 +232,7 @@
    (ignore-objects :initform t)
    (fire-rate :initform 2)))
 
-(defclass enemy-bullet (sprite mobile collidable alarm)
+(defclass enemy-bullet (sprite mobile collidable transient alarm)
   ((timer :initform 60)
    (reactive-collisions-only-p :initform t)))
 
