@@ -674,8 +674,8 @@
       (make-instance drop-class :parent parent
                      :offset (+ offset (/ (- size (size drop-image)) 2))
                      :depth depth 
-		     :veloc (* (unit veloc) (min (/ (abs veloc) 4) 1))
-		     :image drop-image))
+                     :veloc (* (unit veloc) (min (/ (abs veloc) 4) 1))
+                     :image drop-image))
     (detach parent explosion)))
 
 (defmethod collide ((health health-pack) event)
