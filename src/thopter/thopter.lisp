@@ -156,7 +156,15 @@
    (ammo
     :accessor ammo
     :initarg :ammo
-    :initform 1)))
+    :initform 1)
+   (ammo-refill-rate
+    :accessor ammo-refill-rate
+    :initarg :ammo-refill-rate
+    :initform 200)
+   (ammo-deplete-rate
+    :accessor ammo-deplete-rate
+    :initarg :ammo-deplete-rate
+    :initform 200)))
 
 (defclass thopter (sprite mobile collidable shooter alarm direction-mixin)
   ((speed :initform 4)
@@ -188,7 +196,7 @@
    (timer :initform 120)))
 
 (defclass enemy (sprite mobile collidable alarm shooter)
-  ((timer :initform 20)
+  ((timer :initform (+ 20 (mt19937:random 10) (mt19937:random 10)))
    (bullet-class :initform 'enemy-bullet)
    (bullet-image :initform :enemy-bullet)
    (bullet-veloc :initform #c(0 8))
@@ -309,11 +317,15 @@
   (shoot thopter event)
   (setf (timer thopter) 4))
 
+(defmethod initialize-instance :after ((shooter shooter) &key)
+  (setf (ammo shooter) (* (ammo shooter) (ammo-deplete-rate shooter))))
+
 (defmethod shoot ((shooter shooter) event)
   (with-slots (parent offset size veloc ammo bullet-class bullet-image
-               bullet-n-directions bullet-veloc bullet-timer) shooter
+               bullet-n-directions bullet-veloc bullet-timer ammo-deplete-rate)
+              shooter
     (when (> ammo 0)
-      (let* ((firepower (max 1 (floor ammo 100)))
+      (let* ((firepower (ceiling ammo ammo-deplete-rate))
            (increment (if (< (* (floor firepower 2) 0.15d0) 1) (* 0.15d0 pi)
                            (/ pi (/ firepower 2)))))
         (iter (for i from (+ (ceiling firepower -2) 
@@ -401,14 +413,15 @@
           (setf accel 0)))))
 
 (defmethod collide ((thopter thopter) event)
-  (with-slots (parent offset depth veloc health ammo missiles) thopter
+  (with-slots (parent offset depth veloc health ammo ammo-refill-rate 
+                      missiles) thopter
     (typecase (event-hit event)
       (enemy-bullet  (decf health))
       (enemy-missile (decf health))
       (enemy         (decf health 8))
       (explosion     (decf health))
       (health-pack   (incf health 2))
-      (upgrade-bullet (incf ammo 100))
+      (upgrade-bullet (incf ammo ammo-refill-rate))
       (upgrade-missile (incf missiles))
       (upgrade-speed (progn
                       (when (<= (speed-boost thopter) 0)
@@ -599,14 +612,15 @@
         (shoot enemy event)))))
 
 (defmethod collide ((enemy enemy) event)
-  (with-slots (parent offset size depth veloc health ammo missiles) enemy
+  (with-slots (parent offset size depth veloc health ammo ammo-refill-rate
+                      missiles) enemy
     (typecase (event-hit event)
       (bullet      (decf health))
       (missile     (decf health))
       (thopter     (decf health 8))
       (explosion   (decf health))
       (health-pack (incf health 2))
-      (upgrade-bullet (incf ammo 100))
+      (upgrade-bullet (incf ammo ammo-refill-rate))
       (upgrade-missile (incf missiles))
       (upgrade-speed (setf (speed-boost enemy) 240)))
     (when (and parent (<= health 0))
@@ -710,7 +724,7 @@
                                                (* (y size) 3/4))
                                       (/ (size anim) 2))
                            :image anim
-                           :health 4 :ammo 400 :missiles 2)))
+                           :health 16 :ammo 4 :missiles 2)))
             (subscribe (game-keys screen) thopter)
             (incf (players-left (players-left screen)))))
     (let* ((tile-names '(:forest-0 :forest-1 :forest-2 :forest-3
@@ -835,9 +849,9 @@
   (with-slots (level) wave
     (incf level)
     (if (zerop (mod level 10))
-        (spawn-wave level (truncate level 10) (* level 20) (* level 4 100)
+        (spawn-wave level (truncate level 10) (* level 20) (* level 4)
                     (truncate level 2) (min 1d0 (* level 0.024)) 'enemy-boss)
-        (spawn-wave level (+ 2 level) 4 (* (max 1 (ceiling level 3)) 100) 0
+      (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3)) 0
                     (min 1d0 (* level 0.11)) 'enemy-ship))))
 
 (defmethod (setf players-left) :after (value (left players-left-controller))
