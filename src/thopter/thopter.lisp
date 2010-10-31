@@ -766,7 +766,7 @@
                         "Move    => Arrow keys/IJKL/WASD"
                         "Shoot   => Space bar"
                         "Missile => Ctrl/Alt"
-                        "Escape  => Quit"
+                        "Quit    => Escape"
                         ""
                         "Press space bar to start."))
            (images (iter (for text in paragraph)
@@ -851,7 +851,7 @@
     (if (zerop (mod level 10))
         (spawn-wave level (truncate level 10) (* level 20) (* level 4)
                     (truncate level 2) (min 1d0 (* level 0.024)) 'enemy-boss)
-      (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3)) 0
+        (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3)) 0
                     (min 1d0 (* level 0.11)) 'enemy-ship))))
 
 (defmethod (setf players-left) :after (value (left players-left-controller))
