@@ -107,6 +107,8 @@
     :accessor game-quit)
    (wave
     :accessor game-wave)
+   (background
+    :accessor game-background)
    (sound
     :accessor game-sound)
    (enemy-missiles
@@ -136,12 +138,18 @@
     :accessor level
     :initform 0)))
 
+(defclass background-controller (alarm)
+  ())
+
 (defclass players-left-controller (alarm)
   ((players-left
     :accessor players-left
     :initform 0)))
 
 (defclass quit-controller (actor) ())
+
+(defclass tile (sprite mobile transient)
+  ())
 
 (defclass shooter (actor)
   ((bullet-class
@@ -710,10 +718,10 @@
         (game-view screen) (make-instance 'component :size *game-size*))
   (let* ((root (game-root screen))
          (size (size root)))
-    (setf (game-wave screen)
-          (make-instance 'wave-controller :parent root)
+    (setf (game-wave screen) (make-instance 'wave-controller :parent root)
           (game-quit screen) (make-instance 'quit-controller :parent root)
-          (game-wave screen) (make-instance 'wave-controller :parent root)
+          (game-background screen)
+          (make-instance 'background-controller :parent root :timer 2)
           (players-left screen)
           (make-instance 'players-left-controller :parent root)
           (game-sound screen)
@@ -737,14 +745,16 @@
             (incf (players-left (players-left screen)))))
     (let* ((tile-names '(:forest-0 :forest-1 :forest-2 :forest-3
                          :forest-4 :forest-5 :forest-6))
-           (tiles (iter (for name in tile-names) (collect (make-image name))))
+           (tiles (iter (for name in tile-names)
+                        (collect (make-image name))))
            (num-tiles (length tiles))
            (tile-size (size (first tiles))))
       (iter (for x from 0 below (x size) by (x tile-size))
             (iter (for y from 0 below (y size) by (y tile-size))
-                  (make-instance 'sprite
+                  (make-instance 'tile
                                  :parent root
                                  :offset (complex x y)
+                                 :veloc #c(0 1/2)
                                  :image (nth (mt19937:random num-tiles)
                                              tiles)
                                  :depth 100))))))
@@ -872,6 +882,26 @@
                     (truncate level 2) (min 1d0 (* level 0.024)) 'enemy-boss)
         (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3)) 0
                     (min 1d0 (* level 0.11)) 'enemy-ship))))
+
+(defmethod alarm ((controller background-controller) event)
+  (with-slots (parent timer) controller
+    (let* ((size (size parent))
+           (tile-names '(:forest-0 :forest-1 :forest-2 :forest-3
+                         :forest-4 :forest-5 :forest-6))
+           (tiles (iter (for name in tile-names)
+                        (collect (make-image name))))
+           (num-tiles (length tiles))
+           (tile-size (size (first tiles))))
+      (iter (for x from 0 below (x size) by (x tile-size))
+            (let ((y (+ (- (y tile-size)) 2)))
+              (make-instance 'tile
+                             :parent parent
+                             :offset (complex x y)
+                             :veloc #c(0 1/2)
+                             :image (nth (mt19937:random num-tiles)
+                                         tiles)
+                             :depth 100)))
+      (setf timer (- (* (y tile-size) 2) 2)))))
 
 (defmethod (setf players-left) :after (value (left players-left-controller))
   (when (<= value 0)
