@@ -565,8 +565,9 @@
              (unit (- xy2 xy (/ s2 2d0) (/ s -2d0))))))
       (let ((nearest-thopter (nearest-object enemy 'thopter 180))
             (nearest-health (nearest-object enemy 'health-pack 180))
-            (nearest-bullet (nearest-object enemy 'bullet 120))
             (nearest-missile (nearest-object enemy 'missile 120))
+            (nearest-explosion (nearest-object enemy 'explosion 120))
+            (nearest-bullet (nearest-object enemy 'bullet 120))
             (nearest-upgrade-b (nearest-object enemy 'upgrade-bullet 180))
             (nearest-upgrade-m (nearest-object enemy 'upgrade-missile 180))
             (nearest-upgrade-s (nearest-object enemy 'upgrade-speed 180))
@@ -582,6 +583,11 @@
                         (* (toward nearest-health) (max 0.5d0 difficulty)))
                        (nearest-missile
                         (+ (* (away nearest-missile)
+                              (+ 0.5d0 (* 0.1d0 difficulty))
+                              (if (> health 1) 1d0 1.5d0))
+                           (radius-correction r)))
+                       (nearest-explosion
+                        (+ (* (away nearest-explosion)
                               (+ 0.5d0 (* 0.1d0 difficulty))
                               (if (> health 1) 1d0 1.5d0))
                            (radius-correction r)))
