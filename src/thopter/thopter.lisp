@@ -769,11 +769,12 @@
     (let* ((paragraph '("Concept by Elliott Slaughter and Douglas Martin"
                         "Engine by Elliott Slaughter and Michael Matthews"
                         "Art by Peter Balazs"
+                        "Music is Oslodum 2004 by DJ Dolores"
                         ""
                         "Website: http://code.google.com/p/blackthorn-engine/"))
            (images (iter (for text in paragraph)
                          (collect (make-text text (game-font (game screen))))))
-          (offset #c(20 610))
+          (offset #c(20 570))
           (height (y (size (first images)))))
       (iter (for image in images)
             (for y from (y offset) by height)
@@ -789,7 +790,7 @@
                         "Press space bar to start."))
            (images (iter (for text in paragraph)
                          (collect (make-text text (game-font (game screen))))))
-          (offset #c(620 510))
+          (offset #c(620 470))
           (height (y (size (first images)))))
       (iter (for image in images)
             (for y from (y offset) by height)
