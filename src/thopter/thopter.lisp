@@ -792,18 +792,29 @@
     'sample :name :music :source (resource "sound/music.mp3") :type :music)
    :loop t :volume 80))
 
+(defmethod game-update :after ((screen thopter-menu-screen))
+  (let ((s "Thopter"))
+    (set-caption s s)))
+
 (defmethod game-update :after ((screen thopter-play-screen))
   (let* ((thopter (iter (for i in-vector (children (game-root screen)))
                         (when (and (typep i 'thopter)
                                    (eql (event-host i) (game-player *game*)))
                           (return i))))
-         (s (format
-             nil "wave: ~a, health: ~a, ammo: ~a, missiles: ~a, fps: ~,2f"
-             (level (game-wave screen))
-             (when thopter (health thopter))
-             (when thopter (ammo thopter))
-             (when thopter (missiles thopter))
-             (sdl:average-fps))))
+         (s (if thopter
+                (format
+                 nil "wave: ~a, health: ~a, firepower: ~a, ammo: ~a, missiles: ~a, fps: ~,2f"
+                 (level (game-wave screen))
+                 (health thopter)
+                 (ceiling (ammo thopter)
+                          (ammo-deplete-rate thopter))
+                 (ammo thopter)
+                 (missiles thopter)
+                 (sdl:average-fps))
+                (format
+                 nil
+                 "Congratulations! You made it to wave ~a! (Returning to menu in 5 seconds...)"
+                 (level (game-wave screen))))))
     (set-caption s s))
 
   (when (and (zerop (iter (for i in-vector (children (game-root screen)))
