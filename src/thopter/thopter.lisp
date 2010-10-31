@@ -661,8 +661,8 @@
                  :depth depth
                  :veloc (if (= i 1)
                           (/ veloc 2)
-                          (complex (mt19937:random (max 0.01d0 (abs (x veloc))))
-                                 (mt19937:random (max 0.01d0 (abs (y veloc))))))
+                          (+ (/ veloc 2) (complex (- (mt19937:random 6d0) 3d0)
+                                                  (- (mt19937:random 6d0) 3d0))))
                  :image image
                  :timer 28
                  :drop-class drop-class :drop-image drop-image)))
@@ -673,7 +673,9 @@
     (when drop-class
       (make-instance drop-class :parent parent
                      :offset (+ offset (/ (- size (size drop-image)) 2))
-                     :depth depth :veloc (/ veloc 4) :image drop-image))
+                     :depth depth 
+		     :veloc (* (unit veloc) (min (/ (abs veloc) 4) 1))
+		     :image drop-image))
     (detach parent explosion)))
 
 (defmethod collide ((health health-pack) event)
