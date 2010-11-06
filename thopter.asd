@@ -31,7 +31,7 @@
 (defsystem thopter
   :name "Thopter"
   :author "Elliott Slaughter <elliottslaughter@gmail.com>"
-  :version "0.4.4"
+  :version "0.4.5"
   :description "Thopter, a shooter game."
   :properties ((:long-name . "Thopter"))
   :components ((:module src
