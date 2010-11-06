@@ -175,12 +175,12 @@
     :initform 200)))
 
 (defclass thopter (sprite mobile collidable shooter alarm direction-mixin)
-  ((speed :initform 4)
-   (boosted-speed :initform 6 :accessor boosted-speed)
+  ((speed :initform 8)
+   (boosted-speed :initform 10 :accessor boosted-speed)
    (bullet-class :initform 'bullet)
    (bullet-image :initform :bullet)
    (bullet-n-directions :initform 16)
-   (bullet-veloc :initform #c(0 -8))
+   (bullet-veloc :initform #c(0 -12))
    (bullet-timer :initform 60)
    (timer :initform nil)
    (speed-boost :initform 0 :accessor speed-boost :initarg :speed-boost)
@@ -733,14 +733,17 @@
     (subscribe (game-keys screen) (game-quit screen))
     (iter (for player in (game-players (game screen))) (for i from 0)
           (with n = (length (game-players (game screen))))
-          (let* ((anim (make-anim "~a~a" :thopter (mod i 4)))
+          (let* ((body-image (make-image "~a~a-~a" :thopter (mod i 4) :body))
                  (thopter (make-instance
                            'thopter :host player :parent root
                            :offset (- (complex (* (x size) (/ (+ i 1/2) n))
                                                (* (y size) 3/4))
-                                      (/ (size anim) 2))
-                           :image anim
-                           :health 16 :ammo 4 :missiles 2)))
+                                      (/ (size body-image) 2))
+                           :image body-image
+                           :health 16 :ammo 1 :missiles 2)))
+            (make-instance
+             'sprite :parent thopter :offset #c(-33 -22) :depth -1
+             :image (make-anim "~a~a-~a" :thopter (mod i 4) :blades))
             (subscribe (game-keys screen) thopter)
             (incf (players-left (players-left screen)))))
     (let* ((tile-names '(:forest-0 :forest-1 :forest-2 :forest-3
@@ -879,9 +882,10 @@
   (with-slots (level) wave
     (incf level)
     (if (zerop (mod level 10))
-        (spawn-wave level (truncate level 10) (* level 20) (* level 4)
+        (spawn-wave level (truncate level 10) (+ 100 (* level 10)) (* level 4)
                     (truncate level 2) (min 1d0 (* level 0.024)) 'enemy-boss)
-        (spawn-wave level (+ 2 level) 4 (max 1 (ceiling level 3)) 0
+        (spawn-wave level (+ 2 level) (min (ceiling level 3) 8)
+                    (max 1 (ceiling level 3)) 0
                     (min 1d0 (* level 0.11)) 'enemy-ship))))
 
 (defmethod alarm ((controller background-controller) event)
