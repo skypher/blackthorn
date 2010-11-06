@@ -432,9 +432,8 @@
       (upgrade-bullet (incf ammo ammo-refill-rate))
       (upgrade-missile (incf missiles))
       (upgrade-speed (progn
-                      (when (<= (speed-boost thopter) 0)
-                        (setf (veloc thopter) (* 1.5d0 (veloc thopter))))
-                      (setf (speed-boost thopter) 240))))
+                       (setf (speed-boost thopter) 240)
+                       (change-veloc thopter event))))
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
                      :offset offset :depth depth :veloc (/ veloc 2)
@@ -454,8 +453,7 @@
       (setf offset (complex (x offset) (- (y (size parent)) (y size)))))
     (when (> (speed-boost thopter) 0)
       (decf (speed-boost thopter))
-      (when (<= (speed-boost thopter) 0)
-        (setf (veloc thopter) (/ (veloc thopter) 1.5d0))))))
+      (change-veloc thopter event))))
 
 (defmethod collide ((bullet bullet) event)
   (when (and (parent bullet) (typecase (event-hit event)
@@ -823,6 +821,11 @@
                         (when (and (typep i 'thopter)
                                    (eql (event-host i) (game-player *game*)))
                           (return i))))
+         (anyone-alive
+          (or thopter
+              (iter (for i in-vector (children (game-root screen)))
+                    (when (typep i 'thopter)
+                      (return i)))))
          (s (if thopter
                 (format
                  nil "wave: ~a, health: ~a, firepower: ~a, ammo: ~a, missiles: ~a, fps: ~,2f"
@@ -833,10 +836,13 @@
                  (ammo thopter)
                  (missiles thopter)
                  (sdl:average-fps))
-                (format
-                 nil
-                 "Congratulations! You made it to wave ~a! (Returning to menu in 5 seconds...)"
-                 (level (game-wave screen))))))
+                (if anyone-alive
+                    (format
+                     nil "Congrats! You made it to wave ~a! (Waiting for other players to finish...)"
+                     (level (game-wave screen)))
+                    (format
+                     nil "Congrats! You made it to wave ~a! (Returning to menu in 5 seconds...)"
+                     (level (game-wave screen)))))))
     (set-caption s s))
 
   (when (and (zerop (iter (for i in-vector (children (game-root screen)))
