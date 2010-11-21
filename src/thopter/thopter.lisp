@@ -184,6 +184,9 @@
    (bullet-timer :initform 60)
    (timer :initform nil)
    (speed-boost :initform 0 :accessor speed-boost :initarg :speed-boost)
+   (max-speed-timer :initform 900 :accessor max-speed-timer
+                    :initarg :max-speed-timer)
+   (boost-on :initform t :accessor boost-on :initarg :max-speed-timer)
    (health
     :accessor health
     :initarg :health
@@ -279,9 +282,9 @@
 (defvar *dir-vectors* '(#c(0 -1) #c(0 1) #c(-1 0) #c(1 0)))
 
 (defmethod change-veloc ((object direction-mixin) event)
-  (with-slots (veloc speed boosted-speed) object
+  (with-slots (veloc speed boosted-speed boost-on) object
     (setf veloc
-          (* (if (> (speed-boost object) 0) boosted-speed speed)
+          (* (if (and (> (speed-boost object) 0) boost-on) boosted-speed speed)
              (unit (iter (for d in *dir-names*) (for v in *dir-vectors*)
                          (when (get-flag object d) (sum v))))))))
 
@@ -304,6 +307,8 @@
   (bind-key-down thopter :sdl-key-lalt  #'missile)
   (bind-key-down thopter :sdl-key-rctrl #'missile)
   (bind-key-down thopter :sdl-key-ralt  #'missile)
+  (bind-key-down thopter :sdl-key-lshift #'toggle-boost)
+  (bind-key-down thopter :sdl-key-rshift #'toggle-boost)
   ;; TODO: add reset function
   ;(bind-key-down thopter :sdl-key-r     #'reset)
   )
@@ -324,6 +329,11 @@
 (defmethod alarm ((thopter thopter) event)
   (shoot thopter event)
   (setf (timer thopter) 4))
+
+(defmethod toggle-boost ((thopter thopter) event)
+  (if (boost-on thopter)
+      (progn (setf (boost-on thopter) nil) (change-veloc thopter event))
+      (setf (boost-on thopter) t)))
 
 (defmethod initialize-instance :after ((shooter shooter) &key)
   (setf (ammo shooter) (* (ammo shooter) (ammo-deplete-rate shooter))))
@@ -422,7 +432,7 @@
 
 (defmethod collide ((thopter thopter) event)
   (with-slots (parent offset depth veloc health ammo ammo-refill-rate 
-                      missiles) thopter
+                      missiles speed-boost) thopter
     (typecase (event-hit event)
       (enemy-bullet  (decf health))
       (enemy-missile (decf health))
@@ -432,7 +442,8 @@
       (upgrade-bullet (incf ammo ammo-refill-rate))
       (upgrade-missile (incf missiles))
       (upgrade-speed (progn
-                       (setf (speed-boost thopter) 240)
+                       (setf speed-boost
+                            (min (+ speed-boost 240) (max-speed-timer thopter)))
                        (change-veloc thopter event))))
     (when (and parent (<= health 0))
       (make-instance 'explosion :parent parent
@@ -451,7 +462,7 @@
       (setf offset (complex (- (x (size parent)) (x size)) (y offset))))
     (when (> (y offset) (- (y (size parent)) (y size)))
       (setf offset (complex (x offset) (- (y (size parent)) (y size)))))
-    (when (> (speed-boost thopter) 0)
+    (when (and (> (speed-boost thopter) 0) (boost-on thopter))
       (decf (speed-boost thopter))
       (change-veloc thopter event))))
 
@@ -746,16 +757,14 @@
             (incf (players-left (players-left screen)))))
     (let* ((tile-names '(:forest-0 :forest-1 :forest-2 :forest-3
                          :forest-4 :forest-5 :forest-6))
-           (tiles (iter (for name in tile-names)
-                        (collect (make-image name))))
+           (tiles (iter (for name in tile-names) (collect (make-image name))))
            (num-tiles (length tiles))
            (tile-size (size (first tiles))))
       (iter (for x from 0 below (x size) by (x tile-size))
             (iter (for y from 0 below (y size) by (y tile-size))
-                  (make-instance 'tile
+                  (make-instance 'sprite
                                  :parent root
                                  :offset (complex x y)
-                                 :veloc #c(0 1/2)
                                  :image (nth (mt19937:random num-tiles)
                                              tiles)
                                  :depth 100))))))
@@ -828,13 +837,14 @@
                       (return i)))))
          (s (if thopter
                 (format
-                 nil "wave: ~a, health: ~a, firepower: ~a, ammo: ~a, missiles: ~a, fps: ~,2f"
+                 nil "wave: ~a, health: ~a, firepower: ~a, ammo: ~a, missiles: ~a, speed-time: ~a, fps: ~,2f"
                  (level (game-wave screen))
                  (health thopter)
                  (ceiling (ammo thopter)
                           (ammo-deplete-rate thopter))
                  (ammo thopter)
                  (missiles thopter)
+                 (speed-boost thopter)
                  (sdl:average-fps))
                 (if anyone-alive
                     (format
