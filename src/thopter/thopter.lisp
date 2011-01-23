@@ -345,10 +345,11 @@
               shooter
     (when (> ammo 0)
       (let* ((firepower (ceiling ammo ammo-deplete-rate))
-           (increment (if (< (* (floor firepower 2) 0.15d0) 1) (* 0.15d0 pi)
-                           (/ pi (/ firepower 2)))))
-        (iter (for i from (+ (ceiling firepower -2) 
-                 (if (evenp firepower) 1/2 0)) to (floor firepower 2))
+             (increment (if (< (* (floor firepower 2) 0.15d0) 1) (* 0.15d0 pi)
+                            (/ pi (/ firepower 2)))))
+        (iter (for i from (+ (ceiling firepower -2)
+                             (if (evenp firepower) 1/2 0))
+                   to (floor firepower 2))
               (for v = (+ veloc (rot bullet-veloc (* i increment))))
               (for image = (if bullet-n-directions
                                 (make-image
