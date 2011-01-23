@@ -210,6 +210,7 @@
   ((timer :initform (+ 20 (mt19937:random 10) (mt19937:random 10)))
    (bullet-class :initform 'enemy-bullet)
    (bullet-image :initform :enemy-bullet)
+   (bullet-n-directions :initform 16)
    (bullet-veloc :initform #c(0 8))
    (bullet-timer :initform 60)
    (speed-boost :initform 0 :accessor speed-boost :initarg :speed-boost)
@@ -795,6 +796,7 @@
                         "Move    => Arrow keys/IJKL/WASD"
                         "Shoot   => Space bar"
                         "Missile => Ctrl/Alt"
+                        "Speed   => Shift"
                         "Quit    => Escape"
                         ""
                         "Press space bar to start."))
