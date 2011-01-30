@@ -764,9 +764,10 @@
            (tile-size (size (first tiles))))
       (iter (for x from 0 below (x size) by (x tile-size))
             (iter (for y from 0 below (y size) by (y tile-size))
-                  (make-instance 'sprite
+                  (make-instance 'tile
                                  :parent root
                                  :offset (complex x y)
+                                 :veloc #c(0 1/2)
                                  :image (nth (mt19937:random num-tiles)
                                              tiles)
                                  :depth 100))))))
