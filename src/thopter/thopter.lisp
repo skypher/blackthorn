@@ -732,7 +732,7 @@
     (setf (game-wave screen) (make-instance 'wave-controller :parent root)
           (game-quit screen) (make-instance 'quit-controller :parent root)
           (game-background screen)
-          (make-instance 'background-controller :parent root :timer 2)
+          (make-instance 'background-controller :parent root :timer 0)
           (players-left screen)
           (make-instance 'players-left-controller :parent root)
           (game-sound screen)
@@ -767,7 +767,7 @@
                   (make-instance 'tile
                                  :parent root
                                  :offset (complex x y)
-                                 :veloc #c(0 1/2)
+                                 :veloc #c(0 1)
                                  :image (nth (mt19937:random num-tiles)
                                              tiles)
                                  :depth 100))))))
@@ -918,15 +918,15 @@
            (num-tiles (length tiles))
            (tile-size (size (first tiles))))
       (iter (for x from 0 below (x size) by (x tile-size))
-            (let ((y (+ (- (y tile-size)) 2)))
+            (let ((y (1+ (- (y tile-size)))))
               (make-instance 'tile
                              :parent parent
                              :offset (complex x y)
-                             :veloc #c(0 1/2)
+                             :veloc #c(0 1)
                              :image (nth (mt19937:random num-tiles)
                                          tiles)
                              :depth 100)))
-      (setf timer (- (* (y tile-size) 2) 2)))))
+      (setf timer (1- (y tile-size))))))
 
 (defmethod (setf players-left) :after (value (left players-left-controller))
   (when (<= value 0)
