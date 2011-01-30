@@ -46,12 +46,14 @@
   (let* ((root (game-root game))
          (size (size (game-root game))))
     (setf (game-sheet game) (load-sheet (resource "disp/sheet.png")))
-    (loop for i from 0 to (test-size game)
-       do (make-instance
-           'mobile-object :parent root
-           :offset (complex (random (x size)) (random (y size)))
-           :veloc (complex (- (random 1.0) 0.5) (- (random 1.0) 0.5))
-           :image (make-image :explosion)))
+    (let ((image (make-image :explosion)))
+      (loop for i from 0 to (test-size game)
+         do (make-instance
+             'mobile-object :parent root
+             :offset (complex (random (- (x size) (x (size image))))
+                              (random (- (y size) (y (size image)))))
+             :veloc (complex (- (random 1.0) 0.5) (- (random 1.0) 0.5))
+             :image image)))
     (let ((keys (make-instance 'actor)))
       (bind keys :key-down #'report-event)
       (bind keys :key-up #'report-event)
@@ -68,14 +70,14 @@
 
 (defmethod update :after ((object mobile-object) event)
   (declare (ignore event))
-  (with-slots (offset veloc) object
+  (with-slots (offset size veloc) object
     (cond ((< (x offset) 0)
            (setf veloc (complex (abs (x veloc)) (y veloc))))
-          ((>= (x offset) (x (size (game-view *game*))))
+          ((>= (+ (x offset) (x size)) (x (size (game-view *game*))))
            (setf veloc (complex (- (abs (x veloc))) (y veloc)))))
     (cond ((< (y offset) 0)
            (setf veloc (complex (x veloc) (abs (y veloc)))))
-          ((>= (y offset) (y (size (game-view *game*))))
+          ((>= (+ (y offset) (y size)) (y (size (game-view *game*))))
            (setf veloc (complex (x veloc) (- (abs (y veloc)))))))))
 
 ;; For interactive use:
@@ -84,4 +86,4 @@
     (main :exit-when-done nil)))
 
 ;; For non-interactive use:
-(defparameter *game* (make-instance 'mobile-game :test-size 5000))
+(defparameter *game* (make-instance 'mobile-game :test-size 100))
