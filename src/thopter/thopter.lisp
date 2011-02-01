@@ -218,13 +218,13 @@
     :initform (make-instance 'sample :name :thopter-gun
                              :source (resource "sound/missile.ogg")
                              :type :sample))
-   (cooldown :initform 4)
+   (cooldown :initform nil)
    (firepower :initform 1)
    (ammo :initform 2)
    (ammo-refill-rate :initform 1)
    (ammo-deplete-rate :initform 1)))
 
-(defclass thopter (sprite collidable shooter alarm direction-mixin)
+(defclass thopter (sprite collidable shooter direction-mixin)
   ((speed :initform 8)
    (timer :initform nil)
    (primary-weapon
@@ -376,8 +376,7 @@
 
 (defmethod start-shoot ((weapon weapon) event)
   (shoot (parent weapon) weapon event)
-  (when (cooldown weapon)
-    (setf (timer weapon) (cooldown weapon))))
+  (setf (timer weapon) (cooldown weapon)))
 
 (defmethod stop-shoot ((weapon weapon) event)
   (setf (timer weapon) nil))
