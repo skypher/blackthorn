@@ -23,8 +23,6 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(require :asdf)
-
 (defpackage :blackthorn-build
   (:nicknames :blt-build)
   (:use :cl)
@@ -42,6 +40,12 @@
 ;;; Compile the system and associated driver.
 ;;;
 
+#+quicklisp
+(ql:quickload *driver-system*)
+
+#-quicklisp
+(require :asdf)
+#-quicklisp
 (asdf:oos 'asdf:load-op *driver-system*)
 
 #+allegro (asdf:oos 'asdf:load-op :com.gigamonkeys.asdf-extensions)

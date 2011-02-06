@@ -25,7 +25,12 @@
 
 (defvar *driver-system* :blackthorn-test)
 
+#+quicklisp
+(ql:quickload *driver-system*)
+
+#-quicklisp
 (require :asdf)
+#-quicklisp
 (asdf:operate 'asdf:load-op *driver-system*)
 
 ;;; --------------------------------------------------------------------------

@@ -30,7 +30,12 @@
     (pushnew :blt-debug *features*)))
 
 ;; Load and run main:
+#+quicklisp
+(ql:quickload *driver-system*)
+
+#-quicklisp
 (require :asdf)
+#-quicklisp
 (asdf:operate 'asdf:load-op *driver-system*)
 
 (blt-user::main)

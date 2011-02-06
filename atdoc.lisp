@@ -24,13 +24,27 @@
 ;;;;
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  #+quicklisp
+  (ql:quickload :trivial-features)
+  #-quicklisp
   (asdf:oos 'asdf:load-op :trivial-features))
 
 #+(and sbcl windows) (load-shared-object "msvcr71.dll")
 
-(asdf:oos 'asdf:load-op :atdoc)
-(asdf:oos 'asdf:load-op :cl-fad)
+#+quicklisp
+(ql:quickload :atdoc)
+#+quicklisp
+(ql:quickload :cl-fad)
+#+quicklisp
+(ql:quickload :blackthorn)
 
+#-quicklisp
+(require :asdf)
+#-quicklisp
+(asdf:oos 'asdf:load-op :atdoc)
+#-quicklisp
+(asdf:oos 'asdf:load-op :cl-fad)
+#-quicklisp
 (asdf:oos 'asdf:load-op :blackthorn)
 
 ;;;
