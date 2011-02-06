@@ -153,8 +153,6 @@
 (defclass tile (sprite mobile transient)
   ())
 
-(defclass shooter (mobile) ())
-
 (defclass weapon (alarm)
   ((timer :initform nil)
    (projectile-class
@@ -224,7 +222,7 @@
    (ammo-refill-rate :initform 1)
    (ammo-deplete-rate :initform 1)))
 
-(defclass thopter (sprite collidable shooter direction-mixin)
+(defclass thopter (mobile sprite collidable direction-mixin)
   ((speed :initform 8)
    (timer :initform nil)
    (primary-weapon
@@ -263,7 +261,7 @@
     :initform 4)
    (timer :initform 120)))
 
-(defclass enemy (sprite collidable alarm shooter)
+(defclass enemy (mobile sprite collidable alarm)
   ((primary-weapon :accessor primary-weapon :initarg :primary-weapon)
    (secondary-weapon :accessor secondary-weapon :initarg :secondary-weapon)
    (timer :initform (+ 20 (mt19937:random 10) (mt19937:random 10)))
@@ -375,14 +373,14 @@
   (mod (floor (+ (/ (* (theta x) n) (* 2 pi)) 0.5d0)) n))
 
 (defmethod start-shoot ((weapon weapon) event)
-  (shoot (parent weapon) weapon event)
+  (shoot weapon event)
   (setf (timer weapon) (cooldown weapon)))
 
 (defmethod stop-shoot ((weapon weapon) event)
   (setf (timer weapon) nil))
 
 (defmethod alarm ((weapon weapon) event)
-  (shoot (parent weapon) weapon event)
+  (shoot weapon event)
   (setf (timer weapon) (cooldown weapon)))
 
 (defmethod start-shoot-primary ((thopter thopter) event)
@@ -407,11 +405,11 @@
   (when (not (firepower weapon))
     (setf (ammo weapon) (* (ammo weapon) (ammo-deplete-rate weapon)))))
 
-(defmethod shoot ((shooter shooter) (weapon weapon) event)
-  (with-slots (parent offset size veloc) shooter
-    (with-slots (projectile-class projectile-image 
-                 projectile-n-directions projectile-veloc projectile-timer 
-                 fire-sound ammo ammo-deplete-rate) weapon
+(defmethod shoot ((weapon weapon) event)
+  (with-slots ((shooter parent) projectile-class projectile-image 
+               projectile-n-directions projectile-veloc projectile-timer 
+               fire-sound ammo ammo-deplete-rate) weapon
+    (with-slots (parent offset size veloc) shooter
       (when (> ammo 0)
         (let* ((firepower (if (firepower weapon)
                               (firepower weapon)
@@ -443,7 +441,7 @@
           (play fire-sound))))))
 
 (defmethod missile ((enemy enemy) event)
-  (shoot enemy (secondary-weapon enemy) event)
+  (shoot (secondary-weapon enemy) event)
   (when (<= (enemy-missiles (game-screen *game*)) 0)
     (setf (missile-lock (game-screen *game*))
       (play (make-instance 'sample
@@ -682,7 +680,7 @@
     (let* ((shoot-decision (mt19937:random 1d0)))
       (if (and (> (ammo secondary-weapon) 0) (< shoot-decision missile-chance))
         (missile enemy event)
-        (shoot enemy (primary-weapon enemy) event)))))
+        (shoot (primary-weapon enemy) event)))))
 
 (defmethod collide ((enemy enemy) event)
   (with-slots (parent offset size depth veloc health primary-weapon 
@@ -952,12 +950,14 @@
                                   :projectile-class 'enemy-bullet
                                   :projectile-image :enemy-bullet
                                   :projectile-veloc #c(0 +12)
+                                  :ammo ammo
                                   :fire-sound nil))
                  (secondary-weapon (make-instance
                                     'missile-weapon
-                                    :projectile-class 'enemy-bullet
-                                    :projectile-image :enemy-bullet
-                                  :projectile-veloc #c(0 +4)))
+                                    :projectile-class 'enemy-missile
+                                    :projectile-image :enemy-missile
+                                    :projectile-veloc #c(0 +4)
+                                    :ammo missiles))
                  (enemy (make-instance enemy-type
                                        :parent root
                                        :depth 1
