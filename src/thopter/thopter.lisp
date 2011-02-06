@@ -188,7 +188,15 @@
    (ammo-deplete-rate
     :accessor ammo-deplete-rate
     :initarg :ammo-deplete-rate
-    :initform 1)))
+    :initform 1)
+   (angle-increment
+    :accessor angle-increment
+    :initarg :angle-increment
+    :initform 0.15d0)
+   (max-spread
+    :accessor max-spread
+    :initarg :max-spread
+    :initform 2)))
 
 (defclass chaingun-weapon (weapon)
   ((projectile-class :initform  'bullet)
@@ -228,6 +236,9 @@
    (primary-weapon
     :accessor primary-weapon
     :initarg :primary-weapon)
+;   (primary-weapon2
+;    :accessor primary-weapon2
+;    :initarg :primary-weapon2)
    (secondary-weapon
     :accessor secondary-weapon
     :initarg :secondary-weapon)
@@ -385,9 +396,11 @@
 
 (defmethod start-shoot-primary ((thopter thopter) event)
   (start-shoot (primary-weapon thopter) event))
+  ;(start-shoot (primary-weapon2 thopter) event))
 
 (defmethod stop-shoot-primary ((thopter thopter) event)
   (stop-shoot (primary-weapon thopter) event))
+  ;(stop-shoot (primary-weapon2 thopter) event))
 
 (defmethod start-shoot-secondary ((thopter thopter) event)
   (start-shoot (secondary-weapon thopter) event))
@@ -406,16 +419,18 @@
     (setf (ammo weapon) (* (ammo weapon) (ammo-deplete-rate weapon)))))
 
 (defmethod shoot ((weapon weapon) event)
-  (with-slots ((shooter parent) projectile-class projectile-image 
-               projectile-n-directions projectile-veloc projectile-timer 
-               fire-sound ammo ammo-deplete-rate) weapon
+  (with-slots ((shooter parent) projectile-class projectile-image
+               projectile-n-directions projectile-veloc projectile-timer
+               fire-sound ammo ammo-deplete-rate angle-increment
+                max-spread (offset-w offset)) weapon
     (with-slots (parent offset size veloc) shooter
       (when (> ammo 0)
         (let* ((firepower (if (firepower weapon)
                               (firepower weapon)
                               (ceiling ammo ammo-deplete-rate)))
-               (increment (if (< (* (floor firepower 2) 0.15d0) 1) (* 0.15d0 pi)
-                              (/ pi (/ firepower 2)))))
+                (increment (if (< (* firepower angle-increment) max-spread)
+                             (* angle-increment pi)
+                             (/ (* max-spread pi) firepower))))
           (iter (for i from (+ (ceiling firepower -2)
                                (if (evenp firepower) 1/2 0))
                      to (floor firepower 2))
@@ -427,7 +442,7 @@
                                  (make-image projectile-image)))
                 (make-instance
                  projectile-class :parent parent 
-                 :offset (+ offset (/ size 2) (- (/ (size image) 2))
+                 :offset (+ offset offset-w (/ size 2) (- (/ (size image) 2))
                             (* (rot (unit projectile-veloc)
                                     (* i increment))
                                (+ (x size) (y size))
@@ -488,7 +503,8 @@
         (explosion     (decf health))
         (health-pack   (incf health 2))
         (upgrade-bullet (incf ammo ammo-refill-rate))
-        (upgrade-missile (incf (ammo secondary-weapon)))
+        (upgrade-missile (incf (ammo secondary-weapon)
+                               (ammo-refill-rate secondary-weapon)))
         (upgrade-speed (progn
                          (setf speed-boost
                            (min (+ speed-boost 240) (max-speed-timer thopter)))
@@ -693,7 +709,8 @@
         (explosion   (decf health))
         (health-pack (incf health 2))
         (upgrade-bullet (incf ammo ammo-refill-rate))
-        (upgrade-missile (incf (ammo secondary-weapon)))
+        (upgrade-missile (incf (ammo secondary-weapon)
+                               (ammo-refill-rate secondary-weapon)))
         (upgrade-speed (setf (speed-boost enemy) 240)))
       (when (and parent (<= health 0))
         (let ((i (if (typep enemy 'enemy-boss) 25 1)))
@@ -792,7 +809,14 @@
     (iter (for player in (game-players (game screen))) (for i from 0)
           (with n = (length (game-players (game screen))))
           (let* ((body-image (make-image "~a~a-~a" :thopter (mod i 4) :body))
-                 (primary-weapon (make-instance 'chaingun-weapon))
+                 (primary-weapon (make-instance 'chaingun-weapon
+                                   :max-spread 1/4))
+                ;                   :offset (complex 
+                ;                            (x (/ (size body-image) 2)) 0)))
+                ; (primary-weapon2 (make-instance 'chaingun-weapon
+                ;                   :max-spread 1/4
+                ;                   :offset (complex 
+                ;                           (- (x (/ (size body-image) 2))) 0)))
                  (secondary-weapon (make-instance 'missile-weapon))
                  (thopter (make-instance
                            'thopter
@@ -803,9 +827,11 @@
                                       (/ (size body-image) 2))
                            :image body-image
                            :primary-weapon primary-weapon
+                           ;:primary-weapon2 primary-weapon2
                            :secondary-weapon secondary-weapon
                            :health 16)))
             (attach thopter primary-weapon)
+            ;(attach thopter primary-weapon2)
             (attach thopter secondary-weapon)
             (make-instance
              'sprite
