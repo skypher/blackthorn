@@ -408,14 +408,10 @@
         (bind-key-up thopter k (doall (set-flag d nil) #'change-veloc)))
   (bind-key-down thopter :sdl-key-space #'start-shoot-primary)
   (bind-key-up thopter :sdl-key-space #'stop-shoot-primary)
-  (bind-key-down thopter :sdl-key-lctrl #'start-shoot-secondary)
-  (bind-key-up thopter :sdl-key-lctrl #'stop-shoot-secondary)
-  (bind-key-down thopter :sdl-key-lalt  #'start-shoot-secondary)
-  (bind-key-up thopter :sdl-key-lalt  #'stop-shoot-secondary)
-  (bind-key-down thopter :sdl-key-rctrl #'start-shoot-secondary)
-  (bind-key-up thopter :sdl-key-rctrl #'stop-shoot-secondary)
-  (bind-key-down thopter :sdl-key-ralt  #'start-shoot-secondary)
-  (bind-key-up thopter :sdl-key-ralt  #'stop-shoot-secondary)
+  (iter (for k in '(:sdl-key-lctrl :sdl-key-lalt
+                    :sdl-key-rctrl :sdl-key-ralt))
+        (bind-key-down thopter k #'start-shoot-secondary)
+        (bind-key-up thopter k #'stop-shoot-secondary))
   (bind-key-down thopter :sdl-key-lshift #'toggle-boost)
   (bind-key-down thopter :sdl-key-rshift #'toggle-boost)
   ;; TODO: add reset function
@@ -427,6 +423,12 @@
 
 (defun quadrant (x n)
   (mod (floor (+ (/ (* (theta x) n) (* 2 pi)) 0.5d0)) n))
+
+(defmethod stop-all ((thopter thopter) event)
+  (clear-flags thopter)
+  (change-veloc thopter event)
+  (stop-shoot-primary thopter event)
+  (stop-shoot-secondary thopter event))
 
 (defmethod start-shoot ((weapon weapon) event)
   (shoot weapon event)
@@ -954,8 +956,7 @@
 (defmethod activate :after ((screen thopter-play-screen))
   (iter (for i in-vector (children (game-root screen)))
         (when (typep i 'thopter)
-          (clear-flags i)
-          (change-veloc i nil)))
+          (stop-all i nil)))
   ;; Now is a relatively good time to do garbage collection.
   (gc :full t))
 
