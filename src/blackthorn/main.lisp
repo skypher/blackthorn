@@ -64,49 +64,23 @@
   #-(or allegro clisp clozure ecl lispworks sbcl)
   (error "Don't know how to get command line args."))
 
-(defun command-line-arguments ()
-  "Returns the command-line arguments given to the executable, except for the
-   name of the executable itself."
-  #+allegro (cdr (sys:command-line-arguments))
-  #+clisp ext:*args*
-  #+clozure (cdr ccl:*command-line-argument-list*)
-  #+ecl (cdr (ext:command-args))
-  #+lispworks (cdr system:*line-arguments-list*)
-  #+sbcl (cdr sb-ext:*posix-argv*)
-  #-(or allegro clisp clozure ecl lispworks sbcl)
-  (error "Don't know how to get command line args."))
+(defparameter *cli-options*
+  '((("server" #\s) :type string :optional t)
+    (("connect" #\c) :type string :optional t)
+    (("port" #\P) :type integer :initial-value 12345)
+    (("players") :type integer :initial-value 2)))
 
-(defun cli-options ()
-  (list (make-instance 'cli-parser:cli-option
-                       :abbr "s"
-                       :full "server"
-                       :requires-arguments :optional)
-        (make-instance 'cli-parser:cli-option
-                       :abbr nil
-                       :full "players"
-                       :requires-arguments :optional)
-        (make-instance 'cli-parser:cli-option
-                       :abbr "c"
-                       :full "connect"
-                       :requires-arguments t)
-        (make-instance 'cli-parser:cli-option
-                       :abbr "P"
-                       :full "port"
-                       :requires-arguments t)))
-
-(defun cli-get-mode (options)
-  (let ((port (car (gethash "port" options)))
-        (players (car (gethash "players" options))))
-    (or
-     (multiple-value-bind (value exists) (gethash "server" options)
-       (when exists
-         (list :server (car value)
-               (when port (parse-integer port))
-               (when players (parse-integer players)))))
-     (multiple-value-bind (value exists) (gethash "connect" options)
-       (when exists
-         (list :client (car value) (when port (parse-integer port)) nil)))
-     (list :normal nil nil nil))))
+(defun cli-get-mode ()
+  (let* ((args (print (command-line-arguments:get-command-line-arguments)))
+         (opts (print (command-line-arguments:process-command-line-options
+                       *cli-options*
+                       (print (aif (position "--" args :test #'equal)
+                                   (nthcdr (1+ it) args)))))))
+    (append (or (aif (getf opts :server) (list :server it))
+                (aif (getf opts :connect) (list :client it))
+                (list :normal nil))
+            (list (getf opts :port)
+                  (getf opts :players)))))
 
 ;;;
 ;;; Video modes
@@ -159,8 +133,7 @@
 
   (unless *game* (error "No game specified.~%"))
 
-  (let ((options (cli-parser:cli-parse (command-line-arguments) (cli-options))))
-    (apply #'net-init (cli-get-mode options)))
+  (apply #'net-init (cli-get-mode))
 
   (setf mt19937:*random-state* (mt19937:make-random-state t))
 

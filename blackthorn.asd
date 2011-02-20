@@ -54,7 +54,7 @@
                                   :serial t))))
   :depends-on (;; Utilities
                :trivial-features
-               :cli-parser
+               :command-line-arguments
                :cl-fad
                :iterate
                :cl-containers

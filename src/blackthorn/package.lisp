@@ -114,6 +114,9 @@
    :polar
    :rot
    :cross
+   :aif
+   :acond
+   :it
    :once-only
    :with-gensyms
    :gc
@@ -215,6 +218,9 @@
    :polar
    :rot
    :cross
+   :aif
+   :acond
+   :it
    :once-only
    :with-gensyms
    :gc
