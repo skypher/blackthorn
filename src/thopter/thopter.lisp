@@ -196,7 +196,27 @@
    (max-spread
     :accessor max-spread
     :initarg :max-spread
-    :initform 2)))
+    :initform 2)
+   (weapon-type
+    :accessor  weapon-type
+    :initarg  :weapon-type
+    :initform :radial)))
+
+(defclass spread-weapon (weapon)
+  ((projectile-class :initform  'bullet)
+   (projectile-image :initform :bullet)
+   (projectile-n-directions :initform 16)
+   (projectile-veloc :initform #c(0 -12))
+   (projectile-timer :initform 120)
+   (fire-sound
+    :initform (make-instance 'sample :name :thopter-gun
+                             :source (resource "sound/thoptergun.ogg")
+                             :type :sample))
+   (cooldown :initform 4)
+   (firepower :initform nil)
+   (ammo :initform 1)
+   (ammo-refill-rate :initform 200)
+   (ammo-deplete-rate :initform 200)))
 
 (defclass chaingun-weapon (weapon)
   ((projectile-class :initform  'bullet)
@@ -212,7 +232,8 @@
    (firepower :initform nil)
    (ammo :initform 1)
    (ammo-refill-rate :initform 200)
-   (ammo-deplete-rate :initform 200)))
+   (ammo-deplete-rate :initform 200)
+   (weapon-type :initform :straight)))
 
 (defclass missile-weapon (weapon)
   ((projectile-class :initform 'missile)
@@ -419,6 +440,12 @@
     (setf (ammo weapon) (* (ammo weapon) (ammo-deplete-rate weapon)))))
 
 (defmethod shoot ((weapon weapon) event)
+  (with-slots (fire-sound) weapon
+    (shoot-helper weapon (weapon-type weapon) event)
+    (when fire-sound
+      (play fire-sound))))
+
+(defmethod shoot-helper ((weapon weapon) (weapon-type (eql :radial)) event)
   (with-slots ((shooter parent) projectile-class projectile-image
                projectile-n-directions projectile-veloc projectile-timer
                fire-sound ammo ammo-deplete-rate angle-increment
@@ -451,9 +478,43 @@
                  :veloc v
                  :image image
                  :timer projectile-timer))
-          (decf ammo firepower))
-        (when fire-sound
-          (play fire-sound))))))
+          (decf ammo firepower))))))
+
+(defmethod shoot-helper ((weapon weapon) (weapon-type (eql :straight)) event)
+  (with-slots ((shooter parent) projectile-class projectile-image
+               projectile-n-directions projectile-veloc projectile-timer
+               fire-sound ammo ammo-deplete-rate angle-increment
+                max-spread (offset-w offset)) weapon
+    (with-slots (parent offset size veloc) shooter
+      (when (> ammo 0)
+        (let* ((firepower (if (firepower weapon)
+                              (firepower weapon)
+                              (ceiling ammo ammo-deplete-rate)))
+                (increment (if (< (* firepower angle-increment) max-spread)
+                             (* angle-increment pi)
+                             (/ (* max-spread pi) firepower))))
+          (iter (for i from (+ (ceiling firepower -2)
+                               (if (evenp firepower) 1/2 0))
+                     to (floor firepower 2))
+                (for v = (+ veloc projectile-veloc))
+                (for image = (if projectile-n-directions
+                                 (make-image
+                                  "~a-~2,'0d" projectile-image
+                                  (quadrant v projectile-n-directions))
+                                 (make-image projectile-image)))
+                (make-instance
+                 projectile-class :parent parent 
+                  :offset (+ offset offset-w (/ (size weapon) 2)
+                            (- (/ (size image) 2))
+                            (* (rot (unit projectile-veloc)
+                                   (* i increment))
+                                (max (x size) (y size))
+                                0.5d0))
+                 :depth -1
+                 :veloc v
+                 :image image
+                 :timer projectile-timer))
+          (decf ammo firepower))))))
 
 (defmethod missile ((enemy enemy) event)
   (shoot (secondary-weapon enemy) event)
@@ -468,29 +529,29 @@
 (defmethod update ((missile missile) event)
   (with-slots (parent offset size veloc accel image) missile
     (let* ((nearest-enemy (nearest-object missile 'enemy 600))
-           (new-image (make-image "~a-~2,'0d" :missile (quadrant veloc 16))))
+            (new-image (make-image "~a-~2,'0d" :missile (quadrant veloc 16))))
       (if nearest-enemy
-          (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
-                accel (* 2d0 (unit (- (+ (offset nearest-enemy)
-                                         (/ (size nearest-enemy) 2d0))
-                                      (+ offset (/ size 2d0)))))
-                offset (+ offset (/ (size image) 2d0) (/ (size new-image) -2d0))
-                image new-image)
-          (setf accel 0)))))
+        (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
+          accel (* 2d0 (unit (- (+ (offset nearest-enemy)
+                                  (/ (size nearest-enemy) 2d0))
+                               (+ offset (/ size 2d0)))))
+          offset (+ offset (/ (size image) 2d0) (/ (size new-image) -2d0))
+          image new-image)
+        (setf accel 0)))))
 
 (defmethod update ((missile enemy-missile) event)
   (with-slots (parent offset size veloc accel image) missile
     (let* ((nearest-enemy (nearest-object missile 'thopter 400))
-           (new-image (make-image "~a-~2,'0d" :enemy-missile
-                                  (quadrant veloc 16))))
+            (new-image (make-image "~a-~2,'0d" :enemy-missile
+                         (quadrant veloc 16))))
       (if nearest-enemy
-          (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
-                accel (* 2d0 (unit (- (+ (offset nearest-enemy)
-                                         (/ (size nearest-enemy) 2d0))
-                                      (+ offset (/ size 2d0)))))
-                offset (+ offset (/ (size image) 2d0) (/ (size new-image) -2d0))
-                image new-image)
-          (setf accel 0)))))
+        (setf veloc (* (unit veloc) (min (abs veloc) 12d0))
+          accel (* 2d0 (unit (- (+ (offset nearest-enemy)
+                                  (/ (size nearest-enemy) 2d0))
+                               (+ offset (/ size 2d0)))))
+          offset (+ offset (/ (size image) 2d0) (/ (size new-image) -2d0))
+          image new-image)
+        (setf accel 0)))))
 
 (defmethod collide ((thopter thopter) event)
   (with-slots (parent offset depth veloc health primary-weapon
@@ -809,8 +870,15 @@
     (iter (for player in (game-players (game screen))) (for i from 0)
           (with n = (length (game-players (game screen))))
           (let* ((body-image (make-image "~a~a-~a" :thopter (mod i 4) :body))
-                 (primary-weapon (make-instance 'chaingun-weapon
+                 (blade-anim (make-anim "~a~a-~a" :thopter (mod i 4) :blades))
+                 (primary-weapon (make-instance 'spread-weapon
                                    :max-spread 1/4))
+                 ;(primary-weapon (make-instance 'chaingun-weapon
+                 ;                  ;:max-spread 1/4
+                 ;                  :max-spread 1
+                 ;                  :offset #c(-33 -22)
+                 ;                  :size (size blade-anim)
+                 ;                  :weapon-type :straight))
                 ;                   :offset (complex 
                 ;                            (x (/ (size body-image) 2)) 0)))
                 ; (primary-weapon2 (make-instance 'chaingun-weapon
@@ -838,7 +906,7 @@
              :parent thopter
              :offset #c(-33 -22)
              :depth -1
-             :image (make-anim "~a~a-~a" :thopter (mod i 4) :blades))
+             :image blade-anim)
             (subscribe (game-keys screen) thopter)
             (incf (players-left (players-left screen)))))
     (let* ((tile-names '(:forest-0 :forest-1 :forest-2 :forest-3
@@ -972,7 +1040,7 @@
          (root-size (size root)))
     (loop for i from (1+ (floor count -2)) to (floor count 2)
        do (let* ((primary-weapon (make-instance
-                                  'chaingun-weapon
+                                  'spread-weapon
                                   :projectile-class 'enemy-bullet
                                   :projectile-image :enemy-bullet
                                   :projectile-veloc #c(0 +12)
