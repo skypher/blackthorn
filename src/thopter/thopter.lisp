@@ -77,6 +77,10 @@
   #'(lambda (object event)
       (with-slots (flags) object (setf (gethash flag flags) value))))
 
+(defmethod clear-flags ((object flag-mixin))
+  (with-slots (flags) object
+    (clrhash flags)))
+
 (defclass direction-mixin (flag-mixin)
   ((speed
     :accessor speed
@@ -102,11 +106,15 @@
    (play-screen
     :accessor game-play-screen)
    (menu-screen
-    :accessor game-menu-screen)))
+    :accessor game-menu-screen)
+   (item-screen
+    :accessor game-item-screen)))
 
 (defclass thopter-play-screen (screen)
   ((quit
     :accessor game-quit)
+   (pause
+    :accessor game-pause)
    (wave
     :accessor game-wave)
    (background
@@ -132,7 +140,23 @@
    (quit
     :accessor game-quit)))
 
+(defclass thopter-item-screen (screen)
+  ((game-root
+    :initform (make-instance 'component :size *game-size*))
+   (game-view
+    :initform (make-instance 'component :size *game-size*))
+   (resume
+    :accessor game-resume)
+   (quit
+    :accessor game-quit)))
+
 (defclass start-controller (actor)
+  ())
+
+(defclass pause-controller (actor)
+  ())
+
+(defclass resume-controller (actor)
   ())
 
 (defclass wave-controller (alarm)
@@ -795,6 +819,7 @@
          (size (size root)))
     (setf (game-wave screen) (make-instance 'wave-controller :parent root)
           (game-quit screen) (make-instance 'quit-controller :parent root)
+          (game-pause screen) (make-instance 'pause-controller :parent root)
           (game-background screen)
           (make-instance 'background-controller :parent root :timer 0)
           (players-left screen)
@@ -806,6 +831,7 @@
                                :type :sample)
                 :loop t :volume 80))
     (subscribe (game-keys screen) (game-quit screen))
+    (subscribe (game-keys screen) (game-pause screen))
     (iter (for player in (game-players (game screen))) (for i from 0)
           (with n = (length (game-players (game screen))))
           (let* ((body-image (make-image "~a~a-~a" :thopter (mod i 4) :body))
@@ -856,6 +882,13 @@
                                              tiles)
                                  :depth 100))))))
 
+
+(defmethod activate :after ((screen thopter-play-screen))
+  (iter (for i in-vector (children (game-root screen)))
+        (when (typep i 'thopter)
+          (clear-flags i)
+          (change-veloc i nil))))
+
 (defmethod initialize-instance :after ((screen thopter-menu-screen) &key)
   (let* ((root (game-root screen))
          (size (size root)))
@@ -883,6 +916,7 @@
                         "Shoot   => Space bar"
                         "Missile => Ctrl/Alt"
                         "Speed   => Shift"
+                        "Pause   => Tab"
                         "Quit    => Escape"
                         ""
                         "Press space bar to start."))
@@ -897,11 +931,49 @@
     (subscribe (game-keys screen) (game-quit screen))
     (subscribe (game-keys screen) (game-start screen))))
 
+
+(defmethod initialize-instance :after ((screen thopter-item-screen) &key)
+  (let* ((root (game-root screen))
+         (size (size root)))
+    (setf (game-sheet screen) (load-sheet (resource "disp/thopter-item.png"))
+          (game-resume screen) (make-instance 'resume-controller :parent root)
+          (game-quit screen) (make-instance 'quit-controller :parent root))
+    (let* ((paragraph '("Game Paused"))
+           (images (iter (for text in paragraph)
+                         (collect (make-text text (game-font (game screen))))))
+          (offset #c(20 20))
+          (height (y (size (first images)))))
+      (iter (for image in images)
+            (for y from (y offset) by height)
+            (make-instance 'sprite :offset (+ (x offset) (complex 0 y))
+                           :parent root :image image)))
+    (let* ((paragraph '("Controls:"
+                        ""
+                        "Move    => Arrow keys/IJKL/WASD"
+                        "Shoot   => Space bar"
+                        "Missile => Ctrl/Alt"
+                        "Speed   => Shift"
+                        "Pause   => Tab"
+                        "Quit    => Escape"
+                        ""
+                        "Press tab to resume game."))
+           (images (iter (for text in paragraph)
+                         (collect (make-text text (game-font (game screen))))))
+          (offset #c(620 20))
+          (height (y (size (first images)))))
+      (iter (for image in images)
+            (for y from (y offset) by height)
+            (make-instance 'sprite :offset (+ (x offset) (complex 0 y))
+                           :parent root :image image)))
+    (subscribe (game-keys screen) (game-quit screen))
+    (subscribe (game-keys screen) (game-resume screen))))
+
 (defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
   (setf (game-player game) player
         (game-players game) players
         (game-font game) (make-font :font-10x20)
         (game-menu-screen game) (make-instance 'thopter-menu-screen :game game)
+        (game-item-screen game) (make-instance 'thopter-item-screen :game game)
         (game-play-screen game) (make-instance 'thopter-play-screen :game game))
   (activate (game-menu-screen game))
   (play
@@ -910,6 +982,10 @@
    :loop t :volume 80))
 
 (defmethod game-update :after ((screen thopter-menu-screen))
+  (let ((s "Thopter"))
+    (set-caption s s)))
+
+(defmethod game-update :after ((screen thopter-item-screen))
   (let ((s "Thopter"))
     (set-caption s s)))
 
@@ -953,6 +1029,16 @@
                                           (setup-game (game-play-screen *game*))
                                           (activate
                                            (game-play-screen *game*)))))
+
+(defmethod initialize-instance :after ((pause pause-controller) &key)
+  (bind-key-down pause :sdl-key-tab #'(lambda (s e)
+                                        (activate
+                                         (game-item-screen *game*)))))
+
+(defmethod initialize-instance :after ((resume resume-controller) &key)
+  (bind-key-down resume :sdl-key-tab #'(lambda (s e)
+                                         (activate
+                                          (game-play-screen *game*)))))
 
 (defmethod initialize-instance :after ((quit quit-controller) &key)
   #+darwin
