@@ -116,6 +116,7 @@
    :cross
    :once-only
    :with-gensyms
+   :gc
 
    ;; component.lisp
    :component
@@ -216,6 +217,7 @@
    :cross
    :once-only
    :with-gensyms
+   :gc
 
    ;; graphics.lisp
    :set-caption

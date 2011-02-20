@@ -155,3 +155,10 @@
                ,value
                (setf (gethash ,args ,cache)
                      (apply #'(lambda ,params ,@body) ,args))))))))
+
+;;;
+;;; Garbage Collection
+;;;
+
+(defun gc (&key full verbose)
+  (trivial-garbage:gc :full full :verbose verbose))

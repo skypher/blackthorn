@@ -887,7 +887,9 @@
   (iter (for i in-vector (children (game-root screen)))
         (when (typep i 'thopter)
           (clear-flags i)
-          (change-veloc i nil))))
+          (change-veloc i nil)))
+  ;; Now is a relatively good time to do garbage collection.
+  (gc :full t))
 
 (defmethod initialize-instance :after ((screen thopter-menu-screen) &key)
   (let* ((root (game-root screen))
