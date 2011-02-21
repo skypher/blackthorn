@@ -962,7 +962,7 @@
                                     :weapon-class *missile-weapon*))
                  (thopter (make-instance
                            'thopter
-                           :host player
+                           :host (event-host player)
                            :parent root
                            :offset (- (complex (* (x size) (/ (+ i 1/2) n))
                                                (* (y size) 3/4))
@@ -1086,17 +1086,26 @@
     (subscribe (game-keys screen) (game-resume screen))))
 
 (defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
-  (setf (game-player game) player
-        (game-players game) players
-        (game-font game) (make-font :font-10x20)
-        (game-menu-screen game) (make-instance 'thopter-menu-screen :game game)
-        (game-item-screen game) (make-instance 'thopter-item-screen :game game)
-        (game-play-screen game) (make-instance 'thopter-play-screen :game game))
-  (activate (game-menu-screen game))
-  (play
-   (make-instance
-    'sample :name :music :source (resource "sound/music.mp3") :type :music)
-   :loop t :volume 80))
+  (let* ((player-instance (make-instance 'player :host player))
+         (player-instances (iter (for p in players)
+                                 (collect
+                                  (if (eql p player)
+                                      player-instance
+                                      (make-instance 'player :host players))))))
+    (setf (game-player game) player-instance
+          (game-players game) player-instances
+          (game-font game) (make-font :font-10x20)
+          (game-menu-screen game)
+          (make-instance 'thopter-menu-screen :game game)
+          (game-item-screen game)
+          (make-instance 'thopter-item-screen :game game)
+          (game-play-screen game)
+          (make-instance 'thopter-play-screen :game game))
+    (activate (game-menu-screen game))
+    (play
+     (make-instance
+      'sample :name :music :source (resource "sound/music.mp3") :type :music)
+     :loop t :volume 80)))
 
 (defmethod game-update :after ((screen thopter-menu-screen))
   (let ((s "Thopter"))
@@ -1109,7 +1118,8 @@
 (defmethod game-update :after ((screen thopter-play-screen))
   (let* ((thopter (iter (for i in-vector (children (game-root screen)))
                         (when (and (typep i 'thopter)
-                                   (eql (event-host i) (game-player *game*)))
+                                   (eql (event-host i)
+                                        (event-host (game-player *game*))))
                           (return i))))
          (anyone-alive
           (or thopter
