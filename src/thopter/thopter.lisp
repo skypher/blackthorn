@@ -128,7 +128,10 @@
     :accessor missile-lock
     :initform nil)
    (players-left
-    :accessor players-left)))
+    :accessor players-left)
+   (thopters
+    :accessor thopters
+    :initform nil)))
 
 (defclass thopter-menu-screen (screen)
   ((game-root
@@ -148,7 +151,20 @@
    (resume
     :accessor game-resume)
    (quit
-    :accessor game-quit)))
+    :accessor game-quit)
+   (cursor
+    :accessor game-cursor)
+   (item-screen-items
+    :accessor item-screen-items)
+   (squares
+    :accessor item-screen-squares
+    :initform nil)
+   (selections
+    :accessor item-screen-selections
+    :initform nil)
+   (cursors
+    :accessor item-screen-cursors
+    :initform nil)))
 
 (defclass start-controller (actor)
   ())
@@ -174,6 +190,8 @@
 
 (defclass quit-controller (actor) ())
 
+(defclass cursor-controller (actor) ())
+
 (defclass tile (sprite mobile transient)
   ())
 
@@ -181,6 +199,14 @@
   ((host
     :reader event-host
     :initarg :host
+    :initform nil)
+   (primary-weapon-class
+    :accessor primary-weapon-class
+    :initarg :primary-weapon-class
+    :initform nil)
+   (secondary-weapon-class
+    :accessor secondary-weapon-class
+    :initarg :secondary-weapon-class
     :initform nil)))
 
 (defclass weapon-class ()
@@ -229,7 +255,11 @@
    (weapon-type
     :accessor  weapon-type
     :initarg  :weapon-type
-    :initform :radial)))
+    :initform :radial)
+   ;; TODO: Would this be fixed by using "lazy" images?
+   (weapon-image-name
+    :accessor weapon-image-name
+    :initarg :weapon-image-name)))
 
 (defclass weapon (alarm)
   ((timer :initform nil)
@@ -260,7 +290,8 @@
    (initial-firepower :initform nil)
    (initial-ammo :initform 1)
    (ammo-refill-rate :initform 200)
-   (ammo-deplete-rate :initform 200)))
+   (ammo-deplete-rate :initform 200)
+   (weapon-image-name :initform :spread-weapon)))
 
 (defclass chaingun-weapon (weapon-class)
   ((projectile-class :initform  'bullet)
@@ -277,7 +308,8 @@
    (initial-ammo :initform 1)
    (ammo-refill-rate :initform 200)
    (ammo-deplete-rate :initform 200)
-   (weapon-type :initform :straight)))
+   (weapon-type :initform :straight)
+   (weapon-image-name :initform :chaingun-weapon)))
 
 (defclass missile-weapon (weapon-class)
   ((projectile-class :initform 'missile)
@@ -293,7 +325,8 @@
    (initial-firepower :initform 1)
    (initial-ammo :initform 2)
    (ammo-refill-rate :initform 1)
-   (ammo-deplete-rate :initform 1)))
+   (ammo-deplete-rate :initform 1)
+   (weapon-image-name :initform :missile-weapon)))
 
 (defclass thopter (mobile sprite collidable direction-mixin)
   ((speed :initform 8)
@@ -301,9 +334,6 @@
    (primary-weapon
     :accessor primary-weapon
     :initarg :primary-weapon)
-;   (primary-weapon2
-;    :accessor primary-weapon2
-;    :initarg :primary-weapon2)
    (secondary-weapon
     :accessor secondary-weapon
     :initarg :secondary-weapon)
@@ -421,6 +451,9 @@
                                               :projectile-class 'enemy-missile
                                               :projectile-image :enemy-missile
                                               :projectile-veloc #c(0 +4)))
+
+(defvar *available-weapons*
+  (list *spread-weapon* *chaingun-weapon* *missile-weapon*))
 
 (defmethod initialize-instance :after ((weapon weapon) &key weapon-class
                                        firepower ammo)
@@ -645,6 +678,7 @@
                      :image (make-anim :explosion)
                      :timer 28)
       (detach parent thopter)
+      (delete thopter (thopters (game-screen *game*)))
       (decf (players-left (players-left (game-screen *game*)))))))
 
 (defmethod update :after ((thopter thopter) event)
@@ -920,6 +954,11 @@
   (setf (game-sheet screen) (load-sheet (resource "disp/thopter.png"))))
 
 (defun setup-game (screen)
+  ;; Clear out the item screen:
+  (let ((item-screen (game-item-screen (game screen))))
+    (setf (item-screen-squares item-screen) nil
+          (item-screen-selections item-screen) nil
+          (item-screen-cursors item-screen) nil))
   (setf (game-root screen) (make-instance 'component :size *game-size*)
         (game-view screen) (make-instance 'component :size *game-size*))
   (let* ((root (game-root screen))
@@ -941,48 +980,39 @@
     (subscribe (game-keys screen) (game-pause screen))
     (iter (for player in (game-players (game screen))) (for i from 0)
           (with n = (length (game-players (game screen))))
-          (let* ((body-image (make-image "~a~a-~a" :thopter (mod i 4) :body))
-                 (blade-anim (make-anim "~a~a-~a" :thopter (mod i 4) :blades))
-                 (primary-weapon (make-instance 'weapon
-                                                :weapon-class *spread-weapon*))
-                 ;(primary-weapon (make-instance 'chaingun-weapon
-                 ;                  ;:max-spread 1/4
-                 ;                  :max-spread 1
-                 ;                  :offset #c(-33 -22)
-                 ;                  :size (size blade-anim)
-                 ;                  :weapon-type :straight))
-                ;                   :offset (complex 
-                ;                            (x (/ (size body-image) 2)) 0)))
-                ; (primary-weapon2 (make-instance 'chaingun-weapon
-                ;                   :max-spread 1/4
-                ;                   :offset (complex 
-                ;                           (- (x (/ (size body-image) 2))) 0)))
-                 (secondary-weapon (make-instance
+          (with-slots (primary-weapon-class secondary-weapon-class) player
+            (setf primary-weapon-class *spread-weapon*
+                  secondary-weapon-class *missile-weapon*)
+            (let* ((body-image (make-image "~a~a-~a" :thopter (mod i 4) :body))
+                   (blade-anim (make-anim "~a~a-~a" :thopter (mod i 4) :blades))
+                   (primary-weapon (make-instance
                                     'weapon
-                                    :weapon-class *missile-weapon*))
-                 (thopter (make-instance
-                           'thopter
-                           :host (event-host player)
-                           :parent root
-                           :offset (- (complex (* (x size) (/ (+ i 1/2) n))
-                                               (* (y size) 3/4))
-                                      (/ (size body-image) 2))
-                           :image body-image
-                           :primary-weapon primary-weapon
-                           ;:primary-weapon2 primary-weapon2
-                           :secondary-weapon secondary-weapon
-                           :health 16)))
-            (attach thopter primary-weapon)
-            ;(attach thopter primary-weapon2)
-            (attach thopter secondary-weapon)
-            (make-instance
-             'sprite
-             :parent thopter
-             :offset #c(-33 -22)
-             :depth -1
-             :image blade-anim)
-            (subscribe (game-keys screen) thopter)
-            (incf (players-left (players-left screen)))))
+                                    :weapon-class primary-weapon-class))
+                   (secondary-weapon (make-instance
+                                      'weapon
+                                      :weapon-class secondary-weapon-class))
+                   (thopter (make-instance
+                             'thopter
+                             :host (event-host player)
+                             :parent root
+                             :offset (- (complex (* (x size) (/ (+ i 1/2) n))
+                                                 (* (y size) 3/4))
+                                        (/ (size body-image) 2))
+                             :image body-image
+                             :primary-weapon primary-weapon
+                             :secondary-weapon secondary-weapon
+                             :health 16)))
+              (attach thopter primary-weapon)
+              (attach thopter secondary-weapon)
+              (make-instance
+               'sprite
+               :parent thopter
+               :offset #c(-33 -22)
+               :depth -1
+               :image blade-anim)
+              (subscribe (game-keys screen) thopter)
+              (incf (players-left (players-left screen)))
+              (push thopter (thopters screen)))))
     (let* ((tile-names '(:forest-0 :forest-1 :forest-2 :forest-3
                          :forest-4 :forest-5 :forest-6))
            (tiles (iter (for name in tile-names) (collect (make-image name))))
@@ -997,14 +1027,6 @@
                                  :image (nth (mt19937:random num-tiles)
                                              tiles)
                                  :depth 100))))))
-
-
-(defmethod activate :after ((screen thopter-play-screen))
-  (iter (for i in-vector (children (game-root screen)))
-        (when (typep i 'thopter)
-          (stop-all i nil)))
-  ;; Now is a relatively good time to do garbage collection.
-  (gc :full t))
 
 (defmethod initialize-instance :after ((screen thopter-menu-screen) &key)
   (let* ((root (game-root screen))
@@ -1048,13 +1070,14 @@
     (subscribe (game-keys screen) (game-quit screen))
     (subscribe (game-keys screen) (game-start screen))))
 
-
 (defmethod initialize-instance :after ((screen thopter-item-screen) &key)
   (let* ((root (game-root screen))
          (size (size root)))
     (setf (game-sheet screen) (load-sheet (resource "disp/thopter-item.png"))
           (game-resume screen) (make-instance 'resume-controller :parent root)
-          (game-quit screen) (make-instance 'quit-controller :parent root))
+          (game-quit screen) (make-instance 'quit-controller :parent root)
+          (game-cursor screen) (make-instance 'cursor-controller :parent root)
+          (item-screen-items screen) (make-instance 'component :parent root))
     (let* ((paragraph '("Game Paused"))
            (images (iter (for text in paragraph)
                          (collect (make-text text (game-font (game screen))))))
@@ -1083,15 +1106,181 @@
             (make-instance 'sprite :offset (+ (x offset) (complex 0 y))
                            :parent root :image image)))
     (subscribe (game-keys screen) (game-quit screen))
+    (subscribe (game-keys screen) (game-cursor screen))
     (subscribe (game-keys screen) (game-resume screen))))
 
+(defmethod activate :after ((screen thopter-play-screen))
+  ;; Stop all thopters from moving or shooting to avoid keyboard desync.
+  (iter (for i in-vector (children (game-root screen)))
+        (when (typep i 'thopter)
+          (stop-all i nil)))
+  ;; Grab new weapons from item screen selections.
+  (let ((players (game-players (game screen))))
+    (with-slots (squares selections) (game-item-screen (game screen))
+      (with-slots (thopters) screen
+        (when selections
+          (iter (for player in players)
+                (for selection in selections)
+                (for thopter in thopters)
+                (let ((thopter
+                       (find (event-host player) thopters :key #'event-host)))
+                  (when thopter
+                    (let ((weapon1
+                           (nth (position (parent (first selection)) squares)
+                                *available-weapons*))
+                          (weapon2
+                           (nth (position (parent (second selection)) squares)
+                                *available-weapons*)))
+                      (with-slots (primary-weapon secondary-weapon) thopter
+                        (when (not (eql weapon1 (weapon-class primary-weapon)))
+                          (detach (parent primary-weapon) primary-weapon)
+                          (setf primary-weapon (make-instance
+                                                'weapon
+                                                :weapon-class weapon1))
+                          (attach thopter primary-weapon))
+                        (when (not (eql weapon2
+                                        (weapon-class secondary-weapon)))
+                          (detach (parent secondary-weapon) secondary-weapon)
+                          (setf secondary-weapon (make-instance
+                                                  'weapon
+                                                  :weapon-class weapon2))
+                          (attach thopter secondary-weapon)))))))))))
+  ;; Now is a relatively good time to do garbage collection.
+  (gc :full t))
+
+(defmethod activate :after ((screen thopter-item-screen))
+  (with-slots ((item-root item-screen-items)) screen
+    (iter (for child in (concatenate 'list (children item-root)))
+          (detach item-root child))
+    (let ((item-grid (make-instance 'component
+                                    :parent item-root
+                                    :offset #c(20 40))))
+      (let* ((square-size (size (make-image (weapon-image-name
+                                             (first *available-weapons*)))))
+             (selector-size (size (make-image :selection0-primary)))
+             (squares
+              (iter (for weapon in *available-weapons*)
+                    (for i from 0 by (x square-size))
+                    (collect
+                     (make-instance
+                      'sprite
+                      :parent item-grid
+                      :offset (complex i 0)
+                      :image (make-image (weapon-image-name weapon))))))
+             (selections
+              (iter (for player in (game-players (game screen)))
+                    (for i from 0)
+                    (let ((thopter
+                            (find (event-host player)
+                                  (thopters (game-play-screen (game screen)))
+                                  :key #'event-host)))
+                      (collect
+                       (when thopter
+                         (let ((primary-square
+                                (nth (position (weapon-class
+                                                (primary-weapon thopter))
+                                               *available-weapons*)
+                                     squares))
+                               (secondary-square
+                                (nth (position (weapon-class
+                                                (secondary-weapon thopter))
+                                               *available-weapons*)
+                                     squares)))
+                           (list (make-instance
+                                  'sprite
+                                  :parent primary-square
+                                  :offset (complex (* (mod i 4)
+                                                      2 (x selector-size))
+                                                   (* (floor i 4)
+                                                      (y selector-size)))
+                                  :depth -2
+                                  :image (make-image "~a~a-~a"
+                                                     :selection (mod i 4)
+                                                     :primary))
+                                 (make-instance
+                                  'sprite
+                                  :parent secondary-square
+                                  :offset (complex (* (1+ (* (mod i 4) 2))
+                                                      (x selector-size))
+                                                   (* (floor i 4)
+                                                      (y selector-size)))
+                                  :depth -2
+                                  :image (make-image "~a~a-~a"
+                                                     :selection (mod i 4)
+                                                     :secondary)))))))))
+             (cursors
+              (iter (for player in (game-players (game screen)))
+                    (for i from 0)
+                    (collect (make-instance
+                              'sprite
+                              :parent (first squares)
+                              :offset (complex (* (mod i 4)
+                                                  2 (x selector-size))
+                                               (* (floor i 4)
+                                                  (y selector-size)))
+                              :depth -1
+                              :image (make-image "~a~a"
+                                                 :cursor (mod i 4)))))))
+        (setf (item-screen-squares screen) squares
+              (item-screen-selections screen) selections
+              (item-screen-cursors screen) cursors)))))
+
+(defmethod initialize-instance :after ((controller cursor-controller) &key)
+  (bind-key-down controller :sdl-key-left #'cursor-move-left)
+  (bind-key-down controller :sdl-key-right #'cursor-move-right)
+  (bind-key-down controller :sdl-key-space #'cursor-select-primary)
+  (iter (for k in '(:sdl-key-lctrl :sdl-key-lalt
+                    :sdl-key-rctrl :sdl-key-ralt))
+        (bind-key-down controller k #'cursor-select-secondary)))
+
+(defmethod cursor-move-left ((ctrl cursor-controller) (event key-event))
+  (with-slots (squares cursors) (game-item-screen *game*)
+    (let* ((players (game-players *game*))
+           (player (position (event-host event) players :key #'event-host))
+           (cursor (nth player cursors))
+           (new-square (nth (max (1- (position (parent cursor) squares))
+                                 0)
+                            squares)))
+      (detach (parent cursor) cursor)
+      (attach new-square cursor))))
+
+(defmethod cursor-move-right ((ctrl cursor-controller) (event key-event))
+  (with-slots (squares cursors) (game-item-screen *game*)
+    (let* ((players (game-players *game*))
+           (player (position (event-host event) players :key #'event-host))
+           (cursor (nth player cursors))
+           (new-square (nth (min (1+ (position (parent cursor) squares))
+                                 (1- (length squares)))
+                            squares)))
+      (detach (parent cursor) cursor)
+      (attach new-square cursor))))
+
+(defmethod cursor-select-primary ((ctrl cursor-controller) (event key-event))
+  (with-slots (squares selections cursors) (game-item-screen *game*)
+    (let* ((players (game-players *game*))
+           (player (position (event-host event) players :key #'event-host))
+           (cursor (nth player cursors))
+           (selection (first (nth player selections)))
+           (new-square (nth (position (parent cursor) squares)
+                            squares)))
+      (detach (parent selection) selection)
+      (attach new-square selection))))
+
+(defmethod cursor-select-secondary ((ctrl cursor-controller) (event key-event))
+  (with-slots (squares selections cursors) (game-item-screen *game*)
+    (let* ((players (game-players *game*))
+           (player (position (event-host event) players :key #'event-host))
+           (cursor (nth player cursors))
+           (selection (second (nth player selections)))
+           (new-square (nth (position (parent cursor) squares)
+                            squares)))
+      (detach (parent selection) selection)
+      (attach new-square selection))))
+
 (defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
-  (let* ((player-instance (make-instance 'player :host player))
-         (player-instances (iter (for p in players)
-                                 (collect
-                                  (if (eql p player)
-                                      player-instance
-                                      (make-instance 'player :host players))))))
+  (let* ((player-instances (iter (for p in players)
+                                 (collect (make-instance 'player :host p))))
+         (player-instance (find player player-instances :key #'event-host)))
     (setf (game-player game) player-instance
           (game-players game) player-instances
           (game-font game) (make-font :font-10x20)
