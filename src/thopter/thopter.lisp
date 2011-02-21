@@ -177,9 +177,14 @@
 (defclass tile (sprite mobile transient)
   ())
 
-(defclass weapon (alarm)
-  ((timer :initform nil)
-   (projectile-class
+(defclass player ()
+  ((host
+    :reader event-host
+    :initarg :host
+    :initform nil)))
+
+(defclass weapon-class ()
+  ((projectile-class
     :initarg :projectile-class)
    (projectile-image
     :initarg :projectile-image)
@@ -197,13 +202,13 @@
     :accessor cooldown
     :initarg :cooldown
     :initform nil)
-   (firepower 
-    :accessor firepower
-    :initarg :firepower
+   (initial-firepower
+    :accessor initial-irepower
+    :initarg :initial-firepower
     :initform nil)
-   (ammo
-    :accessor ammo
-    :initarg :ammo
+   (initial-ammo
+    :accessor initial-ammo
+    :initarg :initial-ammo
     :initform 1)
    (ammo-refill-rate
     :accessor ammo-refill-rate
@@ -226,7 +231,22 @@
     :initarg  :weapon-type
     :initform :radial)))
 
-(defclass spread-weapon (weapon)
+(defclass weapon (alarm)
+  ((timer :initform nil)
+   (firepower 
+    :accessor firepower
+    :initarg :firepower
+    :initform nil)
+   (ammo
+    :accessor ammo
+    :initarg :ammo
+    :initform 1)
+   (weapon-class
+    :accessor weapon-class
+    :initarg :weapon-class
+    :initform nil)))
+
+(defclass spread-weapon (weapon-class)
   ((projectile-class :initform  'bullet)
    (projectile-image :initform :bullet)
    (projectile-n-directions :initform 16)
@@ -237,12 +257,12 @@
                              :source (resource "sound/thoptergun.ogg")
                              :type :sample))
    (cooldown :initform 4)
-   (firepower :initform nil)
-   (ammo :initform 1)
+   (initial-firepower :initform nil)
+   (initial-ammo :initform 1)
    (ammo-refill-rate :initform 200)
    (ammo-deplete-rate :initform 200)))
 
-(defclass chaingun-weapon (weapon)
+(defclass chaingun-weapon (weapon-class)
   ((projectile-class :initform  'bullet)
    (projectile-image :initform :bullet)
    (projectile-n-directions :initform 16)
@@ -253,13 +273,13 @@
                              :source (resource "sound/thoptergun.ogg")
                              :type :sample))
    (cooldown :initform 4)
-   (firepower :initform nil)
-   (ammo :initform 1)
+   (initial-firepower :initform nil)
+   (initial-ammo :initform 1)
    (ammo-refill-rate :initform 200)
    (ammo-deplete-rate :initform 200)
    (weapon-type :initform :straight)))
 
-(defclass missile-weapon (weapon)
+(defclass missile-weapon (weapon-class)
   ((projectile-class :initform 'missile)
    (projectile-image :initform :missile)
    (projectile-n-directions :initform 16)
@@ -270,8 +290,8 @@
                              :source (resource "sound/missile.ogg")
                              :type :sample))
    (cooldown :initform nil)
-   (firepower :initform 1)
-   (ammo :initform 2)
+   (initial-firepower :initform 1)
+   (initial-ammo :initform 2)
    (ammo-refill-rate :initform 1)
    (ammo-deplete-rate :initform 1)))
 
@@ -383,6 +403,35 @@
 (defclass upgrade-speed (sprite mobile collidable transient)
   ((reactive-collisions-only-p :initform t)))
 
+(defvar *spread-weapon* (make-instance 'spread-weapon
+                                       :max-spread 1/4))
+(defvar *chaingun-weapon* (make-instance 'chaingun-weapon))
+(defvar *missile-weapon* (make-instance 'missile-weapon))
+(defvar *enemy-spread-weapon* (make-instance 'spread-weapon
+                                             :projectile-class 'enemy-bullet
+                                             :projectile-image :enemy-bullet
+                                             :projectile-veloc #c(0 +12)
+                                             :fire-sound nil))
+(defvar *enemy-chaingun-weapon* (make-instance 'chaingun-weapon
+                                               :projectile-class 'enemy-bullet
+                                               :projectile-image :enemy-bullet
+                                               :projectile-veloc #c(0 +12)
+                                               :fire-sound nil))
+(defvar *enemy-missile-weapon* (make-instance 'missile-weapon
+                                              :projectile-class 'enemy-missile
+                                              :projectile-image :enemy-missile
+                                              :projectile-veloc #c(0 +4)))
+
+(defmethod initialize-instance :after ((weapon weapon) &key weapon-class
+                                       firepower ammo)
+  (with-slots (initial-firepower initial-ammo ammo-deplete-rate) weapon-class
+    (let ((firepower (or firepower initial-firepower)))
+      (setf (firepower weapon) firepower
+            (ammo weapon) (if firepower
+                              (or ammo initial-ammo)
+                              (* (or ammo initial-ammo)
+                                 ammo-deplete-rate))))))
+
 (defvar *dir-names* '(:north :south :west :east))
 (defvar *dir-vectors* '(#c(0 -1) #c(0 1) #c(-1 0) #c(1 0)))
 
@@ -413,10 +462,7 @@
         (bind-key-down thopter k #'start-shoot-secondary)
         (bind-key-up thopter k #'stop-shoot-secondary))
   (bind-key-down thopter :sdl-key-lshift #'toggle-boost)
-  (bind-key-down thopter :sdl-key-rshift #'toggle-boost)
-  ;; TODO: add reset function
-  ;(bind-key-down thopter :sdl-key-r     #'reset)
-  )
+  (bind-key-down thopter :sdl-key-rshift #'toggle-boost))
 
 (defun nearest-object (component type radius)
   (find-nearest-object component radius :test #'(lambda (x) (typep x type))))
@@ -432,14 +478,14 @@
 
 (defmethod start-shoot ((weapon weapon) event)
   (shoot weapon event)
-  (setf (timer weapon) (cooldown weapon)))
+  (setf (timer weapon) (cooldown (weapon-class weapon))))
 
 (defmethod stop-shoot ((weapon weapon) event)
   (setf (timer weapon) nil))
 
 (defmethod alarm ((weapon weapon) event)
   (shoot weapon event)
-  (setf (timer weapon) (cooldown weapon)))
+  (setf (timer weapon) (cooldown (weapon-class weapon))))
 
 (defmethod start-shoot-primary ((thopter thopter) event)
   (start-shoot (primary-weapon thopter) event))
@@ -460,87 +506,83 @@
       (progn (setf (boost-on thopter) nil) (change-veloc thopter event))
       (setf (boost-on thopter) t)))
 
-; change to be after init weapon
-(defmethod initialize-instance :after ((weapon weapon) &key)
-  (when (not (firepower weapon))
-    (setf (ammo weapon) (* (ammo weapon) (ammo-deplete-rate weapon)))))
-
 (defmethod shoot ((weapon weapon) event)
-  (with-slots (fire-sound) weapon
-    (shoot-helper weapon (weapon-type weapon) event)
-    (when fire-sound
-      (play fire-sound))))
+  (with-slots (weapon-class) weapon
+    (with-slots (fire-sound weapon-type) weapon-class
+      (shoot-helper weapon weapon-type event)
+      (when fire-sound
+        (play fire-sound)))))
 
 (defmethod shoot-helper ((weapon weapon) (weapon-type (eql :radial)) event)
-  (with-slots ((shooter parent) projectile-class projectile-image
-               projectile-n-directions projectile-veloc projectile-timer
-               fire-sound ammo ammo-deplete-rate angle-increment
-                max-spread (offset-w offset)) weapon
-    (with-slots (parent offset size veloc) shooter
-      (when (> ammo 0)
-        (let* ((firepower (if (firepower weapon)
-                              (firepower weapon)
-                              (ceiling ammo ammo-deplete-rate)))
-                (increment (if (< (* firepower angle-increment) max-spread)
-                             (* angle-increment pi)
-                             (/ (* max-spread pi) firepower))))
-          (iter (for i from (+ (ceiling firepower -2)
-                               (if (evenp firepower) 1/2 0))
-                     to (floor firepower 2))
-                (for v = (+ veloc (rot projectile-veloc (* i increment))))
-                (for image = (if projectile-n-directions
-                                 (make-image
-                                  "~a-~2,'0d" projectile-image
-                                  (quadrant v projectile-n-directions))
-                                 (make-image projectile-image)))
-                (make-instance
-                 projectile-class :parent parent 
-                 :offset (+ offset offset-w (/ size 2) (- (/ (size image) 2))
-                            (* (rot (unit projectile-veloc)
-                                    (* i increment))
-                               (+ (x size) (y size))
-                               0.25d0))
-                 :depth -1
-                 :veloc v
-                 :image image
-                 :timer projectile-timer))
-          (decf ammo firepower))))))
+  (with-slots ((shooter parent) ammo weapon-class (offset-w offset)) weapon
+    (with-slots (projectile-class projectile-image
+                 projectile-n-directions projectile-veloc projectile-timer
+                 ammo-deplete-rate angle-increment max-spread) weapon-class
+      (with-slots (parent offset size veloc) shooter
+        (when (> ammo 0)
+          (let* ((firepower (if (firepower weapon)
+                                (firepower weapon)
+                                (ceiling ammo ammo-deplete-rate)))
+                 (increment (if (< (* firepower angle-increment) max-spread)
+                                (* angle-increment pi)
+                                (/ (* max-spread pi) firepower))))
+            (iter (for i from (+ (ceiling firepower -2)
+                                 (if (evenp firepower) 1/2 0))
+                       to (floor firepower 2))
+                  (for v = (+ veloc (rot projectile-veloc (* i increment))))
+                  (for image = (if projectile-n-directions
+                                   (make-image
+                                    "~a-~2,'0d" projectile-image
+                                    (quadrant v projectile-n-directions))
+                                   (make-image projectile-image)))
+                  (make-instance
+                   projectile-class :parent parent 
+                   :offset (+ offset offset-w (/ size 2) (- (/ (size image) 2))
+                              (* (rot (unit projectile-veloc)
+                                      (* i increment))
+                                 (+ (x size) (y size))
+                                 0.25d0))
+                   :depth -1
+                   :veloc v
+                   :image image
+                   :timer projectile-timer))
+            (decf ammo firepower)))))))
 
 (defmethod shoot-helper ((weapon weapon) (weapon-type (eql :straight)) event)
-  (with-slots ((shooter parent) projectile-class projectile-image
-               projectile-n-directions projectile-veloc projectile-timer
-               fire-sound ammo ammo-deplete-rate angle-increment
-                max-spread (offset-w offset)) weapon
-    (with-slots (parent offset size veloc) shooter
-      (when (> ammo 0)
-        (let* ((firepower (if (firepower weapon)
-                              (firepower weapon)
-                              (ceiling ammo ammo-deplete-rate)))
-                (increment (if (< (* firepower angle-increment) max-spread)
-                             (* angle-increment pi)
-                             (/ (* max-spread pi) firepower))))
-          (iter (for i from (+ (ceiling firepower -2)
-                               (if (evenp firepower) 1/2 0))
-                     to (floor firepower 2))
-                (for v = (+ veloc projectile-veloc))
-                (for image = (if projectile-n-directions
-                                 (make-image
-                                  "~a-~2,'0d" projectile-image
-                                  (quadrant v projectile-n-directions))
-                                 (make-image projectile-image)))
-                (make-instance
-                 projectile-class :parent parent 
-                  :offset (+ offset offset-w (/ (size weapon) 2)
-                            (- (/ (size image) 2))
-                            (* (rot (unit projectile-veloc)
-                                   (* i increment))
-                                (max (x size) (y size))
-                                0.5d0))
-                 :depth -1
-                 :veloc v
-                 :image image
-                 :timer projectile-timer))
-          (decf ammo firepower))))))
+  (with-slots ((shooter parent) ammo weapon-class (offset-w offset)) weapon
+    (with-slots (projectile-class projectile-image
+                 projectile-n-directions projectile-veloc projectile-timer
+                 ammo-deplete-rate angle-increment max-spread) weapon-class
+      (with-slots (parent offset size veloc) shooter
+        (when (> ammo 0)
+          (let* ((firepower (if (firepower weapon)
+                                (firepower weapon)
+                                (ceiling ammo ammo-deplete-rate)))
+                 (increment (if (< (* firepower angle-increment) max-spread)
+                                (* angle-increment pi)
+                                (/ (* max-spread pi) firepower))))
+            (iter (for i from (+ (ceiling firepower -2)
+                                 (if (evenp firepower) 1/2 0))
+                       to (floor firepower 2))
+                  (for v = (+ veloc projectile-veloc))
+                  (for image = (if projectile-n-directions
+                                   (make-image
+                                    "~a-~2,'0d" projectile-image
+                                    (quadrant v projectile-n-directions))
+                                   (make-image projectile-image)))
+                  (make-instance
+                   projectile-class :parent parent 
+                   :offset (+ offset offset-w (/ (size weapon) 2)
+                              (- (/ (size image) 2))
+                              (* (rot (unit projectile-veloc)
+                                      (* i increment))
+                                 (max (x size) (y size))
+                                 0.5d0))
+                   :depth -1
+                   :veloc v
+                   :image image
+                   :timer projectile-timer))
+            (decf ammo firepower)))))))
 
 (defmethod missile ((enemy enemy) event)
   (shoot (secondary-weapon enemy) event)
@@ -581,28 +623,29 @@
 
 (defmethod collide ((thopter thopter) event)
   (with-slots (parent offset depth veloc health primary-weapon
-                      secondary-weapon missiles speed-boost) thopter
-    (with-slots (ammo ammo-refill-rate) primary-weapon
-      (typecase (event-hit event)
-        (enemy-bullet  (decf health))
-        (enemy-missile (decf health))
-        (enemy         (decf health 8))
-        (explosion     (decf health))
-        (health-pack   (incf health 2))
-        (upgrade-bullet (incf ammo ammo-refill-rate))
-        (upgrade-missile (incf (ammo secondary-weapon)
-                               (ammo-refill-rate secondary-weapon)))
-        (upgrade-speed (progn
-                         (setf speed-boost
-                           (min (+ speed-boost 240) (max-speed-timer thopter)))
-                         (change-veloc thopter event))))
-      (when (and parent (<= health 0))
-        (make-instance 'explosion :parent parent
-          :offset offset :depth depth :veloc (/ veloc 2)
-          :image (make-anim :explosion)
-          :timer 28)
-        (detach parent thopter)
-        (decf (players-left (players-left (game-screen *game*))))))))
+               secondary-weapon missiles speed-boost) thopter
+    (typecase (event-hit event)
+      (enemy-bullet  (decf health))
+      (enemy-missile (decf health))
+      (enemy         (decf health 8))
+      (explosion     (decf health))
+      (health-pack   (incf health 2))
+      (upgrade-bullet (incf (ammo primary-weapon)
+                            (ammo-refill-rate (weapon-class primary-weapon))))
+      (upgrade-missile (incf (ammo secondary-weapon)
+                             (ammo-refill-rate
+                              (weapon-class secondary-weapon))))
+      (upgrade-speed (progn
+                       (setf speed-boost
+                             (min (+ speed-boost 240) (max-speed-timer thopter)))
+                       (change-veloc thopter event))))
+    (when (and parent (<= health 0))
+      (make-instance 'explosion :parent parent
+                     :offset offset :depth depth :veloc (/ veloc 2)
+                     :image (make-anim :explosion)
+                     :timer 28)
+      (detach parent thopter)
+      (decf (players-left (players-left (game-screen *game*)))))))
 
 (defmethod update :after ((thopter thopter) event)
   (with-slots (parent offset size veloc) thopter
@@ -788,55 +831,56 @@
 (defmethod collide ((enemy enemy) event)
   (with-slots (parent offset size depth veloc health primary-weapon 
                secondary-weapon missiles) enemy
-    (with-slots (ammo ammo-refill-rate) primary-weapon
-      (typecase (event-hit event)
-        (bullet      (decf health))
-        (missile     (decf health))
-        (thopter     (decf health 8))
-        (explosion   (decf health))
-        (health-pack (incf health 2))
-        (upgrade-bullet (incf ammo ammo-refill-rate))
-        (upgrade-missile (incf (ammo secondary-weapon)
-                               (ammo-refill-rate secondary-weapon)))
-        (upgrade-speed (setf (speed-boost enemy) 240)))
-      (when (and parent (<= health 0))
-        (let ((i (if (typep enemy 'enemy-boss) 25 1)))
-          (loop repeat i 
-            do (let* ((random-choice (mt19937:random 1d0))
-                       ; not happy with way chances are, prefer individual
-                       (upgrade-bullet-chance 0.30)
-                       (upgrade-missile-chance 0.6d0)
-                       (health-pack-chance 0.90)
-                       (upgrade-speed-chance 1.00d0)
-                       (drop-class (if (< random-choice upgrade-bullet-chance)
+    (typecase (event-hit event)
+      (bullet      (decf health))
+      (missile     (decf health))
+      (thopter     (decf health 8))
+      (explosion   (decf health))
+      (health-pack (incf health 2))
+      (upgrade-bullet (incf (ammo primary-weapon)
+                             (ammo-refill-rate (weapon-class primary-weapon))))
+      (upgrade-missile (incf (ammo secondary-weapon)
+                             (ammo-refill-rate
+                              (weapon-class secondary-weapon))))
+      (upgrade-speed (setf (speed-boost enemy) 240)))
+    (when (and parent (<= health 0))
+      (let ((i (if (typep enemy 'enemy-boss) 25 1)))
+        (loop repeat i 
+           do (let* ((random-choice (mt19937:random 1d0))
+                     ; not happy with way chances are, prefer individual
+                     (upgrade-bullet-chance 0.30)
+                     (upgrade-missile-chance 0.6d0)
+                     (health-pack-chance 0.90)
+                     (upgrade-speed-chance 1.00d0)
+                     (drop-class (if (< random-choice upgrade-bullet-chance)
                                      'upgrade-bullet
-                                    (if (< random-choice upgrade-missile-chance)
-                                      'upgrade-missile
-                                     (if (< random-choice health-pack-chance)
-                                       'health-pack
-                                        'upgrade-speed))))
-                       (drop-image
-                         (make-anim-or-image (ecase drop-class
-                                          ((upgrade-bullet) :upgrade-bullet)
-                                          ((upgrade-missile) :upgrade-missile)
-                                          ((health-pack) :health)
-                                          ((upgrade-speed) :upgrade-speed))))
-                       (image (make-anim :explosion))
-                       (bound (- size (size image))))
-                 (make-instance
-                   'explosion :parent parent
-                   :offset (+ offset
-                             (complex (mt19937:random (max 1 (x bound)))
-                               (mt19937:random (max 1 (y bound)))))
-                   :depth depth
-                   :veloc (if (= i 1)
+                                     (if (< random-choice upgrade-missile-chance)
+                                         'upgrade-missile
+                                         (if (< random-choice health-pack-chance)
+                                             'health-pack
+                                             'upgrade-speed))))
+                     (drop-image
+                      (make-anim-or-image (ecase drop-class
+                                            ((upgrade-bullet) :upgrade-bullet)
+                                            ((upgrade-missile) :upgrade-missile)
+                                            ((health-pack) :health)
+                                            ((upgrade-speed) :upgrade-speed))))
+                     (image (make-anim :explosion))
+                     (bound (- size (size image))))
+                (make-instance
+                 'explosion :parent parent
+                 :offset (+ offset
+                            (complex (mt19937:random (max 1 (x bound)))
+                                     (mt19937:random (max 1 (y bound)))))
+                 :depth depth
+                 :veloc (if (= i 1)
                             (/ veloc 2)
                             (+ (/ veloc 2) (complex (- (mt19937:random 6d0) 3d0)
-                                             (- (mt19937:random 6d0) 3d0))))
-                   :image image
-                   :timer 28
-                   :drop-class drop-class :drop-image drop-image)))
-          (detach parent enemy))))))
+                                                    (- (mt19937:random 6d0) 3d0))))
+                 :image image
+                 :timer 28
+                 :drop-class drop-class :drop-image drop-image)))
+        (detach parent enemy)))))
 
 (defmethod alarm ((explosion explosion) event)
   (with-slots (parent offset size depth veloc drop-class drop-image) explosion
@@ -899,8 +943,8 @@
           (with n = (length (game-players (game screen))))
           (let* ((body-image (make-image "~a~a-~a" :thopter (mod i 4) :body))
                  (blade-anim (make-anim "~a~a-~a" :thopter (mod i 4) :blades))
-                 (primary-weapon (make-instance 'spread-weapon
-                                   :max-spread 1/4))
+                 (primary-weapon (make-instance 'weapon
+                                                :weapon-class *spread-weapon*))
                  ;(primary-weapon (make-instance 'chaingun-weapon
                  ;                  ;:max-spread 1/4
                  ;                  :max-spread 1
@@ -913,7 +957,9 @@
                 ;                   :max-spread 1/4
                 ;                   :offset (complex 
                 ;                           (- (x (/ (size body-image) 2))) 0)))
-                 (secondary-weapon (make-instance 'missile-weapon))
+                 (secondary-weapon (make-instance
+                                    'weapon
+                                    :weapon-class *missile-weapon*))
                  (thopter (make-instance
                            'thopter
                            :host player
@@ -1076,7 +1122,8 @@
                  (level (game-wave screen))
                  (health thopter)
                  (ceiling (ammo (primary-weapon thopter))
-                   (ammo-deplete-rate (primary-weapon thopter)))
+                          (ammo-deplete-rate
+                           (weapon-class (primary-weapon thopter))))
                  (ammo (primary-weapon thopter))
                  (ammo (secondary-weapon thopter))
                  (speed-boost thopter)
@@ -1129,17 +1176,12 @@
          (root-size (size root)))
     (loop for i from (1+ (floor count -2)) to (floor count 2)
        do (let* ((primary-weapon (make-instance
-                                  'spread-weapon
-                                  :projectile-class 'enemy-bullet
-                                  :projectile-image :enemy-bullet
-                                  :projectile-veloc #c(0 +12)
-                                  :ammo ammo
-                                  :fire-sound nil))
+                                  'weapon
+                                  :weapon-class *enemy-spread-weapon*
+                                  :ammo ammo))
                  (secondary-weapon (make-instance
-                                    'missile-weapon
-                                    :projectile-class 'enemy-missile
-                                    :projectile-image :enemy-missile
-                                    :projectile-veloc #c(0 +4)
+                                    'weapon
+                                    :weapon-class *enemy-missile-weapon*
                                     :ammo missiles))
                  (enemy (make-instance enemy-type
                                        :parent root
