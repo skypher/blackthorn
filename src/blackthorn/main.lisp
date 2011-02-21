@@ -71,11 +71,11 @@
     (("players") :type integer :initial-value 2)))
 
 (defun cli-get-mode ()
-  (let* ((args (print (command-line-arguments:get-command-line-arguments)))
-         (opts (print (command-line-arguments:process-command-line-options
-                       *cli-options*
-                       (print (aif (position "--" args :test #'equal)
-                                   (nthcdr (1+ it) args)))))))
+  (let* ((args (command-line-arguments:get-command-line-arguments))
+         (opts (command-line-arguments:process-command-line-options
+                        *cli-options*
+                        (aif (position "--" args :test #'equal)
+                             (nthcdr (1+ it) args)))))
     (append (or (aif (getf opts :server) (list :server it))
                 (aif (getf opts :connect) (list :client it))
                 (list :normal nil))
