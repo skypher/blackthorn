@@ -29,25 +29,13 @@
 ;;; System paths
 ;;;
 
-(defvar *resource-pathname-defaults*
-  "The root directory which contains resources for the game. Normally, this
-   is equivalent to *default-pathname-defaults*, but in some situations,
-   e.g. Mac OS X applications, this refers to a different location.")
-
 (defun setup-paths ()
-  #-darwin
-  (setf *resource-pathname-defaults* (truename *default-pathname-defaults*))
+  (add-resource-path *default-pathname-defaults*)
+  (add-resource-path
+   (merge-pathnames #p"../../" #.(or *compile-file-truename* *load-truename*)))
   #+darwin
-  (let* ((root (truename *default-pathname-defaults*))
-         (exe (truename (directory-namestring (command-line-executable))))
-         (resources (merge-pathnames #p"../Resources/" exe)))
-    (if (fad:directory-exists-p resources)
-        (setf *default-pathname-defaults* exe
-              *resource-pathname-defaults* resources)
-        (setf *resource-pathname-defaults* root))))
-
-(defun resource (pathname)
-  (merge-pathnames pathname *resource-pathname-defaults*))
+  (add-resource-path
+   (merge-pathnames #p"../Resources/" (command-line-executable))))
 
 ;;;
 ;;; Command-line option parsing

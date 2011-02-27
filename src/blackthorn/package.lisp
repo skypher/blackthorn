@@ -31,9 +31,38 @@
 ;;; intended for internal use.
 ;;;
 
+(defpackage :blackthorn-utils
+  (:nicknames :blt-utils)
+  (:use :cl :alexandria :iter)
+  (:export
+
+   ;; utils.lisp
+   :unit
+   :dot
+   :proj
+   :norm
+   :dist
+   :theta
+   :polar
+   :rot
+   :cross
+   :mklist
+   :aif
+   :acond
+   :it
+   :once-only
+   :with-gensyms
+   :gc
+
+   ;; resources.lisp
+   :add-resource-path
+   :resolve-resource
+   
+   ))
+
 (defpackage :blackthorn-net
   (:nicknames :blt-net)
-  (:use :cl :iter)
+  (:use :cl :iter :blt-utils)
   (:export
 
    ;; network.lisp
@@ -50,7 +79,7 @@
 
 (defpackage :blackthorn-graphics
   (:nicknames :blt-gfx)
-  (:use :cl :iter)
+  (:use :cl :iter :blt-utils)
   (:import-from :sdl :set-caption)
   (:export
 
@@ -87,7 +116,7 @@
 
 (defpackage :blackthorn-mixer
   (:nicknames :blt-mixer)
-  (:use :cl)
+  (:use :cl :blt-utils)
   (:export
 
    ;; music.lisp
@@ -101,25 +130,8 @@
 
 (defpackage :blackthorn-physics
   (:nicknames :blt-phys)
-  (:use :cl :iter :blt-gfx)
+  (:use :cl :alexandria :iter :blt-utils :blt-gfx)
   (:export
-
-   ;; utils.lisp
-   :unit
-   :dot
-   :proj
-   :norm
-   :dist
-   :theta
-   :polar
-   :rot
-   :cross
-   :aif
-   :acond
-   :it
-   :once-only
-   :with-gensyms
-   :gc
 
    ;; component.lisp
    :component
@@ -205,7 +217,7 @@
 
 (defpackage :blackthorn
   (:nicknames :blt)
-  (:use :cl :blt-gfx :blt-mixer :blt-phys)
+  (:use :cl :blt-utils :blt-gfx :blt-mixer :blt-phys)
   (:export
 
    ;; utils.lisp
@@ -218,12 +230,17 @@
    :polar
    :rot
    :cross
+   :mklist
    :aif
    :acond
    :it
    :once-only
    :with-gensyms
    :gc
+
+   ;; resources.lisp
+   :add-resource-path
+   :resolve-resource
 
    ;; graphics.lisp
    :set-caption
@@ -349,8 +366,6 @@
   (:export
 
    ;; main.lisp
-   :*resource-pathname-defaults*
-   :resource
    :main
 
    ))

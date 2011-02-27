@@ -39,6 +39,7 @@
                                   ((:file "package")
                                    (:file "public")
                                    (:file "utils")
+                                   (:file "resources")
                                    (:file "graphics")
                                    (:file "fonts")
                                    (:file "music")
@@ -46,6 +47,7 @@
                                    (:file "event")
                                    (:file "input")
                                    (:file "actor")
+                                   (:file "collision-macros")
                                    (:file "collision")
                                    (:file "game")
                                    (:file "network")
@@ -53,6 +55,7 @@
                                    (:file "main"))
                                   :serial t))))
   :depends-on (;; Utilities
+               :alexandria
                :trivial-features
                :command-line-arguments
                :cl-fad

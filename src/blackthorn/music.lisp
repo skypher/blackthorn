@@ -60,12 +60,14 @@
 
 (defun load-sample (sample)
   (with-slots (source type) sample
-    (assert (probe-file source) (source) "Source file \"~a\" not found." source)
-    (ecase type
-      ((:music)
-       (sdl-mixer:load-music source))
-      ((:sample)
-       (sdl-mixer:load-sample source)))))
+    (let ((actual-source (resolve-resource source)))
+      (assert (probe-file actual-source) (actual-source)
+              "Source file \"~a\" not found." actual-source)
+      (ecase type
+        ((:music)
+         (sdl-mixer:load-music actual-source))
+        ((:sample)
+         (sdl-mixer:load-sample actual-source))))))
 
 (defmethod play ((sample sample) &key loop fade volume)
   (with-slots (type raw-sample) sample

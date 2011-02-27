@@ -284,7 +284,7 @@
    (projectile-timer :initform 120)
    (fire-sound
     :initform (make-instance 'sample :name :thopter-gun
-                             :source (resource "sound/thoptergun.ogg")
+                             :source "sound/thoptergun.ogg"
                              :type :sample))
    (cooldown :initform 4)
    (initial-firepower :initform nil)
@@ -301,7 +301,7 @@
    (projectile-timer :initform 120)
    (fire-sound
     :initform (make-instance 'sample :name :thopter-gun
-                             :source (resource "sound/thoptergun.ogg")
+                             :source "sound/thoptergun.ogg"
                              :type :sample))
    (cooldown :initform 4)
    (initial-firepower :initform nil)
@@ -319,7 +319,7 @@
    (projectile-timer :initform 60)
    (fire-sound
     :initform (make-instance 'sample :name :thopter-gun
-                             :source (resource "sound/missile.ogg")
+                             :source "sound/missile.ogg"
                              :type :sample))
    (cooldown :initform nil)
    (initial-firepower :initform 1)
@@ -623,7 +623,7 @@
     (setf (missile-lock (game-screen *game*))
       (play (make-instance 'sample
               :name :beep
-              :source (resource "sound/beep.ogg")
+              :source "sound/beep.ogg"
               :type :sample) :loop t)))
   (incf (enemy-missiles (game-screen *game*))))
 
@@ -951,7 +951,7 @@
     (detach (parent upgrade) upgrade)))
 
 (defmethod initialize-instance :after ((screen thopter-play-screen) &key)
-  (setf (game-sheet screen) (load-sheet (resource "disp/thopter.png"))))
+  (setf (game-sheet screen) (load-sheet "disp/thopter.png")))
 
 (defun setup-game (screen)
   ;; Clear out the item screen:
@@ -973,7 +973,7 @@
           (game-sound screen)
           (play (make-instance 'sample
                                :name :thopter-blades
-                               :source (resource "sound/thopterblades.ogg")
+                               :source "sound/thopterblades.ogg"
                                :type :sample)
                 :loop t :volume 80))
     (subscribe (game-keys screen) (game-quit screen))
@@ -1031,7 +1031,7 @@
 (defmethod initialize-instance :after ((screen thopter-menu-screen) &key)
   (let* ((root (game-root screen))
          (size (size root)))
-    (setf (game-sheet screen) (load-sheet (resource "disp/thopter-screen.png"))
+    (setf (game-sheet screen) (load-sheet "disp/thopter-screen.png")
           (game-start screen) (make-instance 'start-controller :parent root)
           (game-quit screen) (make-instance 'quit-controller :parent root))
     (make-instance 'sprite :image (make-image :title) :depth 1 :parent root)
@@ -1073,7 +1073,7 @@
 (defmethod initialize-instance :after ((screen thopter-item-screen) &key)
   (let* ((root (game-root screen))
          (size (size root)))
-    (setf (game-sheet screen) (load-sheet (resource "disp/thopter-item.png"))
+    (setf (game-sheet screen) (load-sheet "disp/thopter-item.png")
           (game-resume screen) (make-instance 'resume-controller :parent root)
           (game-quit screen) (make-instance 'quit-controller :parent root)
           (game-cursor screen) (make-instance 'cursor-controller :parent root)
@@ -1293,7 +1293,7 @@
     (activate (game-menu-screen game))
     (play
      (make-instance
-      'sample :name :music :source (resource "sound/music.mp3") :type :music)
+      'sample :name :music :source "sound/music.mp3" :type :music)
      :loop t :volume 80)))
 
 (defmethod game-update :after ((screen thopter-menu-screen))

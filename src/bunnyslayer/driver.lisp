@@ -176,7 +176,7 @@
   (let* ((root (game-root game))
          (size (size (game-root game))))
     (setf (game-sheet game)
-          (load-sheet (directory (resource "disp/refmap/*.png")) :name :sheet))
+          (load-sheet "disp/refmap/*.png" :name :sheet))
     (let ((hero (make-instance 'hero :parent root :offset (/ size 2))))
       (subscribe (game-keys game) hero))))
 

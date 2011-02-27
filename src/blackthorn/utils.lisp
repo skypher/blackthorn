@@ -23,7 +23,7 @@
 ;;;; DEALINGS IN THE SOFTWARE.
 ;;;;
 
-(in-package :blackthorn-physics)
+(in-package :blackthorn-utils)
 
 ;;;
 ;;; Complex numbers
@@ -99,6 +99,9 @@
        do (setf (gethash k table) v))
     table))
 
+(defun mklist (atom-or-list)
+  (if (listp atom-or-list) atom-or-list (list atom-or-list)))
+
 ;;;
 ;;; Anaphora
 ;;;
@@ -120,20 +123,6 @@
 ;;;
 ;;; Macros
 ;;;
-
-(defmacro once-only ((&rest names) &body body)
-  (let ((gensyms (loop for n in names collect (gensym))))
-    `(let (,@(loop for g in gensyms collect `(,g (gensym))))
-      `(let (,,@(loop for g in gensyms for n in names collect ``(,,g ,,n)))
-        ,(let (,@(loop for n in names for g in gensyms collect `(,n ,g)))
-           ,@body)))))
-
-(eval-when (:compile-toplevel)
-  (defmacro with-gensyms (syms &body body)
-    `(let ,(mapcar #'(lambda (s)
-                       `(,s (gensym)))
-                   syms)
-       ,@body)))
 
 (defmacro defmemo (name params &body body)
   (with-gensyms (cache args value exists)

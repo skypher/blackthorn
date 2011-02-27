@@ -45,7 +45,7 @@
 (defmethod game-init ((game mobile-game) &key &allow-other-keys)
   (let* ((root (game-root game))
          (size (size (game-root game))))
-    (setf (game-sheet game) (load-sheet (resource "disp/sheet.png")))
+    (setf (game-sheet game) (load-sheet "disp/sheet.png"))
     (let ((image (make-image :explosion)))
       (loop for i from 0 to (test-size game)
          do (make-instance

@@ -79,7 +79,7 @@
                       &key &allow-other-keys)
   (let* ((root (game-root game))
          (size (size (game-root game))))
-    (setf (game-sheet game) (load-sheet (resource "disp/collision.png")))
+    (setf (game-sheet game) (load-sheet "disp/collision.png"))
     (let ((player (make-instance 'player :parent root :offset (/ size 2)
                                  :image (make-image :orange))))
       (subscribe (game-keys game) player))
