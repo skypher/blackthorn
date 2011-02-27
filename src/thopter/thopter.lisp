@@ -320,7 +320,7 @@
    (projectile-timer :initform 120)
    (fire-sound
     :initform (make-instance 'sample :name :thopter-gun
-                             :source (resource "sound/thoptergun.ogg")
+                             :source "sound/thoptergun.ogg"
                              :type :sample))
    (cooldown :initform 4)
    (max-spread :initform 1)
