@@ -94,7 +94,7 @@
 (defun load-source-to-texture (source &optional options)
   (let ((actual-source (resolve-resource source :allow-wild t)))
     (surface-to-texture
-     (load-and-convert-images (mklist actual-source) options))))
+     (load-and-convert-images (ensure-list actual-source) options))))
 
 ;;;
 ;;; Sprite Sheets
@@ -167,7 +167,8 @@
   (labels ((coord (key alist) (apply #'complex (cdr (assoc key alist))))
            (forever (x) (let ((l (list x))) (setf (cdr l) l) l)))
     (with-slots (name size options) sheet
-      (let* ((actual-source (mklist (resolve-resource source :allow-wild t)))
+      (let* ((actual-source
+              (ensure-list (resolve-resource source :allow-wild t)))
              (config-options (mapcar #'parse-config-file actual-source))
              (total-size
               (iter (for o in config-options)

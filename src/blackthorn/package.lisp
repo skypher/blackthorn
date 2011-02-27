@@ -46,7 +46,6 @@
    :polar
    :rot
    :cross
-   :mklist
    :aif
    :acond
    :it
@@ -79,7 +78,7 @@
 
 (defpackage :blackthorn-graphics
   (:nicknames :blt-gfx)
-  (:use :cl :iter :blt-utils)
+  (:use :cl :alexandria :iter :blt-utils)
   (:import-from :sdl :set-caption)
   (:export
 
@@ -230,7 +229,6 @@
    :polar
    :rot
    :cross
-   :mklist
    :aif
    :acond
    :it

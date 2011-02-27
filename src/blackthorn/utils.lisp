@@ -99,9 +99,6 @@
        do (setf (gethash k table) v))
     table))
 
-(defun mklist (atom-or-list)
-  (if (listp atom-or-list) atom-or-list (list atom-or-list)))
-
 ;;;
 ;;; Anaphora
 ;;;
