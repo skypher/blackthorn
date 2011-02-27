@@ -47,7 +47,6 @@
                                    (:file "event")
                                    (:file "input")
                                    (:file "actor")
-                                   (:file "collision-macros")
                                    (:file "collision")
                                    (:file "game")
                                    (:file "network")

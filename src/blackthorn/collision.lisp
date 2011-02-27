@@ -53,6 +53,22 @@
    (collision-square-size
     :initform 32)))
 
+(defmacro with-collision-grid-iterate ((var (grid xy1 xy2) &key outer-label)
+                                       &body body)
+  (with-gensyms (g sq i1 j1 i2 j2 i j)
+    (once-only (grid xy1 xy2)
+      `(with-slots ((,g collision-grid) (,sq collision-square-size)) ,grid
+         (let ((,i1 (truncate (x ,xy1) ,sq))
+               (,j1 (truncate (y ,xy1) ,sq))
+               (,i2 (truncate (x ,xy2) ,sq))
+               (,j2 (truncate (y ,xy2) ,sq)))
+           (iter ,@(when outer-label (list outer-label))
+                 (for ,i from ,i1 to ,i2)
+                 (iter (for ,j from ,j1 to ,j2)
+                       (symbol-macrolet
+                           (,(when var `(,var (gethash (complex ,i ,j) ,g))))
+                         ,@body))))))))
+
 (defgeneric collision-grid-insert-node (grid node xy))
 (defmethod collision-grid-insert-node (grid node xy)
   (declare (ignore grid node)))
