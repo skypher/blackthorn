@@ -304,6 +304,26 @@
                              :source "sound/thoptergun.ogg"
                              :type :sample))
    (cooldown :initform 4)
+   (max-spread :initform 1)
+   (initial-firepower :initform nil)
+   (initial-ammo :initform 1)
+   (ammo-refill-rate :initform 200)
+   (ammo-deplete-rate :initform 200)
+   (weapon-type :initform :straight)
+   (weapon-image-name :initform :chaingun-weapon)))
+
+(defclass laser-weapon (weapon-class)
+  ((projectile-class :initform 'bullet)
+   (projectile-image :initform :laser)
+   (projectile-n-directions :initform 1)
+   (projectile-veloc :initform #c(0 -72))
+   (projectile-timer :initform 120)
+   (fire-sound
+    :initform (make-instance 'sample :name :thopter-gun
+                             :source (resource "sound/thoptergun.ogg")
+                             :type :sample))
+   (cooldown :initform 4)
+   (max-spread :initform 1)
    (initial-firepower :initform nil)
    (initial-ammo :initform 1)
    (ammo-refill-rate :initform 200)
@@ -436,6 +456,7 @@
 (defvar *spread-weapon* (make-instance 'spread-weapon
                                        :max-spread 1/4))
 (defvar *chaingun-weapon* (make-instance 'chaingun-weapon))
+(defvar *laser-weapon* (make-instance 'laser-weapon))
 (defvar *missile-weapon* (make-instance 'missile-weapon))
 (defvar *enemy-spread-weapon* (make-instance 'spread-weapon
                                              :projectile-class 'enemy-bullet
@@ -463,7 +484,10 @@
             (ammo weapon) (if firepower
                               (or ammo initial-ammo)
                               (* (or ammo initial-ammo)
-                                 ammo-deplete-rate))))))
+                                 ammo-deplete-rate))))
+    (when (eql (weapon-type weapon-class) :straight)
+      (setf (offset weapon) #c(-33 -22))
+      (setf (size weapon) (size (make-anim "~a~a-~a" :thopter 0 :blades))))))
 
 (defvar *dir-names* '(:north :south :west :east))
 (defvar *dir-vectors* '(#c(0 -1) #c(0 1) #c(-1 0) #c(1 0)))
@@ -603,6 +627,7 @@
                                     "~a-~2,'0d" projectile-image
                                     (quadrant v projectile-n-directions))
                                    (make-image projectile-image)))
+                  ;(format t "~a,~a  " (x  offset-w) (y offset-w))
                   (make-instance
                    projectile-class :parent parent 
                    :offset (+ offset offset-w (/ (size weapon) 2)
