@@ -1,6 +1,6 @@
 ;;;; Blackthorn -- Lisp Game Engine
 ;;;;
-;;;; Copyright (c) 2007-2010, Elliott Slaughter <elliottslaughter@gmail.com>
+;;;; Copyright (c) 2007-2011, Elliott Slaughter <elliottslaughter@gmail.com>
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -26,7 +26,7 @@
 ;;;; -------------------------------------------------------------------------
 ;;;; Usage: place script and additional files (is_user_admin) into directory
 ;;;; where distribution is stored, then compile with NSIS (latest version
-;;;; used was 2.31).
+;;;; used was 2.46).
 ;;;;
 ;;;; Note: this script globs all files in the current directory.
 ;;;; -------------------------------------------------------------------------
@@ -60,6 +60,9 @@
 
     ;; get installation folder from registry if available
     InstallDirRegKey HKCU "Software\${LONGNAME} ${VERSION}" ""
+
+    ;; execute with highest level of permissions available to the user
+    RequestExecutionLevel highest
 
 ;;; --------------------------------------------------------------------------
 ;;; Variables
