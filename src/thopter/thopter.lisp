@@ -1302,6 +1302,8 @@
       (detach (parent selection) selection)
       (attach new-square selection))))
 
+(defvar *music*)
+
 (defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
   (let* ((player-instances (iter (for p in players)
                                  (collect (make-instance 'player :host p))))
@@ -1316,10 +1318,10 @@
           (game-play-screen game)
           (make-instance 'thopter-play-screen :game game))
     (activate (game-menu-screen game))
-    (play
-     (make-instance
-      'sample :name :music :source "sound/music.mp3" :type :music)
-     :loop t :volume 80)))
+    (setf *music*
+          (make-instance
+           'sample :name :music :source "sound/music.mp3" :type :music))
+    (play *music* :loop t :volume 80)))
 
 (defmethod game-update :after ((screen thopter-menu-screen))
   (let ((s "Thopter"))
