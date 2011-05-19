@@ -49,14 +49,11 @@
   (sdl-mixer:close-audio)
   (clrhash *samples*))
 
-(defmethod make-instance ((class (eql (find-class 'sample))) &key name source)
+(defun make-sample (&rest initargs &key name source &allow-other-keys)
   (or (when name (gethash name *samples*))
       (when (not source) (error "No such sample named ~a." name))
-      (let ((sample (call-next-method)))
-        (setf (gethash (name sample) *samples*) sample))))
-
-(defmethod make-instance ((class (eql 'sample)) &rest initargs)
-  (apply #'make-instance (find-class 'sample) initargs))
+      (let ((sample (apply #'make-instance 'sample initargs)))
+       (setf (gethash (name sample) *samples*) sample))))
 
 (defun load-sample (sample)
   (with-slots (source type) sample

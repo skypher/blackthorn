@@ -283,9 +283,9 @@
    (projectile-veloc :initform #c(0 -12))
    (projectile-timer :initform 120)
    (fire-sound
-    :initform (make-instance 'sample :name :thopter-gun
-                             :source "sound/thoptergun.ogg"
-                             :type :sample))
+    :initform (make-sample :name :thopter-gun
+                           :source "sound/thoptergun.ogg"
+                           :type :sample))
    (cooldown :initform 4)
    (initial-firepower :initform nil)
    (initial-ammo :initform 1)
@@ -300,9 +300,9 @@
    (projectile-veloc :initform #c(0 -12))
    (projectile-timer :initform 120)
    (fire-sound
-    :initform (make-instance 'sample :name :thopter-gun
-                             :source "sound/thoptergun.ogg"
-                             :type :sample))
+    :initform (make-sample :name :thopter-gun
+                           :source "sound/thoptergun.ogg"
+                           :type :sample))
    (cooldown :initform 4)
    (max-spread :initform 1)
    (initial-firepower :initform nil)
@@ -319,9 +319,9 @@
    (projectile-veloc :initform #c(0 -72))
    (projectile-timer :initform 120)
    (fire-sound
-    :initform (make-instance 'sample :name :thopter-gun
-                             :source "sound/thoptergun.ogg"
-                             :type :sample))
+    :initform (make-sample :name :thopter-gun
+                           :source "sound/thoptergun.ogg"
+                           :type :sample))
    (cooldown :initform 4)
    (max-spread :initform 1)
    (initial-firepower :initform nil)
@@ -338,9 +338,9 @@
    (projectile-veloc :initform #c(0 -4))
    (projectile-timer :initform 60)
    (fire-sound
-    :initform (make-instance 'sample :name :thopter-gun
-                             :source "sound/missile.ogg"
-                             :type :sample))
+    :initform (make-sample :name :thopter-gun
+                           :source "sound/missile.ogg"
+                           :type :sample))
    (cooldown :initform nil)
    (initial-firepower :initform 1)
    (initial-ammo :initform 2)
@@ -646,10 +646,10 @@
   (shoot (secondary-weapon enemy) event)
   (when (<= (enemy-missiles (game-screen *game*)) 0)
     (setf (missile-lock (game-screen *game*))
-      (play (make-instance 'sample
-              :name :beep
-              :source "sound/beep.ogg"
-              :type :sample) :loop t)))
+      (play (make-sample
+             :name :beep
+             :source "sound/beep.ogg"
+             :type :sample) :loop t)))
   (incf (enemy-missiles (game-screen *game*))))
 
 (defmethod update ((missile missile) event)
@@ -996,10 +996,10 @@
           (players-left screen)
           (make-instance 'players-left-controller :parent root)
           (game-sound screen)
-          (play (make-instance 'sample
-                               :name :thopter-blades
-                               :source "sound/thopterblades.ogg"
-                               :type :sample)
+          (play (make-sample
+                 :name :thopter-blades
+                 :source "sound/thopterblades.ogg"
+                 :type :sample)
                 :loop t :volume 80))
     (subscribe (game-keys screen) (game-quit screen))
     (subscribe (game-keys screen) (game-pause screen))
@@ -1302,8 +1302,6 @@
       (detach (parent selection) selection)
       (attach new-square selection))))
 
-(defvar *music*)
-
 (defmethod game-init ((game thopter-game) &key player players &allow-other-keys)
   (let* ((player-instances (iter (for p in players)
                                  (collect (make-instance 'player :host p))))
@@ -1318,10 +1316,9 @@
           (game-play-screen game)
           (make-instance 'thopter-play-screen :game game))
     (activate (game-menu-screen game))
-    (setf *music*
-          (make-instance
-           'sample :name :music :source "sound/music.mp3" :type :music))
-    (play *music* :loop t :volume 80)))
+    (play
+     (make-sample :name :music :source "sound/music.mp3" :type :music)
+     :loop t :volume 80)))
 
 (defmethod game-update :after ((screen thopter-menu-screen))
   (let ((s "Thopter"))

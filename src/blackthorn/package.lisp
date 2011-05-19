@@ -121,7 +121,7 @@
    ;; music.lisp
    :init-mixer
    :unload-mixer
-   :sample
+   :make-sample
    :play
    :stop
    
@@ -270,7 +270,7 @@
    ;; music.lisp
    :init-mixer
    :unload-mixer
-   :sample
+   :make-sample
    :play
    :stop
 
