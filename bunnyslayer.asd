@@ -1,6 +1,6 @@
 ;;;; Blackthorn -- Lisp Game Engine
 ;;;;
-;;;; Copyright (c) 2007-2010, Elliott Slaughter <elliottslaughter@gmail.com>
+;;;; Copyright (c) 2007-2012, Elliott Slaughter <elliottslaughter@gmail.com>
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -32,7 +32,8 @@
   :name "Bunny Slayer"
   :author "Elliott Slaughter <elliottslaughter@gmail.com>"
   :version "0.2"
-  :description "Bunny Slayer, an adventure game."
+  :license "MIT"
+  :description "Bunny Slayer, an adventure game"
   :components ((:module src
                         :components
                         ((:module bunnyslayer

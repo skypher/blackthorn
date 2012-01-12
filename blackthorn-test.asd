@@ -1,6 +1,6 @@
 ;;;; Blackthorn -- Lisp Game Engine
 ;;;;
-;;;; Copyright (c) 2007-2010, Elliott Slaughter <elliottslaughter@gmail.com>
+;;;; Copyright (c) 2007-2012, Elliott Slaughter <elliottslaughter@gmail.com>
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -32,6 +32,8 @@
   :name "blackthorn-test"
   :author "Elliott Slaughter <elliottslaughter@gmail.com>"
   :version "0.2"
+  :license "MIT"
+  :description "Test suite for Blackthorn 2D engine"
   :components ((:module src
                         :components
                         ((:module test

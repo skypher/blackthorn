@@ -1,6 +1,6 @@
 ;;;; Blackthorn -- Lisp Game Engine
 ;;;;
-;;;; Copyright (c) 2007-2010, Elliott Slaughter <elliottslaughter@gmail.com>
+;;;; Copyright (c) 2007-2012, Elliott Slaughter <elliottslaughter@gmail.com>
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -32,7 +32,8 @@
   :name "Thopter"
   :author "Elliott Slaughter <elliottslaughter@gmail.com>"
   :version "0.4.5"
-  :description "Thopter, a shooter game."
+  :license "MIT"
+  :description "Thopter, a shooter game"
   :properties ((:long-name . "Thopter"))
   :components ((:module src
                         :components
